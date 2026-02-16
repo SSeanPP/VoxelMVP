@@ -5,7 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.URL;
+//import java.net.URL;
 
 public class ResourceLoader {
 	
@@ -15,8 +15,8 @@ public class ResourceLoader {
 	
 	public static String loadResourceAsString(String fileName) throws IOException {
 		
-		URL url = ResourceLoader.class.getClassLoader().getResource("");
-		System.out.println("Classpath root is: " + url);
+		//URL url = ResourceLoader.class.getClassLoader().getResource("");
+		//System.out.println("Classpath root is: " + url);
 		InputStream is = ResourceLoader.class.getClassLoader().getResourceAsStream(fileName);
 		//System.out.println("Classpath root is: " + is);
 		
