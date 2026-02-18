@@ -2,13 +2,24 @@ package main;
 
 import static org.lwjgl.opengl.GL20.*;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.FloatBuffer;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.joml.Matrix4f;
+
 public class ShaderProgram {
-	private final int programId;
+	public final int programId;
 
     private int vertexShaderId;
 
     private int fragmentShaderId;
 
+    private Map<String, Integer> uniforms = new HashMap<String, Integer>();
+    FloatBuffer matrixBuffer = ByteBuffer.allocateDirect(16*4).order(ByteOrder.nativeOrder()).asFloatBuffer();
+    
     public ShaderProgram() throws Exception {
         programId = glCreateProgram();
         if (programId == 0) {
@@ -76,4 +87,26 @@ public class ShaderProgram {
             glDeleteProgram(programId);
         }
     }
+    
+    
+    public void createUniform(String uniformName) {
+        int location = glGetUniformLocation(programId, uniformName);
+        if (location < 0) {
+            throw new RuntimeException("Could not find uniform [" + uniformName + "] in shader program [" +
+                    programId + "]");
+        }
+        uniforms.put(uniformName, location);
+    }
+    
+    public void setUniform(String uniformName, Matrix4f matrix) {
+    	Integer location = uniforms.get(uniformName);
+        if (location == null) {
+            throw new RuntimeException("Could not find uniform [" + uniformName + "]");
+        }
+        matrixBuffer.clear();
+        matrix.get(matrixBuffer);  
+        glUniformMatrix4(location, false, matrixBuffer);
+	    
+	}
+    
 }

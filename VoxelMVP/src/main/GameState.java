@@ -7,8 +7,21 @@ public class GameState {
 		
 	}
 	
+	public GameState(Projection old) {
+		
+	}
+	
+	public GameState copy() {
+		GameState copy = new GameState();
+		
+		//Copy its shit
+		
+		return copy;
+	}
+	
 	public void integrate(double t, double dt) {
 		//Should move camera in this state
+		
 	}
 	
 	public static GameState lerp(GameState previous, GameState current, double alpha) {
@@ -25,11 +38,4 @@ public class GameState {
 		return result;
 	}
 	
-	public GameState copy() {
-		GameState copy = new GameState();
-		
-		//Copy its shit
-		
-		return copy;
-	}
 }

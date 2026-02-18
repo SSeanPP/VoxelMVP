@@ -11,11 +11,11 @@ public class GameEngine implements Runnable {
 	
 	public void gameLoop() {
 		double t = 0.0;
-	    double dt = 0.01;
+	    double dt = 0.05;
 
-	    double currentTime = System.nanoTime();
+	    double currentTime = System.nanoTime() /1000000000.0;
 	    double accumulator = 0.0;
-
+ 
 	    GameState previousState = publishedState;
 	    GameState currentState = publishedState.copy();
 	    
@@ -23,7 +23,7 @@ public class GameEngine implements Runnable {
 	    {
 	    	//System.out.println("running");
 	        double newTime = System.nanoTime() / 1000000000.0;
-	        double frameTime = (newTime - currentTime) / 1000000000.0;
+	        double frameTime = (newTime - currentTime);
 	        if ( frameTime > 0.25 )
 	            frameTime = 0.25;
 	        currentTime = newTime;

@@ -18,5 +18,6 @@
 			<attribute name="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value="C:/Users/seanp/Desktop/Minecraft Java Development/lwjgl/native/windows"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="C:/Users/seanp/Desktop/Minecraft Java Development/lwjgl/jar/joml-1.10.7.jar" sourcepath="C:/Users/seanp/Desktop/Minecraft Java Development/lwjgl/jar/joml-1.10.7-sources.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

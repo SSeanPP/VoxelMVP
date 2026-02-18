@@ -31,6 +31,24 @@ public class Main {
             fpsTimer = System.currentTimeMillis();
             frames = 0;
             
+            float[] positions = new float[]{
+                    -0.5f, 0.5f, -2f,
+                    -0.5f, -0.5f, -2f,
+                    0.5f, -0.5f, -2f,
+                    0.5f, 0.5f, -2f,
+            };
+            float[] colors = new float[]{
+                    0.5f, 0.0f, 0.0f,
+                    0.0f, 0.5f, 0.0f,
+                    0.0f, 0.0f, 0.5f,
+                    0.0f, 0.5f, 0.5f,
+            };
+            int[] indices = new int[]{
+                    0, 1, 3, 3, 1, 2,
+            };
+            Mesh mesh = new Mesh(positions, colors, indices);
+            renderer.addMesh(mesh);
+            
             while(!Display.isCloseRequested()) {
             	long now = System.nanoTime();
             	delta = (now - lastTime) / 1000000000f;
@@ -53,29 +71,22 @@ public class Main {
         } finally {
             gameEngine.running = false;
             gameEngineThread.join();
+            shaderProgram.cleanup();
             renderer.cleanup();
+            
         }
     }
     
     public static void init() throws Exception {
     	
-    	renderer.initDisplay();
-    	
-    	glEnable(GL_DEPTH_TEST);
-        glEnable(GL_CULL_FACE);
-        glCullFace(GL_BACK);
+    	renderer.initDisplay(1920,1080);
     	
         shaderProgram = new ShaderProgram();
         shaderProgram.createVertexShader(ResourceLoader.loadResourceAsString("resources/vertex.vs"));
         shaderProgram.createFragmentShader(ResourceLoader.loadResourceAsString("resources/fragment.fs"));
         shaderProgram.link();
         
-        glClearColor(0.2f, 0.3f, 0.4f, 1f);
-
-        //setPerspective(70f, 1280f / 720f, 0.1f, 1000f);
-        
+        renderer.createUniforms();
     }
-    
-    
-    
+   
 }
