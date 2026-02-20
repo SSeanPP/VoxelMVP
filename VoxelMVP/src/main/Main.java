@@ -3,6 +3,9 @@ package main;
 import resourceLoader.ResourceLoader;
 import static org.lwjgl.opengl.GL11.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.lwjgl.opengl.Display;
 
 public class Main {
@@ -25,29 +28,69 @@ public class Main {
     	try {
     		
             init();
-            gameEngineThread.start();
+            
             Runtime rt = Runtime.getRuntime();
             long usedMB = (rt.totalMemory() - rt.freeMemory()) / (1024 * 1024);
             fpsTimer = System.currentTimeMillis();
             frames = 0;
             
             float[] positions = new float[]{
-                    -0.5f, 0.5f, -2f,
-                    -0.5f, -0.5f, -2f,
-                    0.5f, -0.5f, -2f,
-                    0.5f, 0.5f, -2f,
+                    // VO
+                    -0.5f, 0.5f, 0.5f,
+                    // V1
+                    -0.5f, -0.5f, 0.5f,
+                    // V2
+                    0.5f, -0.5f, 0.5f,
+                    // V3
+                    0.5f, 0.5f, 0.5f,
+                    // V4
+                    -0.5f, 0.5f, -0.5f,
+                    // V5
+                    0.5f, 0.5f, -0.5f,
+                    // V6
+                    -0.5f, -0.5f, -0.5f,
+                    // V7
+                    0.5f, -0.5f, -0.5f,
             };
             float[] colors = new float[]{
                     0.5f, 0.0f, 0.0f,
                     0.0f, 0.5f, 0.0f,
                     0.0f, 0.0f, 0.5f,
                     0.0f, 0.5f, 0.5f,
+                    0.5f, 0.0f, 0.0f,
+                    0.0f, 0.5f, 0.0f,
+                    0.0f, 0.0f, 0.5f,
+                    0.0f, 0.5f, 0.5f,
             };
             int[] indices = new int[]{
+                    // Front face
                     0, 1, 3, 3, 1, 2,
+                    // Top Face
+                    4, 0, 3, 5, 4, 3,
+                    // Right face
+                    3, 2, 7, 5, 3, 7,
+                    // Left face
+                    6, 1, 0, 6, 0, 4,
+                    // Bottom face
+                    2, 1, 6, 2, 6, 7,
+                    // Back face
+                    7, 6, 4, 7, 4, 5,
             };
+            
+            List<Mesh> meshList = new ArrayList<Mesh>();
             Mesh mesh = new Mesh(positions, colors, indices);
-            renderer.addMesh(mesh);
+            meshList.add(mesh);
+            String cubeModelId = "cube-model";
+            Model model = new Model(cubeModelId, meshList);
+            
+            
+            Entity cubeEntity = new Entity("cube-entity", cubeModelId);
+            cubeEntity.setPosition(0, 0, -5);
+            cubeEntity.updateModelMatrix();
+            
+            gameEngine.getPublishedState().addBoth(model, cubeEntity);
+            
+            gameEngineThread.start();
             
             while(!Display.isCloseRequested()) {
             	long now = System.nanoTime();

@@ -1,21 +1,15 @@
 package main;
 
-import org.joml.Matrix4f;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
-import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
 import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.opengl.GL20.*;
 import static org.lwjgl.opengl.GL30.*;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.FloatBuffer;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 public class Renderer {
 	
@@ -29,15 +23,26 @@ public class Renderer {
 	public void render(GameState state) {
 		
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		
 		Main.shaderProgram.bind();
 		Main.shaderProgram.setUniform("projectionMatrix", projection.getProjMatrix());
-		for (Mesh mesh : meshes) {
-			glBindVertexArray(mesh.getVaoId());
-			glDrawElements(GL_TRIANGLES, mesh.getNumVertices(), GL_UNSIGNED_INT, 0);
-			int error = glGetError();
-		    if (error != GL_NO_ERROR) {
-		        System.out.println("Draw error: " + error);
-		    }
+		
+		Collection<Model> models = state.getModelMap().values();
+		
+		for (Model model : models) {
+			for (Mesh mesh : model.getMeshList()) {
+				glBindVertexArray(mesh.getVaoId());
+				for (Entity entity : model.getEntitiesList()) {
+					Main.shaderProgram.setUniform("modelMatrix", entity.getModelMatrix());
+					glDrawElements(GL_TRIANGLES, mesh.getNumVertices(), GL_UNSIGNED_INT, 0);
+					//System.out.println("drawn something");
+					int error = glGetError();
+					if (error != GL_NO_ERROR) {
+				        System.out.println("Draw error: " + error);
+					}
+					
+			    }
+			}
 		}
 		Main.shaderProgram.unbind();
 		
@@ -82,5 +87,6 @@ public class Renderer {
 	
 	public void createUniforms() {
 		Main.shaderProgram.createUniform("projectionMatrix");
+		Main.shaderProgram.createUniform("modelMatrix");
 	}
 }
