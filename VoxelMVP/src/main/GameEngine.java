@@ -1,10 +1,15 @@
 package main;
 
+import java.util.ArrayList;
+
 import org.lwjgl.input.Keyboard;
 
 public class GameEngine implements Runnable {
 	public volatile boolean running;
-	private volatile GameState publishedState = new GameState();
+	
+	private volatile GameState state = new GameState();
+	private volatile double alpha = 0.0;
+	
 	private InputState inputState = new InputState();
 	
 	public GameEngine() {
@@ -17,9 +22,6 @@ public class GameEngine implements Runnable {
 
 	    double currentTime = System.nanoTime() /1000000000.0;
 	    double accumulator = 0.0;
- 
-	    GameState previousState = publishedState;
-	    GameState currentState = publishedState.copy();
 	    
 	    while ( running )
 	    {
@@ -35,23 +37,25 @@ public class GameEngine implements Runnable {
 	        while ( accumulator >= dt )
 	        {
 	        	drainInputQueue();
-	            previousState = currentState.copy();
-	            currentState.integrate(t, dt, inputState);;
+	        	
+	        	state.integrate(t, dt, inputState);
+	        	
 	            t += dt;
 	            accumulator -= dt;
 	        }
 
-	        double alpha = accumulator / dt;
+	        this.alpha = accumulator / dt;
 	        //System.out.println("Alpha: " + alpha); 
 
-	        GameState state = GameState.lerp(previousState, currentState, alpha);
-
-	        this.publishedState = state;
 	    }
 	}
 	
 	public GameState getPublishedState() {
-	    return publishedState;
+	    return state;
+	}
+	
+	public double getPublishedAlpha() {
+		return alpha;
 	}
 	
 	private void drainInputQueue() {

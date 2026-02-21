@@ -1,47 +1,58 @@
 package main;
 
+import org.joml.Matrix4f;
+import org.joml.Vector3f;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
+
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL30.*;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class Renderer {
 	
-	private List<Mesh> meshes = new ArrayList<Mesh>();
+	private Map<String, Model> models = new HashMap<String, Model>();
 	private Projection projection;
 	
+	private Vector3f renderPos = new Vector3f();
+	private Matrix4f renderMatrix = new Matrix4f();
 	public Renderer () {
 		
 	}
 	
-	public void render(GameState state) {
+	public void render(GameState state, double alpha) {
 		
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		
 		Main.shaderProgram.bind();
 		Main.shaderProgram.setUniform("projectionMatrix", projection.getProjMatrix());
 		
-		Collection<Model> models = state.getModelMap().values();
+		ArrayList<Entity> entities = state.getEntityList();
 		
-		for (Model model : models) {
+		for (Entity entity : entities) {
+			
+			entity.lerpPos(alpha, renderPos);
+	        renderMatrix.translationRotateScale(renderPos, entity.getRotation(), entity.getScale());
+	        
+	        Main.shaderProgram.setUniform("modelMatrix", renderMatrix);
+	        
+	        Model model = models.get(entity.getModelId());
 			for (Mesh mesh : model.getMeshList()) {
 				glBindVertexArray(mesh.getVaoId());
-				for (Entity entity : model.getEntitiesList()) {
-					Main.shaderProgram.setUniform("modelMatrix", entity.getModelMatrix());
-					glDrawElements(GL_TRIANGLES, mesh.getNumVertices(), GL_UNSIGNED_INT, 0);
-					//System.out.println("drawn something");
-					int error = glGetError();
-					if (error != GL_NO_ERROR) {
-				        System.out.println("Draw error: " + error);
-					}
-					
-			    }
+				glDrawElements(GL_TRIANGLES, mesh.getNumVertices(), GL_UNSIGNED_INT, 0);
+				//System.out.println("drawn something");
+				/*
+				int error = glGetError();
+				if (error != GL_NO_ERROR) {
+			        System.out.println("Draw error: " + error);
+				}*/
 			}
 		}
 		Main.shaderProgram.unbind();
@@ -68,9 +79,6 @@ public class Renderer {
     }
 	
 	public void cleanup(){
-		for(Mesh mesh : meshes) {
-			mesh.cleanup();
-		}
 		Display.destroy();
 	}
 	
@@ -81,12 +89,12 @@ public class Renderer {
 		
 	}
 	
-	public void addMesh(Mesh mesh) {
-		meshes.add(mesh);
-	}
-	
 	public void createUniforms() {
 		Main.shaderProgram.createUniform("projectionMatrix");
 		Main.shaderProgram.createUniform("modelMatrix");
+	}
+	
+	public void addModel(Model model) {
+		models.put(model.getId(), model);
 	}
 }

@@ -83,12 +83,10 @@ public class Main {
             String cubeModelId = "cube-model";
             Model model = new Model(cubeModelId, meshList);
             
-            
             Entity cubeEntity = new Entity("cube-entity", cubeModelId);
             cubeEntity.setPosition(0, 0, -5);
-            cubeEntity.updateModelMatrix();
             
-            gameEngine.getPublishedState().addBoth(model, cubeEntity);
+            addEntityToGame(model, cubeEntity);
             
             gameEngineThread.start();
             
@@ -97,7 +95,7 @@ public class Main {
             	delta = (now - lastTime) / 1000000000f;
             	lastTime = now;
             	
-            	renderer.render(gameEngine.getPublishedState());
+            	renderer.render(gameEngine.getPublishedState(), gameEngine.getPublishedAlpha());
             	
             	frames++;
             	if (System.currentTimeMillis() - fpsTimer >= 1000) {
@@ -122,7 +120,7 @@ public class Main {
     
     public static void init() throws Exception {
     	
-    	renderer.initDisplay(1920,1080);
+    	renderer.initDisplay(1280,720);
     	
         shaderProgram = new ShaderProgram();
         shaderProgram.createVertexShader(ResourceLoader.loadResourceAsString("resources/vertex.vs"));
@@ -130,6 +128,11 @@ public class Main {
         shaderProgram.link();
         
         renderer.createUniforms();
+    }
+    
+    public static void addEntityToGame(Model model, Entity entity) {
+    	renderer.addModel(model);
+    	gameEngine.getPublishedState().addEntity(entity);
     }
    
 }

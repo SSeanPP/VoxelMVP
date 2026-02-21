@@ -11,6 +11,9 @@ public class Entity {
     private Vector3f position;
     private Quaternionf rotation;
     private float scale;
+    private Vector3f previousPosition;
+    private Quaternionf previousRotation;
+    private float previousScale;
 
     public Entity(String id, String modelId) {
         this.id = id;
@@ -19,6 +22,18 @@ public class Entity {
         position = new Vector3f();
         rotation = new Quaternionf();
         scale = 1;
+        previousPosition = new Vector3f();
+        previousRotation = new Quaternionf();
+        previousScale = 1; 
+    }
+    
+    public Entity(Entity input) {
+    	this.id = input.id;
+    	this.modelId = input.modelId;
+    	this.modelMatrix = new Matrix4f(input.modelMatrix);
+    	this.position = new Vector3f(input.position);
+    	this.rotation = new Quaternionf(input.rotation);
+    	this.scale = input.scale;
     }
 
     public String getId() {
@@ -36,16 +51,28 @@ public class Entity {
     public Vector3f getPosition() {
         return position;
     }
+    
+    public Vector3f getPreviousPosition() {
+    	return previousPosition;
+    }
 
     public Quaternionf getRotation() {
         return rotation;
+    }
+    
+    public Quaternionf getPreviousRotation() {
+    	return previousRotation;
     }
 
     public float getScale() {
         return scale;
     }
+    
+    public float getPreviousScale() {
+    	return previousScale;
+    }
 
-    public final void setPosition(float x, float y, float z) {
+    public void setPosition(float x, float y, float z) {
         position.x = x;
         position.y = y;
         position.z = z;
@@ -58,10 +85,18 @@ public class Entity {
     public void setScale(float scale) {
         this.scale = scale;
     }
-
-    public void updateModelMatrix() {
-        modelMatrix.translationRotateScale(position, rotation, scale);
+    
+    public void lerpPos(double alpha, Vector3f dest) {
+    	dest.set(
+                (float)(position.x * alpha + previousPosition.x * (1 - alpha)),
+                (float)(position.y * alpha + previousPosition.y * (1 - alpha)),
+                (float)(position.z * alpha + previousPosition.z * (1 - alpha))
+            );
     }
     
-    
+    public void capturePrevious() {
+        previousPosition.set(position);
+        previousRotation.set(rotation);
+        previousScale = scale;
+    }
 }
