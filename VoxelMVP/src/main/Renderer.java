@@ -6,23 +6,27 @@ import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
+import org.lwjgl.opengl.GL11;
 
 import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.opengl.GL13.*;
 import static org.lwjgl.opengl.GL30.*;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class Renderer {
 	
 	private Map<String, Model> models = new HashMap<String, Model>();
+	private TextureCache textureCache = new TextureCache();
+	private MaterialCache materialCache = new MaterialCache();
+	
 	private Projection projection;
 	
 	private Vector3f renderPos = new Vector3f();
 	private Matrix4f renderMatrix = new Matrix4f();
+	
 	public Renderer () {
 		
 	}
@@ -33,7 +37,9 @@ public class Renderer {
 		
 		Main.shaderProgram.bind();
 		Main.shaderProgram.setUniform("projectionMatrix", projection.getProjMatrix());
+		Main.shaderProgram.setUniform("txtSampler", 0);
 		
+				
 		ArrayList<Entity> entities = state.getEntityList();
 		
 		for (Entity entity : entities) {
@@ -45,6 +51,8 @@ public class Renderer {
 	        
 	        Model model = models.get(entity.getModelId());
 			for (Mesh mesh : model.getMeshList()) {
+				glActiveTexture(GL_TEXTURE0);
+				mesh.getMaterial().getTexture().bind();
 				glBindVertexArray(mesh.getVaoId());
 				glDrawElements(GL_TRIANGLES, mesh.getNumVertices(), GL_UNSIGNED_INT, 0);
 				//System.out.println("drawn something");
@@ -75,6 +83,8 @@ public class Renderer {
         glEnable(GL_CULL_FACE);
         glCullFace(GL_BACK);
         
+        glEnable(GL11.GL_TEXTURE_2D);
+        
         glClearColor(0.2f, 0.3f, 0.4f, 1f);
     }
 	
@@ -92,9 +102,18 @@ public class Renderer {
 	public void createUniforms() {
 		Main.shaderProgram.createUniform("projectionMatrix");
 		Main.shaderProgram.createUniform("modelMatrix");
+		Main.shaderProgram.createUniform("txtSampler");
 	}
 	
-	public void addModel(Model model) {
-		models.put(model.getId(), model);
+	public TextureCache getTextureCache() {
+		return this.textureCache;
+	}
+	
+	public MaterialCache getMaterialCache() {
+		return this.materialCache;
+	}
+	
+	public void addModel(String name, Model model) {
+		models.put(name, model);
 	}
 }

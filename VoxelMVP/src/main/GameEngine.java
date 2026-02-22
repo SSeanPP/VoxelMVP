@@ -1,7 +1,5 @@
 package main;
 
-import java.util.ArrayList;
-
 import org.lwjgl.input.Keyboard;
 
 public class GameEngine implements Runnable {

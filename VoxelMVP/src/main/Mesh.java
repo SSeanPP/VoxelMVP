@@ -16,9 +16,11 @@ public class Mesh {
 	private int numVertices;
     private int vaoId;
     private List<Integer> vboIdList;
+    private Material material;
 
-    public Mesh(float[] positions, float[] colors, int[] indices) {
+    public Mesh(float[] positions, float[] colors, int[] indices, Material material) {
         this.numVertices = indices.length;
+        this.material = material;
         vboIdList = new ArrayList<Integer>();
 
         vaoId = glGenVertexArrays();
@@ -34,6 +36,8 @@ public class Mesh {
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
         
+        
+        // Texture
         vboId = glGenBuffers();
         vboIdList.add(vboId);
         FloatBuffer colorsBuffer = ByteBuffer.allocateDirect(colors.length * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
@@ -41,7 +45,7 @@ public class Mesh {
         glBindBuffer(GL_ARRAY_BUFFER, vboId);
         glBufferData(GL_ARRAY_BUFFER, colorsBuffer, GL_STATIC_DRAW);
         glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 3, GL_FLOAT, false, 0, 0);
+        glVertexAttribPointer(1, 2, GL_FLOAT, false, 0, 0);
 
         // Index VBO
         vboId = glGenBuffers();
@@ -78,5 +82,9 @@ public class Mesh {
 
     public final int getVaoId() {
         return vaoId;
+    }
+    
+    public Material getMaterial() {
+    	return this.material;
     }
 }
