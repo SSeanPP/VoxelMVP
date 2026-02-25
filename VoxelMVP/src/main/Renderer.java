@@ -94,7 +94,13 @@ public class Renderer {
 	
 	private void gameInput() {
 		while(Keyboard.next()) {
-			Input.inputQueue.add(new Input(Keyboard.getEventKeyState(), Keyboard.getEventKey()));
+			boolean keyPress = Keyboard.getEventKeyState();
+			int keyReference = Keyboard.getEventKey();
+			if (keyReference == Keyboard.KEY_ESCAPE) {
+				System.exit(0);
+			} else {
+				Input.inputQueue.add(new Input(keyPress, keyReference));
+			}
 		}
 		
 	}

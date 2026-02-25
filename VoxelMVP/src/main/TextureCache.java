@@ -3,7 +3,6 @@ package main;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Map.Entry;
 
 public class TextureCache {
 	private Map<Integer, Texture> textureMap;

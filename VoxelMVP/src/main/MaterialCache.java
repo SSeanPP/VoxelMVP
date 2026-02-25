@@ -15,8 +15,9 @@ public class MaterialCache {
         Iterator<Map.Entry<String, Material>> it = materialCache.entrySet().iterator();
         
         while(it.hasNext()) {
-        	Map.Entry<String, Material> entry = it.next();
+        	//Map.Entry<String, Material> entry = it.next();
         	//entry.getValue().cleanup();
+        	it.next();
         	it.remove();
         }
     }
