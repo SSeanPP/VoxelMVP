@@ -4,7 +4,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class Input {
 	public final static ConcurrentLinkedQueue<Input> inputQueue = new ConcurrentLinkedQueue<Input>();
-
+	
 	public boolean isPressed;
 	public int keyCode;
 	
@@ -20,4 +20,5 @@ public class Input {
 	public int getEventKey() {
 		return keyCode;
 	}
+	
 }

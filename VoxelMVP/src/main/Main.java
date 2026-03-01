@@ -68,7 +68,7 @@ public class Main {
     
     public static void init() throws Exception {
     	
-    	renderer.initDisplay(1280,720);
+    	renderer.initDisplay(1920,1080);
     	
         shaderProgram = new ShaderProgram();
         shaderProgram.createVertexShader(ResourceLoader.loadResourceAsString("resources/vertex.vs"));
@@ -78,11 +78,6 @@ public class Main {
         renderer.createUniforms();
     }
     
-    public static void addEntityToGame(Model model, Entity entity) {
-    	renderer.addModel(entity.getModelId(), model);
-    	gameEngine.getPublishedState().addEntity(entity);
-    }
-    
     public static void testGameSetup() {
     	TextureCache textureCache = renderer.getTextureCache();
     	MaterialCache materialCache = renderer.getMaterialCache();
@@ -90,109 +85,56 @@ public class Main {
     	Texture textureTest = textureCache.createTexture(0, "bin/resources/textureTest(1).png");
     	Material materialTest = materialCache.createMaterial("test", textureTest);
     	
-    	float[] positions = new float[]{
-                // V0
-                -0.5f, 0.5f, 0.5f,
-                // V1
-                -0.5f, -0.5f, 0.5f,
-                // V2
-                0.5f, -0.5f, 0.5f,
-                // V3
-                0.5f, 0.5f, 0.5f,
-                // V4
-                -0.5f, 0.5f, -0.5f,
-                // V5
-                0.5f, 0.5f, -0.5f,
-                // V6
-                -0.5f, -0.5f, -0.5f,
-                // V7
-                0.5f, -0.5f, -0.5f,
+    	float[] vertexData = new float[]{
+    		    // Top face
+    		    -0.5f, 0.5f, -0.5f,  0.0f, 0.5f,   // V0
+    		    0.5f, 0.5f, -0.5f,   0.5f, 0.5f,   // V1
+    		    -0.5f, 0.5f, 0.5f,   0.0f, 1.0f,   // V2
+    		    0.5f, 0.5f, 0.5f,    0.5f, 1.0f,   // V3
 
-                // For text coords in top face
-                // V8: V4 repeated
-                -0.5f, 0.5f, -0.5f,
-                // V9: V5 repeated
-                0.5f, 0.5f, -0.5f,
-                // V10: V0 repeated
-                -0.5f, 0.5f, 0.5f,
-                // V11: V3 repeated
-                0.5f, 0.5f, 0.5f,
+    		    // Front face (z = 0.5)
+    		    -0.5f, 0.5f, 0.5f,   0.6f, 1f,     // V4
+    		    0.5f, 0.5f, 0.5f,    1f, 1f,       // V5
+    		    0.5f, -0.5f, 0.5f,   1f, 0.5f,     // V6
+    		    -0.5f, -0.5f, 0.5f,  0.6f, 0.5f,   // V7
 
-                // For text coords in right face
-                // V12: V3 repeated
-                0.5f, 0.5f, 0.5f,
-                // V13: V2 repeated
-                0.5f, -0.5f, 0.5f,
+    		    // Bottom face
+    		    -0.5f, -0.5f, -0.5f, 0.0f, 0.0f,   // V8
+    		    0.5f, -0.5f, -0.5f,  0.5f, 0.0f,   // V9
+    		    -0.5f, -0.5f, 0.5f,  0.0f, 0.5f,   // V10
+    		    0.5f, -0.5f, 0.5f,   0.5f, 0.5f,   // V11
 
-                // For text coords in left face
-                // V14: V0 repeated
-                -0.5f, 0.5f, 0.5f,
-                // V15: V1 repeated
-                -0.5f, -0.5f, 0.5f,
+    		    // Back face (z = -0.5)
+    		    -0.5f, 0.5f, -0.5f,  0.6f, 1f,     // V12
+    		    0.5f, 0.5f, -0.5f,   1f, 1f,       // V13
+    		    0.5f, -0.5f, -0.5f,  1f, 0.5f,     // V14
+    		    -0.5f, -0.5f, -0.5f, 0.6f, 0.5f,   // V15
 
-                // For text coords in bottom face
-                // V16: V6 repeated
-                -0.5f, -0.5f, -0.5f,
-                // V17: V7 repeated
-                0.5f, -0.5f, -0.5f,
-                // V18: V1 repeated
-                -0.5f, -0.5f, 0.5f,
-                // V19: V2 repeated
-                0.5f, -0.5f, 0.5f,
-        };
-        float[] textCoords = new float[]{
-        		//front
-                0.0f, 0.0f,
-                0.0f, 0.5f,
-                0.5f, 0.5f,
-                0.5f, 0.0f,
-                //back
-                0.0f, 0.0f,
-                0.5f, 0.0f,
-                0.0f, 0.5f,
-                0.5f, 0.5f,
+    		    // Left face (x = -0.5)
+    		    -0.5f, 0.5f, -0.5f,  0.6f, 1f,     // V16
+    		    -0.5f, 0.5f, 0.5f,   1f, 1f,       // V17
+    		    -0.5f, -0.5f, 0.5f,  1f, 0.5f,     // V18
+    		    -0.5f, -0.5f, -0.5f, 0.6f, 0.5f,   // V19
 
-                // For text coords in top face
-                0.0f, 0.5f,
-                0.5f, 0.5f,
-                0.0f, 1.0f,
-                0.5f, 1.0f,
+    		    // Right face (x = 0.5)
+    		    0.5f, 0.5f, -0.5f,   0.6f, 1f,     // V20
+    		    0.5f, 0.5f, 0.5f,    1f, 1f,       // V21
+    		    0.5f, -0.5f, 0.5f,   1f, 0.5f,     // V22
+    		    0.5f, -0.5f, -0.5f,  0.6f, 0.5f,   // V23
+    		};
 
-                // For text coords in right face
-                0.0f, 0.0f,
-                0.0f, 0.5f,
-
-                // For text coords in left face
-                0.5f, 0.0f,
-                0.5f, 0.5f,
-
-                // For text coords in bottom face
-                0.5f, 0.0f,
-                1.0f, 0.0f,
-                0.5f, 0.5f,
-                1.0f, 0.5f,
-        };
-        int[] indices = new int[]{
-        		// Front face (z = 0.5)
-        	    0, 1, 3, 3, 1, 2,
-        	    
-        	    // Top Face (y = 0.5)
-        	    8, 10, 9, 9, 10, 11,
-        	    
-        	    // Right face (x = 0.5)
-        	    12, 13, 5, 5, 13, 7,
-        	    
-        	    // Left face (x = -0.5)
-        	    4, 6, 14, 14, 6, 15,
-        	    
-        	    // Bottom face (y = -0.5)
-        	    18, 16, 19, 19, 16, 17,
-        	    
-        	    // Back face (z = -0.5)
-        	    5, 7, 4, 4, 7, 6,};
+    		int[] indices = new int[]{
+    		    3, 1, 2, 2, 1, 0,       // Top
+    		    4, 7, 6, 6, 5, 4,       // Front
+    		    8, 9, 11, 11, 10, 8,    // Bottom
+    		    13, 14, 15, 15, 12, 13, // Back
+    		    16, 19, 18, 18, 17, 16, // Left
+    		    21, 22, 23, 23, 20, 21  // Right
+    		};
+    		
         
         List<Mesh> meshList = new ArrayList<Mesh>();
-        Mesh mesh = new Mesh(positions, textCoords, indices, materialTest);
+        Mesh mesh = new Mesh(vertexData, indices, materialTest);
         meshList.add(mesh);
         String cubeModelId = "cube-model";
         Model model = new Model(cubeModelId, meshList);
@@ -200,8 +142,13 @@ public class Main {
         Entity cubeEntity = new Entity("cube-entity", cubeModelId);
         cubeEntity.setPosition(0, 0, -5);
         
-        addEntityToGame(model, cubeEntity);
-       
+        Entity cube2Entity = new Entity("test", cubeModelId);
+        cube2Entity.setPosition(0, 0, -6);
+        
+        
+        renderer.addModel(model.getId(), model);
+    	gameEngine.getPublishedState().addEntity(cubeEntity);
+        gameEngine.getPublishedState().addEntity(cube2Entity);
     }
    
 }

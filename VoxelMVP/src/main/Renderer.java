@@ -1,9 +1,11 @@
 package main;
 
 import org.joml.Matrix4f;
+import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
+import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
 import org.lwjgl.opengl.GL11;
@@ -26,6 +28,7 @@ public class Renderer {
 	
 	private Vector3f renderPos = new Vector3f();
 	private Matrix4f renderMatrix = new Matrix4f();
+	private Camera camera;
 	
 	public Renderer () {
 		
@@ -35,15 +38,18 @@ public class Renderer {
 		
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		
+		camera = state.getCamera();
+		camera.updateCameraMatrix(Mouse.getDX(), Mouse.getDY());
+		
 		Main.shaderProgram.bind();
+		Main.shaderProgram.setUniform("viewMatrix", camera.handleCameraLerpAndMatrix(alpha, renderPos));
 		Main.shaderProgram.setUniform("projectionMatrix", projection.getProjMatrix());
 		Main.shaderProgram.setUniform("txtSampler", 0);
 		
-				
 		ArrayList<Entity> entities = state.getEntityList();
 		
 		for (Entity entity : entities) {
-			
+			renderMatrix = entity.getModelMatrix();
 			entity.lerpPos(alpha, renderPos);
 	        renderMatrix.translationRotateScale(renderPos, entity.getRotation(), entity.getScale());
 	        
@@ -86,6 +92,7 @@ public class Renderer {
         glEnable(GL11.GL_TEXTURE_2D);
         
         glClearColor(0.2f, 0.3f, 0.4f, 1f);
+        Mouse.setGrabbed(true);
     }
 	
 	public void cleanup(){
@@ -101,7 +108,10 @@ public class Renderer {
 			} else {
 				Input.inputQueue.add(new Input(keyPress, keyReference));
 			}
+			
+			
 		}
+		
 		
 	}
 	
@@ -109,6 +119,7 @@ public class Renderer {
 		Main.shaderProgram.createUniform("projectionMatrix");
 		Main.shaderProgram.createUniform("modelMatrix");
 		Main.shaderProgram.createUniform("txtSampler");
+		Main.shaderProgram.createUniform("viewMatrix");
 	}
 	
 	public TextureCache getTextureCache() {

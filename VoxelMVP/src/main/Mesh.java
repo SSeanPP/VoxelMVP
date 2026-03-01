@@ -18,14 +18,17 @@ public class Mesh {
     private List<Integer> vboIdList;
     private Material material;
 
-    public Mesh(float[] positions, float[] colors, int[] indices, Material material) {
+    public Mesh(float[] positions, int[] indices, Material material) {
         this.numVertices = indices.length;
         this.material = material;
         vboIdList = new ArrayList<Integer>();
 
         vaoId = glGenVertexArrays();
         glBindVertexArray(vaoId);
-
+        
+        // 5 floats * sizeof(float)
+        int stride = 5 * 4;
+        
         // Positions VBO
         int vboId = glGenBuffers();
         vboIdList.add(vboId);
@@ -34,18 +37,9 @@ public class Mesh {
         glBindBuffer(GL_ARRAY_BUFFER, vboId);
         glBufferData(GL_ARRAY_BUFFER, positionsBuffer, GL_STATIC_DRAW);
         glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
-        
-        
-        // Texture
-        vboId = glGenBuffers();
-        vboIdList.add(vboId);
-        FloatBuffer colorsBuffer = ByteBuffer.allocateDirect(colors.length * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
-        colorsBuffer.put(colors).flip();
-        glBindBuffer(GL_ARRAY_BUFFER, vboId);
-        glBufferData(GL_ARRAY_BUFFER, colorsBuffer, GL_STATIC_DRAW);
+        glVertexAttribPointer(0, 3, GL_FLOAT, false, stride, 0);
         glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 2, GL_FLOAT, false, 0, 0);
+        glVertexAttribPointer(1, 2, GL_FLOAT, false, stride, 3*4);
 
         // Index VBO
         vboId = glGenBuffers();
@@ -59,9 +53,6 @@ public class Mesh {
         
         glBindVertexArray(0);
 
-        colorsBuffer.clear();
-        colorsBuffer = null;
-        
         indicesBuffer.clear();
         indicesBuffer = null;
         

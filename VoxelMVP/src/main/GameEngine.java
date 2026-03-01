@@ -1,5 +1,6 @@
 package main;
 
+import org.joml.Matrix4f;
 import org.lwjgl.input.Keyboard;
 
 public class GameEngine implements Runnable {
@@ -16,7 +17,7 @@ public class GameEngine implements Runnable {
 	
 	public void gameLoop() {
 		double t = 0.0;
-	    double dt = 0.04;
+	    double dt = 1.0 / 20.0;
 
 	    double currentTime = System.nanoTime() /1000000000.0;
 	    double accumulator = 0.0;
@@ -59,7 +60,7 @@ public class GameEngine implements Runnable {
 	private void drainInputQueue() {
         Input input;
         while ((input = Input.inputQueue.poll()) != null) {
-            switch (input.getEventKey()) {
+             switch (input.getEventKey()) {
                 case Keyboard.KEY_W:
                     inputState.forward = input.getEventState();
                     break;
@@ -87,4 +88,6 @@ public class GameEngine implements Runnable {
 		this.running = true;
 		gameLoop();
 	}
+	
+	
 }
