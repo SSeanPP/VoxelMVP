@@ -1,7 +1,6 @@
 package main;
 
 import org.joml.Matrix4f;
-import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
@@ -13,6 +12,7 @@ import org.lwjgl.opengl.GL11;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL13.*;
 import static org.lwjgl.opengl.GL30.*;
+
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -41,7 +41,7 @@ public class Renderer {
 		camera = state.getCamera();
 		camera.updateCameraMatrix(Mouse.getDX(), Mouse.getDY());
 		
-		Main.shaderProgram.bind();
+		
 		Main.shaderProgram.setUniform("viewMatrix", camera.handleCameraLerpAndMatrix(alpha, renderPos));
 		Main.shaderProgram.setUniform("projectionMatrix", projection.getProjMatrix());
 		Main.shaderProgram.setUniform("txtSampler", 0);
@@ -69,7 +69,6 @@ public class Renderer {
 				}*/
 			}
 		}
-		Main.shaderProgram.unbind();
 		
 		gameInput();
 		Display.update();
@@ -93,6 +92,7 @@ public class Renderer {
         
         glClearColor(0.2f, 0.3f, 0.4f, 1f);
         Mouse.setGrabbed(true);
+        
     }
 	
 	public void cleanup(){

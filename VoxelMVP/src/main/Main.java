@@ -7,6 +7,7 @@ import java.util.List;
 
 import org.lwjgl.opengl.Display;
 
+
 public class Main {
 	
 	public static ShaderProgram shaderProgram;
@@ -43,6 +44,7 @@ public class Main {
             	delta = (now - lastTime) / 1000000000f;
             	lastTime = now;
             	
+            	Main.shaderProgram.bind();
             	renderer.render(gameEngine.getPublishedState(), gameEngine.getPublishedAlpha());
             	
             	frames++;
@@ -138,17 +140,22 @@ public class Main {
         meshList.add(mesh);
         String cubeModelId = "cube-model";
         Model model = new Model(cubeModelId, meshList);
-        
-        Entity cubeEntity = new Entity("cube-entity", cubeModelId);
-        cubeEntity.setPosition(0, 0, -5);
-        
-        Entity cube2Entity = new Entity("test", cubeModelId);
-        cube2Entity.setPosition(0, 0, -6);
-        
+        renderer.addModel(model.getId(), model);
         
         renderer.addModel(model.getId(), model);
-    	gameEngine.getPublishedState().addEntity(cubeEntity);
-        gameEngine.getPublishedState().addEntity(cube2Entity);
+        for(int x = 0; x < 32; x++) {
+        	for (int y = 0; y < 32; y++) {
+        		for (int z = 1; z < 33; z++) {
+        			Entity cubeEntity = new Entity("cube-entity"+x+y+z, cubeModelId);
+    				cubeEntity.setPosition(x, y, -z);
+    				gameEngine.getPublishedState().addEntity(cubeEntity);
+        		}
+        	}
+        }
+        
+        
+        
+        
     }
    
 }

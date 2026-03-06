@@ -14,7 +14,7 @@ public class Camera {
     private Vector2f previousRotation;
     private Vector3f up;
     private Matrix4f viewMatrix;
-    private final float MOUSE_SENSITIVITY = 0.35f;
+    private final float MOUSE_SENSITIVITY = 0.2f;
 
     public Camera() {
         direction = new Vector3f();
