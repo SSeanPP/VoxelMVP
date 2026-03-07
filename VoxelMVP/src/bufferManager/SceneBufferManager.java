@@ -15,9 +15,11 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.lwjgl.opengl.ARBBufferStorage;
 
@@ -46,7 +48,8 @@ public class SceneBufferManager {
 	
 	TreeMap<Integer, FreeRegion> vboFreeList;
 	TreeMap<Integer, FreeRegion> eboFreeList;
-
+	
+	private final ReentrantLock allocLock = new ReentrantLock();
 	
 	public SceneBufferManager() {
 		
@@ -102,29 +105,21 @@ public class SceneBufferManager {
 	}
 	
 	public Allocation getAllocation(int vertexFloatCount, int indexCount) {
-	    int vertexBytes = vertexFloatCount * 4; // size_of(float)
-	    int indexBytes  = indexCount * 4; // size_of(int)
+		allocLock.lock();
+		try {
+			int vertexSizeBytes = vertexFloatCount * 4; // size_of(float)
+		    int indexSizeBytes  = indexCount * 4; // size_of(int)
+		    FreeRegion vboRegion = findFit(vboFreeList, vertexSizeBytes);
+		    FreeRegion eboRegion = findFit(eboFreeList, indexSizeBytes);
 
-	    return new Allocation(
-	        vertexOffset.getAndAdd(vertexBytes),
-	        indexOffset.getAndAdd(indexBytes),
-	        vertexBytes,
-	        indexBytes
-	    );
-	}
-	
-	public Allocation getAllcation(int vertexFloatCount, int indexCount) {
-		
-		int vertexSizeBytes = vertexFloatCount * 4; // size_of(float)
-	    int indexSizeBytes  = indexCount * 4; // size_of(int)
-	    FreeRegion vboRegion = findFit(vboFreeList, vertexSizeBytes);
-	    FreeRegion eboRegion = findFit(eboFreeList, indexSizeBytes);
+		    if (vboRegion == null || eboRegion == null) {
+		        throw new RuntimeException("Out of GPU buffer space");
+		    }
 
-	    if (vboRegion == null || eboRegion == null) {
-	        throw new RuntimeException("Out of GPU buffer space");
-	    }
-
-	    return new Allocation(vboRegion.offset, eboRegion.offset, vertexSizeBytes, indexSizeBytes);
+		    return new Allocation(vboRegion.offset, eboRegion.offset, vertexSizeBytes, indexSizeBytes);
+		} finally {
+			allocLock.unlock();
+		}
 	}
 	
 	public ByteBuffer getVBOSlice(Allocation allocation) {
@@ -155,19 +150,24 @@ public class SceneBufferManager {
 	}
 	
 	public void free(Allocation alloc) {
-	    // Return VBO region
-	    FreeRegion vboRegion = new FreeRegion(alloc.vertexOffset, alloc.indexLimit);
-	    vboFreeList.put(vboRegion.offset, vboRegion);
-	    coalesce(vboFreeList, vboRegion);
+		allocLock.lock();
+		try {
+			// Return VBO region
+		    FreeRegion vboRegion = new FreeRegion(alloc.vertexOffset, alloc.indexLimit);
+		    vboFreeList.put(vboRegion.offset, vboRegion);
+		    coalesce(vboFreeList, vboRegion);
 
-	    // Return EBO region
-	    FreeRegion eboRegion = new FreeRegion(alloc.indexOffset, alloc.indexLimit);
-	    eboFreeList.put(eboRegion.offset, eboRegion);
-	    coalesce(eboFreeList, eboRegion);
+		    // Return EBO region
+		    FreeRegion eboRegion = new FreeRegion(alloc.indexOffset, alloc.indexLimit);
+		    eboFreeList.put(eboRegion.offset, eboRegion);
+		    coalesce(eboFreeList, eboRegion);
+		} finally {
+			allocLock.unlock();
+		}
 	}
 
 	private void coalesce(TreeMap<Integer, FreeRegion> freeList, FreeRegion region) {
-	    // Check if region immediately before this one is also free
+		// Check if region immediately before this one is also free
 	    Map.Entry<Integer, FreeRegion> lower = freeList.lowerEntry(region.offset);
 	    if (lower != null && lower.getValue().offset + lower.getValue().size == region.offset) {
 	        freeList.remove(lower.getKey());
@@ -187,17 +187,26 @@ public class SceneBufferManager {
 	}
 	
 	private FreeRegion findFit(TreeMap<Integer, FreeRegion> freeList, int sizeBytes) {
-	    for (FreeRegion region : freeList.values()) {
-	        if (region.size >= sizeBytes) {
-	            freeList.remove(region.offset);
-	            if (region.size > sizeBytes) {
-	                // Put remainder back
-	                FreeRegion remainder = new FreeRegion(region.offset + sizeBytes, region.size - sizeBytes);
-	                freeList.put(remainder.offset, remainder);
-	            }
-	            return new FreeRegion(region.offset, sizeBytes);
-	        }
-	    }
+
+		Iterator<FreeRegion> it = freeList.values().iterator();
+
+		while (it.hasNext()) {
+		    FreeRegion region = it.next();
+
+		    if (region.size >= sizeBytes) {
+		        it.remove();
+
+		        if (region.size > sizeBytes) {
+		            FreeRegion remainder = new FreeRegion(
+		                    region.offset + sizeBytes,
+		                    region.size - sizeBytes
+		            );
+		            freeList.put(remainder.offset, remainder);
+		        }
+
+		        return new FreeRegion(region.offset, sizeBytes);
+		    }
+		}
 	    return null;
 	}
 }
