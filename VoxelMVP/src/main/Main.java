@@ -44,7 +44,8 @@ public class Main {
             fpsTimer = System.currentTimeMillis();
             frames = 0;
             
-            testGameSetup();
+            Texture atlas = testGameSetup();
+            renderer.bindTextureAtlas(atlas);
              
             gameEngineThread.start();
             
@@ -89,20 +90,31 @@ public class Main {
         renderer.createUniforms();
     }
     
-    public static void testGameSetup() {
+    public static Texture testGameSetup() {
     	TextureCache textureCache = renderer.getTextureCache();
     	MaterialCache materialCache = renderer.getMaterialCache();
     	
-    	Texture atlas = textureCache.createTexture(0, "bin/resources/homemadeTerrain.png");
-    	atlas.bind();
-    	//Material materialTest = materialCache.createMaterial("test", textureTest);
-    	
-    	ChunkCoord spawnLoc = new ChunkCoord(0,0,0);
-    	Chunk spawn = new Chunk(spawnLoc);
-        gameMap.addToWorldMap(spawnLoc, spawn);
+        for(int x = 0; x < 32; x++) {
+        	for(int y = 0; y < 16; y++) {
+        		for (int z = 0; z < 32; z++) {
+            		ChunkCoord chunkcoord = new ChunkCoord(x,y,-z);
+            		Chunk chunk = new Chunk(chunkcoord);
+            		gameMap.addToWorldMap(chunkcoord, chunk);
+            		//meshThreader.meshChunk(chunk);
+            	}
+        	}
+        	
+        }
         
-        meshThreader.meshChunk(spawn);
-        
+        for(int x = 0; x < 32; x++) {
+    		for(int y = 0; y < 16; y++) {
+    			for (int z = 0; z < 32; z++) {
+    				meshThreader.meshChunk(gameMap.getChunk(new ChunkCoord(x,y,-z)));
+    			}
+    		}
+        }
+        Texture atlas = textureCache.createTexture(0, "bin/resources/homemadeTerrain.png");
+        return atlas;
     }
    
 }

@@ -12,6 +12,11 @@ import static org.lwjgl.opengl.GL30.glBindVertexArray;
 import static org.lwjgl.opengl.GL30.glGenVertexArrays;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.lwjgl.opengl.ARBBufferStorage;
@@ -29,16 +34,36 @@ public class SceneBufferManager {
 	
 	private int stride = 5 * 4;
 	
+	private class FreeRegion {
+		public int offset;
+		public int size;
+		
+		private FreeRegion(int off, int s) {
+			this.offset = off;
+			this.size = s;
+		}
+	}
+	
+	TreeMap<Integer, FreeRegion> vboFreeList;
+	TreeMap<Integer, FreeRegion> eboFreeList;
+
+	
 	public SceneBufferManager() {
+		
+		long bufferSize = 1024L * 1024L * 256L; // 256MB example
 		
 		vertexOffset.set(0);
 		indexOffset.set(0);
 		
+		vboFreeList = new TreeMap<Integer, FreeRegion>();
+		vboFreeList.put(0, new FreeRegion(0, (int)bufferSize));
+
+		eboFreeList = new TreeMap<Integer, FreeRegion>();
+		eboFreeList.put(0, new FreeRegion(0, (int)bufferSize));
+		
+		
 		vaoId = glGenVertexArrays();
         glBindVertexArray(vaoId);
-        
-        
-        long bufferSize = 1024L * 1024L * 256L; // 256MB example
 		
         //VBO
         megaVBOid = GL15.glGenBuffers();
@@ -76,8 +101,30 @@ public class SceneBufferManager {
 		glBindVertexArray(0);
 	}
 	
-	public Allocation getAllocation(int vertexSize, int indicesSize) {
-		return new Allocation(vertexOffset.getAndAdd(vertexSize * 4), indexOffset.getAndAdd(indicesSize * 4), (vertexSize * 4), (indicesSize * 4), stride);
+	public Allocation getAllocation(int vertexFloatCount, int indexCount) {
+	    int vertexBytes = vertexFloatCount * 4; // size_of(float)
+	    int indexBytes  = indexCount * 4; // size_of(int)
+
+	    return new Allocation(
+	        vertexOffset.getAndAdd(vertexBytes),
+	        indexOffset.getAndAdd(indexBytes),
+	        vertexBytes,
+	        indexBytes
+	    );
+	}
+	
+	public Allocation getAllcation(int vertexFloatCount, int indexCount) {
+		
+		int vertexSizeBytes = vertexFloatCount * 4; // size_of(float)
+	    int indexSizeBytes  = indexCount * 4; // size_of(int)
+	    FreeRegion vboRegion = findFit(vboFreeList, vertexSizeBytes);
+	    FreeRegion eboRegion = findFit(eboFreeList, indexSizeBytes);
+
+	    if (vboRegion == null || eboRegion == null) {
+	        throw new RuntimeException("Out of GPU buffer space");
+	    }
+
+	    return new Allocation(vboRegion.offset, eboRegion.offset, vertexSizeBytes, indexSizeBytes);
 	}
 	
 	public ByteBuffer getVBOSlice(Allocation allocation) {
@@ -94,6 +141,7 @@ public class SceneBufferManager {
 		return eEBO.slice();
 	}
 	
+	
 	public void bind() {
 		glBindVertexArray(vaoId);
 	}
@@ -104,5 +152,52 @@ public class SceneBufferManager {
 	
 	public int getStride() {
 		return stride;
+	}
+	
+	public void free(Allocation alloc) {
+	    // Return VBO region
+	    FreeRegion vboRegion = new FreeRegion(alloc.vertexOffset, alloc.indexLimit);
+	    vboFreeList.put(vboRegion.offset, vboRegion);
+	    coalesce(vboFreeList, vboRegion);
+
+	    // Return EBO region
+	    FreeRegion eboRegion = new FreeRegion(alloc.indexOffset, alloc.indexLimit);
+	    eboFreeList.put(eboRegion.offset, eboRegion);
+	    coalesce(eboFreeList, eboRegion);
+	}
+
+	private void coalesce(TreeMap<Integer, FreeRegion> freeList, FreeRegion region) {
+	    // Check if region immediately before this one is also free
+	    Map.Entry<Integer, FreeRegion> lower = freeList.lowerEntry(region.offset);
+	    if (lower != null && lower.getValue().offset + lower.getValue().size == region.offset) {
+	        freeList.remove(lower.getKey());
+	        freeList.remove(region.offset);
+	        region = new FreeRegion(lower.getValue().offset, lower.getValue().size + region.size);
+	        freeList.put(region.offset, region);
+	    }
+
+	    // Check if region immediately after this one is also free
+	    Map.Entry<Integer, FreeRegion> higher = freeList.higherEntry(region.offset);
+	    if (higher != null && region.offset + region.size == higher.getValue().offset) {
+	        freeList.remove(higher.getKey());
+	        freeList.remove(region.offset);
+	        region = new FreeRegion(region.offset, region.size + higher.getValue().size);
+	        freeList.put(region.offset, region);
+	    }
+	}
+	
+	private FreeRegion findFit(TreeMap<Integer, FreeRegion> freeList, int sizeBytes) {
+	    for (FreeRegion region : freeList.values()) {
+	        if (region.size >= sizeBytes) {
+	            freeList.remove(region.offset);
+	            if (region.size > sizeBytes) {
+	                // Put remainder back
+	                FreeRegion remainder = new FreeRegion(region.offset + sizeBytes, region.size - sizeBytes);
+	                freeList.put(remainder.offset, remainder);
+	            }
+	            return new FreeRegion(region.offset, sizeBytes);
+	        }
+	    }
+	    return null;
 	}
 }

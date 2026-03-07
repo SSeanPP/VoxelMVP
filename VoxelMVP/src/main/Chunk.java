@@ -19,12 +19,23 @@ public class Chunk {
 		
 		for(int i = 0; i < chunkSize; i++) {
 			for (int k = 0; k < chunkSize; k++) {
-				blocks[i][5][k] = Block.grass;
-				blocks[i][4][k] = Block.dirt;
-				blocks[i][3][k] = Block.dirt;
-				blocks[i][2][k] = Block.dirt;
+				blocks[i][15][k] = Block.grass;
+				blocks[i][14][k] = Block.dirt;
+				blocks[i][13][k] = Block.dirt;
+				blocks[i][12][k] = Block.dirt;
+				blocks[i][11][k] = Block.dirt;
+				blocks[i][10][k] = Block.stone;
+				blocks[i][9][k] = Block.stone;
+				blocks[i][8][k] = Block.stone;
+				blocks[i][7][k] = Block.stone;
+				blocks[i][6][k] = Block.stone;
+				blocks[i][5][k] = Block.stone;
+				blocks[i][4][k] = Block.stone;
+				blocks[i][3][k] = Block.stone;
+				blocks[i][2][k] = Block.stone;
 				blocks[i][1][k] = Block.stone;
 				blocks[i][0][k] = Block.stone;
+				
 			}
 		}
 		

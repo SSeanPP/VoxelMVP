@@ -34,11 +34,20 @@ public class Renderer {
 	private Matrix4f renderMatrix = new Matrix4f();
 	private Camera camera;
 	
+	private Texture textAtlas;
+	
 	public Renderer () {
 	}
 	
 	public void bindBufferMananger(SceneBufferManager main) {
 		bufferManager = main;
+		bufferManager.bind();
+	}
+	
+	public void bindTextureAtlas(Texture texture) {
+		textAtlas = texture;
+		glActiveTexture(GL_TEXTURE0);
+		textAtlas.bind();
 	}
 	
 	public void render(GameState state, double alpha) {
@@ -50,10 +59,8 @@ public class Renderer {
 		
 		Main.shaderProgram.setUniform("viewMatrix", camera.handleCameraLerpAndMatrix(alpha, renderPos));
 		Main.shaderProgram.setUniform("projectionMatrix", projection.getProjMatrix());
-		Main.shaderProgram.setUniform("txtSampler", 0);
-		bufferManager.bind();
 		
-		for (Chunk chunk : WorldMap.chunks.values()) {
+		for (Chunk chunk : WorldMap.getChunks().values()) {
 			if (chunk.allocation == null) continue;
 			Main.shaderProgram.setUniform("modelMatrix", chunk.modelMatrix);
 			
@@ -61,10 +68,10 @@ public class Renderer {
 		        GL_TRIANGLES,
 		        chunk.allocation.indexCount,
 		        GL_UNSIGNED_INT,
-		        chunk.allocation.indexOffset,       // byte offset into the EBO
-		        chunk.allocation.vertexOffset / 20  // base vertex (number of vertices)
+		        chunk.allocation.indexOffset,
+		        chunk.allocation.vertexOffset / bufferManager.getStride()
 		    );
-			int error = GL11.glGetError();
+			//int error = GL11.glGetError();
 			
 			//System.out.println("IndexCount: " +chunk.allocation.indexCount+" IndexOffset: "+ chunk.allocation.indexOffset + " VertexOffset: " + chunk.allocation.vertexOffset / 5);
 		}
@@ -76,8 +83,10 @@ public class Renderer {
 	public void initDisplay(int width, int height) throws LWJGLException {
         Display.setDisplayMode(new DisplayMode(width, height));
         Display.setTitle("LWJGL 2 Simple 3D Loop");
+        
         Display.create();
         Display.setLocation(0, 0);
+        System.out.println("OpenGL version: " + GL11.glGetString(GL11.GL_VERSION));
         
         glViewport(0, 0, width, height);
         
@@ -120,6 +129,7 @@ public class Renderer {
 		Main.shaderProgram.createUniform("modelMatrix");
 		Main.shaderProgram.createUniform("txtSampler");
 		Main.shaderProgram.createUniform("viewMatrix");
+		Main.shaderProgram.setUniform("txtSampler", 0);
 	}
 	
 	public TextureCache getTextureCache() {

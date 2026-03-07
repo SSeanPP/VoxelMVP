@@ -1,6 +1,7 @@
 package meshThreader;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
@@ -16,8 +17,6 @@ public class MeshThread {
 	private ArrayList<Float> vertices = new ArrayList<Float>();
 	
 	private SceneBufferManager bufferManager;
-	
-	private int indicesOffset = 0;
 	
 	private int bx = 0;
 	private int by = 0;
@@ -104,29 +103,24 @@ public class MeshThread {
 		
 		
 		if (chunk.allocation == null) {
-			chunk.allocation = bufferManager.getAllocation(vertices.size(), indices.size());
+		    chunk.allocation = bufferManager.getAllocation(vertices.size(), indices.size());
 		}
-		
+
 		ByteBuffer sliceVBO = bufferManager.getVBOSlice(chunk.allocation);
-		System.out.println("Slice position: " + sliceVBO.position() + " limit: " + sliceVBO.limit());
+		//System.out.println("Slice position: " + sliceVBO.position() + " limit: " + sliceVBO.limit());
 		ByteBuffer sliceEBO = bufferManager.getEBOSlice(chunk.allocation);
 		
-		FloatBuffer fb = sliceVBO.asFloatBuffer();
-		for(float f : vertices) fb.put(f);
-		//fb.flip();
-		fb.position(0);
-		System.out.println("FB after write: " + fb.get(0) + ", " + fb.get(1) + ", " + fb.get(2));
 		
-		IntBuffer ib = sliceEBO.asIntBuffer();
+		FloatBuffer fb = sliceVBO.order(ByteOrder.nativeOrder()).asFloatBuffer();
+		for(float f : vertices) fb.put(f);
+		
+		//System.out.println("FB after write: " + fb.get(0) + ", " + fb.get(1) + ", " + fb.get(2));
+		
+		IntBuffer ib = sliceEBO.order(ByteOrder.nativeOrder()).asIntBuffer();
 		for(int i : indices) ib.put(i);
 		//ib.flip();
 		
-		chunk.allocation.setCounts(vertices.size()/5, indices.size());
-		System.out.println("Chunk meshed: vertices=" + vertices.size() + " indices=" + indices.size());
-		
-		ByteBuffer verify = bufferManager.getVBOSlice(chunk.allocation);
-		FloatBuffer fb2 = verify.asFloatBuffer();
-		System.out.println("First vertex: " + fb2.get(0) + ", " + fb2.get(1) + ", " + fb2.get(2));
+		chunk.allocation.setCounts(indices.size());
 	}
 	
 	private final float[][][] FACE_VERTICES = {
@@ -180,12 +174,13 @@ public class MeshThread {
 	};
 	
 	private final int[] FACE_INDICES = {
-	    0,1,2,
-	    0,2,3
-	};
+		    0,2,1,
+		    0,3,2
+		};
 	
 	private void addFace(int face, int x, int y, int z, Block block)
 	{
+		
 	    int offset = vertices.size() / 5;
 
 	    float[][] verts = FACE_VERTICES[face];
@@ -196,17 +191,14 @@ public class MeshThread {
 	    int tileY = texIndex / ATLAS_SIZE;
 
 	    float u = tileX * TILE_SIZE;
-	    float v = tileY * TILE_SIZE;
+	    float v = 1.0f - (tileY * TILE_SIZE) - TILE_SIZE;
 
-	    float u1 = u + TILE_SIZE;
-	    float v1 = v + TILE_SIZE;
-
-	    float[][] uvs = {
-	        {u,  v},
-	        {u1, v},
-	        {u1, v1},
-	        {u,  v1}
-	    };
+	    float[][] rawUVs = FACE_UVS[face];
+	    float[][] uvs = new float[4][2];
+	    for (int i = 0; i < 4; i++) {
+	        uvs[i][0] = u + rawUVs[i][0] * TILE_SIZE;
+	        uvs[i][1] = v + rawUVs[i][1] * TILE_SIZE;
+	    }
 
 	    for(int i=0;i<4;i++)
 	    {
@@ -236,15 +228,19 @@ public class MeshThread {
 	            return block.sideTexture;
 	    }
 	}
-	/*
-	private float[] getUV(int tileIndex)
-	{
-	    int tileX = tileIndex % ATLAS_SIZE;
-	    int tileY = tileIndex / ATLAS_SIZE;
 
-	    float u = tileX * TILE_SIZE;
-	    float v = tileY * TILE_SIZE;
-
-	    return new float[]{u, v};
-	}*/
+	private final float[][][] FACE_UVS = {
+		    // TOP - looking down, x increases right, z increases down
+		    {{0,1},{1,1},{1,0},{0,0}},
+		    // BOTTOM - looking up, x increases right, z increases up  
+		    {{0,0},{1,0},{1,1},{0,1}},
+		    // NORTH (+Z) - x increases right, y increases up
+		    {{0,0},{0,1},{1,1},{1,0}},
+		    // SOUTH (-Z) - x increases left, y increases up
+		    {{1,0},{0,0},{0,1},{1,1}},
+		    // EAST (+X) - z increases left, y increases up
+		    {{1,0},{0,0},{0,1},{1,1}},
+		    // WEST (-X) - z increases right, y increases up
+		    {{0,0},{0,1},{1,1},{1,0}},
+		};
 }

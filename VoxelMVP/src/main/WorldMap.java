@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class WorldMap {
-	public static final Map<ChunkCoord, Chunk> chunks = new HashMap<ChunkCoord, Chunk>();
+	private static final Map<ChunkCoord, Chunk> chunks = new HashMap<ChunkCoord, Chunk>();
 	private static final int blockCacheSize = 18;
 	
 	public WorldMap() {
@@ -13,6 +13,14 @@ public class WorldMap {
 	
 	public void addToWorldMap(ChunkCoord coords, Chunk chunk) {
 		chunks.put(coords, chunk);
+	}
+	
+	public Chunk getChunk(ChunkCoord coords) {
+		return chunks.get(coords);
+	}
+	
+	public static Map<ChunkCoord, Chunk> getChunks() {
+		return chunks;
 	}
 	
 	public static Block[][][] blockCache(ChunkCoord chunkCoords, Chunk centreChunk) {
@@ -66,7 +74,7 @@ public class WorldMap {
 		    for (int x = 0; x < 16; x++)
 	    	for (int y = 0; y < 16; y++)
 	    	{
-	    	    blockCache[x+1][y+1][0] = northBlocks[x][y][15];
+	    	    blockCache[x+1][y+1][17] = northBlocks[x][y][0];
 	    	}
 		}
 		
@@ -93,12 +101,12 @@ public class WorldMap {
 		    for (int x = 0; x < 16; x++)
 	    	for (int y = 0; y < 16; y++)
 	    	{
-	    	    blockCache[x+1][y+1][17] = southBlocks[x][y][0];
+	    	    blockCache[x+1][y+1][0] = southBlocks[x][y][15];
 	    	}
 		}
 		
 		//W
-		Chunk west = chunks.get(new ChunkCoord(chunkCoords.x+1, chunkCoords.y, chunkCoords.z));
+		Chunk west = chunks.get(new ChunkCoord(chunkCoords.x-1, chunkCoords.y, chunkCoords.z));
 
 		if (west != null)
 		{

@@ -4,26 +4,19 @@ public class Allocation {
 	public int vertexOffset;
 	public int indexOffset;
 	public int indexCount;
-	public int vertexCount;
-	public int vertexLimit;
-	public int indexLimit;
+	public int vertexLimit; // no. bytes
+	public int indexLimit;	// no. bytes
 	
-	public int baseIndex;
-	public int baseVertex;
-	
-	public Allocation(int vo, int io, int vertLimit, int indLimit, int stride) {
-		this.vertexOffset = vo;
-		this.vertexCount = 0;
-		this.indexOffset = io;
-		this.indexCount = 0;
-		this.vertexLimit = vertLimit + vertexOffset;
-		this.indexLimit = indLimit + indexOffset;
-		this.baseIndex = indexOffset / stride;
-		this.baseVertex = vertexOffset / 20;
+	public Allocation(int vertexOffset, int indexOffset, int vertexSizeBytes, int indexSizeBytes) {
+	    this.vertexOffset = vertexOffset;
+	    this.indexOffset = indexOffset;
+
+	    this.vertexLimit = vertexOffset + vertexSizeBytes;
+	    this.indexLimit = indexOffset + indexSizeBytes;
+
 	}
 	
-	public void setCounts(int vertCount, int indCount) {
-		this.vertexCount = vertCount;
+	public void setCounts(int indCount) {
 		this.indexCount = indCount;
 	}
 }
