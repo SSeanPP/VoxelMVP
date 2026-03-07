@@ -19,7 +19,7 @@ public class Allocation {
 		this.vertexLimit = vertLimit + vertexOffset;
 		this.indexLimit = indLimit + indexOffset;
 		this.baseIndex = indexOffset / stride;
-		this.baseVertex = indexOffset / stride;
+		this.baseVertex = vertexOffset / 20;
 	}
 	
 	public void setCounts(int vertCount, int indCount) {

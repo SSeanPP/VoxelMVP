@@ -29,7 +29,7 @@ public class SceneBufferManager {
 	
 	private int stride = 5 * 4;
 	
-	SceneBufferManager() {
+	public SceneBufferManager() {
 		
 		vertexOffset.set(0);
 		indexOffset.set(0);

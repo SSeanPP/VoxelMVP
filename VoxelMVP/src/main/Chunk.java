@@ -1,13 +1,16 @@
 package main;
 
+import org.joml.Matrix4f;
+
 import bufferManager.Allocation;
 
 public class Chunk {
 	public Allocation allocation = null; 
 	
-	public ChunkCoord chunkCoord;
+	public final ChunkCoord chunkCoord;
+	public final Matrix4f modelMatrix;
 	
-	private final int chunkSize = 16;
+	public final int chunkSize = 16;
 	
 	public Block[][][] blocks = new Block[chunkSize][chunkSize][chunkSize];
 	
@@ -25,7 +28,7 @@ public class Chunk {
 			}
 		}
 		
-		
+		modelMatrix = new Matrix4f().translation(coord.x * chunkSize, coord.y * chunkSize,coord.z * chunkSize);
 	}
 	
 	public Allocation getAllocation() {
@@ -34,5 +37,9 @@ public class Chunk {
 	
 	public void setAllocation(Allocation newAlloc) {
 		this.allocation = newAlloc;
+	}
+	
+	public Block[][][] getBlocks() {
+		return blocks;
 	}
 }

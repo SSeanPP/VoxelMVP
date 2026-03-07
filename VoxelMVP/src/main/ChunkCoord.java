@@ -1,7 +1,7 @@
 package main;
 
 public class ChunkCoord {
-    final int x, y, z;
+    public final int x, y, z;
 
     public ChunkCoord(int x, int y, int z) {
         this.x = x;
