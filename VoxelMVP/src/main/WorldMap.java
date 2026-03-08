@@ -4,27 +4,31 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class WorldMap {
-	private static final Map<ChunkCoord, Chunk> chunks = new HashMap<ChunkCoord, Chunk>();
+	private static final Map<Long, Chunk> chunks = new HashMap<Long, Chunk>();
 	private static final int blockCacheSize = 18;
 	
 	public WorldMap() {
 		
 	}
 	
-	public void addToWorldMap(ChunkCoord coords, Chunk chunk) {
+	public void addToWorldMap(long coords, Chunk chunk) {
 		chunks.put(coords, chunk);
 	}
 	
-	public Chunk getChunk(ChunkCoord coords) {
+	public Chunk getChunk(long coords) {
 		return chunks.get(coords);
 	}
 	
-	public static Map<ChunkCoord, Chunk> getChunks() {
+	public static Map<Long, Chunk> getChunks() {
 		return chunks;
 	}
 	
-	public static short[][][] blockCache(ChunkCoord chunkCoords, Chunk centreChunk) {
+	public static short[][][] blockCache(long chunkCoords, Chunk centreChunk) {
 		short[][][] blockCache = new short[blockCacheSize][blockCacheSize][blockCacheSize];
+		
+		int centreX = ChunkCoord.unpackX(chunkCoords);
+		int centreY = ChunkCoord.unpackY(chunkCoords);
+		int centreZ = ChunkCoord.unpackZ(chunkCoords);
 		
 		short[][][] centreBlocks = centreChunk.getBlocks();
 
@@ -36,7 +40,7 @@ public class WorldMap {
 		}
 		
 		//top
-		Chunk top = chunks.get(new ChunkCoord(chunkCoords.x, chunkCoords.y+1, chunkCoords.z));
+		Chunk top = chunks.get(ChunkCoord.pack(centreX, centreY+1, centreZ));
 
 		if (top != null)
 		{
@@ -50,7 +54,7 @@ public class WorldMap {
 		}
 		//bottom
 		
-		Chunk bottom = chunks.get(new ChunkCoord(chunkCoords.x, chunkCoords.y-1, chunkCoords.z));
+		Chunk bottom = chunks.get(ChunkCoord.pack(centreX, centreY-1, centreZ));
 
 		if (bottom != null)
 		{
@@ -65,7 +69,7 @@ public class WorldMap {
 		//side
 		
 		//N
-		Chunk north = chunks.get(new ChunkCoord(chunkCoords.x, chunkCoords.y, chunkCoords.z+1));
+		Chunk north = chunks.get(ChunkCoord.pack(centreX, centreY, centreZ+1));
 
 		if (north != null)
 		{
@@ -79,7 +83,7 @@ public class WorldMap {
 		}
 		
 		//E
-		Chunk east = chunks.get(new ChunkCoord(chunkCoords.x+1, chunkCoords.y, chunkCoords.z));
+		Chunk east = chunks.get(ChunkCoord.pack(centreX+1, centreY, centreZ));
 
 		if (east != null)
 		{
@@ -92,7 +96,7 @@ public class WorldMap {
 	    	}
 		}
 		//S
-		Chunk south = chunks.get(new ChunkCoord(chunkCoords.x, chunkCoords.y, chunkCoords.z-1));
+		Chunk south = chunks.get(ChunkCoord.pack(centreX, centreY, centreZ-1));
 
 		if (south != null)
 		{
@@ -106,7 +110,7 @@ public class WorldMap {
 		}
 		
 		//W
-		Chunk west = chunks.get(new ChunkCoord(chunkCoords.x-1, chunkCoords.y, chunkCoords.z));
+		Chunk west = chunks.get(ChunkCoord.pack(centreX-1, centreY, centreZ));
 
 		if (west != null)
 		{

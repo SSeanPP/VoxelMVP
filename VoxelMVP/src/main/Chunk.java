@@ -7,14 +7,14 @@ import bufferManager.Allocation;
 public class Chunk {
 	public Allocation allocation = null; 
 	
-	public final ChunkCoord chunkCoord;
+	public final long chunkCoord;
 	public final Matrix4f modelMatrix;
 	
 	public final int chunkSize = 16;
 	
 	public short[][][] blocks = new short[chunkSize][chunkSize][chunkSize];
 	
-	public Chunk(ChunkCoord coord) {
+	public Chunk(long coord) {
 		this.chunkCoord = coord;
 		
 		for(int i = 0; i < chunkSize; i++) {
@@ -39,7 +39,11 @@ public class Chunk {
 			}
 		}
 		
-		modelMatrix = new Matrix4f().translation(coord.x * chunkSize, coord.y * chunkSize,coord.z * chunkSize);
+		int centreX = ChunkCoord.unpackX(this.chunkCoord);
+		int centreY = ChunkCoord.unpackY(this.chunkCoord);
+		int centreZ = ChunkCoord.unpackZ(this.chunkCoord);
+		
+		modelMatrix = new Matrix4f().translation(centreX * chunkSize, centreY * chunkSize, centreZ * chunkSize);
 	}
 	
 	public Allocation getAllocation() {

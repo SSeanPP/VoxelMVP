@@ -100,9 +100,8 @@ public class Main {
         for(int x = 0; x <worldSize; x++) {
         	for(int y = 0; y < worldHeight; y++) {
         		for (int z = 0; z < worldSize; z++) {
-            		ChunkCoord chunkcoord = new ChunkCoord(x,y,-z);
-            		Chunk chunk = new Chunk(chunkcoord);
-            		gameMap.addToWorldMap(chunkcoord, chunk);
+            		Chunk chunk = new Chunk(ChunkCoord.pack(x,y,-z));
+            		gameMap.addToWorldMap(ChunkCoord.pack(x,y,-z), chunk);
             		//meshThreader.meshChunk(chunk);
             	}
         	}
@@ -112,7 +111,7 @@ public class Main {
         for(int x = 0; x < worldSize; x++) {
     		for(int y = 0; y < worldHeight; y++) {
     			for (int z = 0; z < worldSize; z++) {
-    				meshThreader.meshChunk(gameMap.getChunk(new ChunkCoord(x,y,-z)));
+    				meshThreader.meshChunk(gameMap.getChunk(ChunkCoord.pack(x,y,-z)));
     			}
     		}
         }
