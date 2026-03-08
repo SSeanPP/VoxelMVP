@@ -2,6 +2,7 @@ package resourceLoader;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 
 import javax.imageio.ImageIO;
@@ -11,8 +12,9 @@ import static org.lwjgl.opengl.GL12.*;
 public class TextureLoader {
 
     public static int loadTexture(String path) throws Exception {
-    	System.out.println("Current directory: " + new File(".").getAbsolutePath());
-        BufferedImage image = ImageIO.read(new File(path));
+    	//System.out.println("Current directory: " + new File(".").getAbsolutePath());
+    	InputStream is = ResourceLoader.class.getClassLoader().getResourceAsStream(path);
+    	BufferedImage image = ImageIO.read(is);
 
         int width = image.getWidth();
         int height = image.getHeight();
