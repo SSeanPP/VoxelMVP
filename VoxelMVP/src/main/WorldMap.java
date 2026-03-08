@@ -23,10 +23,10 @@ public class WorldMap {
 		return chunks;
 	}
 	
-	public static Block[][][] blockCache(ChunkCoord chunkCoords, Chunk centreChunk) {
-		Block[][][] blockCache = new Block[blockCacheSize][blockCacheSize][blockCacheSize];
+	public static short[][][] blockCache(ChunkCoord chunkCoords, Chunk centreChunk) {
+		short[][][] blockCache = new short[blockCacheSize][blockCacheSize][blockCacheSize];
 		
-		Block[][][] centreBlocks = centreChunk.getBlocks();
+		short[][][] centreBlocks = centreChunk.getBlocks();
 
 		for (int x = 0; x < 16; x++)
 		for (int y = 0; y < 16; y++)
@@ -40,7 +40,7 @@ public class WorldMap {
 
 		if (top != null)
 		{
-		    Block[][][] topBlocks = top.getBlocks();
+			short[][][] topBlocks = top.getBlocks();
 
 		    for (int x = 0; x < 16; x++)
 		    for (int z = 0; z < 16; z++)
@@ -54,7 +54,7 @@ public class WorldMap {
 
 		if (bottom != null)
 		{
-		    Block[][][] bottomBlocks = bottom.getBlocks();
+			short[][][] bottomBlocks = bottom.getBlocks();
 
 		    for (int x = 0; x < 16; x++)
 		    for (int z = 0; z < 16; z++)
@@ -69,7 +69,7 @@ public class WorldMap {
 
 		if (north != null)
 		{
-		    Block[][][] northBlocks = north.getBlocks();
+			short[][][] northBlocks = north.getBlocks();
 
 		    for (int x = 0; x < 16; x++)
 	    	for (int y = 0; y < 16; y++)
@@ -83,7 +83,7 @@ public class WorldMap {
 
 		if (east != null)
 		{
-		    Block[][][] eastBlocks = east.getBlocks();
+			short[][][] eastBlocks = east.getBlocks();
 
 		    for (int y = 0; y < 16; y++)
 	    	for (int z = 0; z < 16; z++)
@@ -96,7 +96,7 @@ public class WorldMap {
 
 		if (south != null)
 		{
-		    Block[][][] southBlocks = south.getBlocks();
+			short[][][] southBlocks = south.getBlocks();
 
 		    for (int x = 0; x < 16; x++)
 	    	for (int y = 0; y < 16; y++)
@@ -110,7 +110,7 @@ public class WorldMap {
 
 		if (west != null)
 		{
-		    Block[][][] westBlocks = west.getBlocks();
+			short[][][] westBlocks = west.getBlocks();
 
 		    for (int y = 0; y < 16; y++)
 	    	for (int z = 0; z < 16; z++)

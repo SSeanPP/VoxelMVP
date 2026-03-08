@@ -94,9 +94,12 @@ public class Main {
     	TextureCache textureCache = renderer.getTextureCache();
     	MaterialCache materialCache = renderer.getMaterialCache();
     	
-        for(int x = 0; x < 32; x++) {
-        	for(int y = 0; y < 16; y++) {
-        		for (int z = 0; z < 32; z++) {
+    	int worldSize = 32;
+    	int worldHeight = 16;
+    	
+        for(int x = 0; x <worldSize; x++) {
+        	for(int y = 0; y < worldHeight; y++) {
+        		for (int z = 0; z < worldSize; z++) {
             		ChunkCoord chunkcoord = new ChunkCoord(x,y,-z);
             		Chunk chunk = new Chunk(chunkcoord);
             		gameMap.addToWorldMap(chunkcoord, chunk);
@@ -106,9 +109,9 @@ public class Main {
         	
         }
         
-        for(int x = 0; x < 32; x++) {
-    		for(int y = 0; y < 16; y++) {
-    			for (int z = 0; z < 32; z++) {
+        for(int x = 0; x < worldSize; x++) {
+    		for(int y = 0; y < worldHeight; y++) {
+    			for (int z = 0; z < worldSize; z++) {
     				meshThreader.meshChunk(gameMap.getChunk(new ChunkCoord(x,y,-z)));
     			}
     		}

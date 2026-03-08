@@ -104,18 +104,16 @@ public class SceneBufferManager {
 		glBindVertexArray(0);
 	}
 	
-	public Allocation getAllocation(int vertexFloatCount, int indexCount) {
+	public Allocation getAllocation(int vertexSizeBytes, int indexSizeBytes) {
 		allocLock.lock();
 		try {
-			int vertexSizeBytes = vertexFloatCount * 4; // size_of(float)
-		    int indexSizeBytes  = indexCount * 4; // size_of(int)
 		    FreeRegion vboRegion = findFit(vboFreeList, vertexSizeBytes);
 		    FreeRegion eboRegion = findFit(eboFreeList, indexSizeBytes);
 
 		    if (vboRegion == null || eboRegion == null) {
 		        throw new RuntimeException("Out of GPU buffer space");
 		    }
-
+		    
 		    return new Allocation(vboRegion.offset, eboRegion.offset, vertexSizeBytes, indexSizeBytes);
 		} finally {
 			allocLock.unlock();
@@ -149,16 +147,24 @@ public class SceneBufferManager {
 		return stride;
 	}
 	
+	public int alignVertex(int bytes) {
+	    return ((bytes + stride - 1) / stride) * stride;
+	}
+	
+	public int alignIndex(int bytes) {
+	    return (bytes + 3) & ~3;
+	}
+	
 	public void free(Allocation alloc) {
 		allocLock.lock();
 		try {
 			// Return VBO region
-		    FreeRegion vboRegion = new FreeRegion(alloc.vertexOffset, alloc.indexLimit);
+		    FreeRegion vboRegion = new FreeRegion(alloc.vertexOffset, alloc.vertexLimit - alloc.vertexOffset);
 		    vboFreeList.put(vboRegion.offset, vboRegion);
 		    coalesce(vboFreeList, vboRegion);
 
 		    // Return EBO region
-		    FreeRegion eboRegion = new FreeRegion(alloc.indexOffset, alloc.indexLimit);
+		    FreeRegion eboRegion = new FreeRegion(alloc.indexOffset, alloc.indexLimit - alloc.indexOffset);
 		    eboFreeList.put(eboRegion.offset, eboRegion);
 		    coalesce(eboFreeList, eboRegion);
 		} finally {
@@ -209,4 +215,6 @@ public class SceneBufferManager {
 		}
 	    return null;
 	}
+	
+
 }

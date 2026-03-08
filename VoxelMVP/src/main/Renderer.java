@@ -62,6 +62,7 @@ public class Renderer {
 		
 		for (Chunk chunk : WorldMap.getChunks().values()) {
 			if (chunk.allocation == null) continue;
+			
 			Main.shaderProgram.setUniform("modelMatrix", chunk.modelMatrix);
 			
 			GL32.glDrawElementsBaseVertex(

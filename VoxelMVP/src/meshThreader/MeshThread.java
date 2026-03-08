@@ -54,56 +54,71 @@ public class MeshThread {
 		indices.clear();
 		vertices.clear();
 		
-		Block[][][] blocks = WorldMap.blockCache(chunk.chunkCoord, chunk);
+		short[][][] blocks = WorldMap.blockCache(chunk.chunkCoord, chunk);
 		int chunkSize = chunk.chunkSize;
 		
 		for(int x = 1; x < chunkSize+1; x++) {
 			for (int y = 1; y < chunkSize+1; y++) {
 				for (int z = 1; z < chunkSize+1; z++) {
-					Block block = blocks[x][y][z];
-					if(block == null) {
-						continue;
-					}
+					short id = blocks[x][y][z];
+					if(id == Block.air.id) continue;
+
+					Block block = Block.blockRegister[id];
 					
 					bx = x - 1;
 					by = y - 1;
 					bz = z - 1;
 					//top
-					if(blocks[x][y+1][z] == null) {
+					if(blocks[x][y+1][z] == Block.air.id) {
 						addFace(TOP, bx, by, bz, block);
 					}
 					
 					//bottom
-					if(blocks[x][y-1][z] == null) {
+					if(blocks[x][y-1][z] == Block.air.id) {
 						addFace(BOTTOM, bx, by, bz, block);
 					}
 					
 					//N
-					if(blocks[x][y][z+1] == null) {
+					if(blocks[x][y][z+1] == Block.air.id) {
 						addFace(NORTH, bx, by, bz, block);
 					}
 					
 					//E
-					if(blocks[x+1][y][z] == null) {
+					if(blocks[x+1][y][z] == Block.air.id) {
 						addFace(EAST, bx, by, bz, block);
 					}
 					
 					//S
-					if(blocks[x][y][z-1] == null) {
+					if(blocks[x][y][z-1] == Block.air.id) {
 						addFace(SOUTH, bx, by, bz, block);
 					}
 					
 					//W
-					if(blocks[x-1][y][z] == null) {
+					if(blocks[x-1][y][z] == Block.air.id) {
 						addFace(WEST, bx, by, bz, block);
 					}
 				}
 			}
 		}
 		
+		int vertexSizeBytes = vertices.size() * 4;
+		int indexSizeBytes = indices.size() * 4;
+		
+		int paddedVertexBytes = bufferManager.alignVertex((int)(vertexSizeBytes * 1.1));
+		int paddedIndexBytes  = bufferManager.alignIndex((int)(indexSizeBytes * 1.1));
 		
 		if (chunk.allocation == null) {
-		    chunk.allocation = bufferManager.getAllocation(vertices.size(), indices.size());
+		    chunk.allocation = bufferManager.getAllocation(paddedVertexBytes, paddedIndexBytes);
+		}
+
+		int allocatedVertexSize = chunk.allocation.vertexLimit - chunk.allocation.vertexOffset;
+		int allocatedIndexSize = chunk.allocation.indexLimit - chunk.allocation.indexOffset;
+		if (allocatedVertexSize < paddedVertexBytes || allocatedIndexSize < paddedIndexBytes) {
+			
+			bufferManager.free(chunk.allocation);
+		    chunk.allocation = bufferManager.getAllocation(
+		    		paddedVertexBytes, paddedIndexBytes
+		    );
 		}
 
 		ByteBuffer sliceVBO = bufferManager.getVBOSlice(chunk.allocation);
@@ -243,4 +258,6 @@ public class MeshThread {
 		    // WEST (-X) - z increases right, y increases up
 		    {{0,0},{0,1},{1,1},{1,0}},
 		};
+	
+	
 }

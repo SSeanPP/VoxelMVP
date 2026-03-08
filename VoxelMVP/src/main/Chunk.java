@@ -12,29 +12,29 @@ public class Chunk {
 	
 	public final int chunkSize = 16;
 	
-	public Block[][][] blocks = new Block[chunkSize][chunkSize][chunkSize];
+	public short[][][] blocks = new short[chunkSize][chunkSize][chunkSize];
 	
 	public Chunk(ChunkCoord coord) {
 		this.chunkCoord = coord;
 		
 		for(int i = 0; i < chunkSize; i++) {
 			for (int k = 0; k < chunkSize; k++) {
-				blocks[i][15][k] = Block.grass;
-				blocks[i][14][k] = Block.dirt;
-				blocks[i][13][k] = Block.dirt;
-				blocks[i][12][k] = Block.dirt;
-				blocks[i][11][k] = Block.dirt;
-				blocks[i][10][k] = Block.stone;
-				blocks[i][9][k] = Block.stone;
-				blocks[i][8][k] = Block.stone;
-				blocks[i][7][k] = Block.stone;
-				blocks[i][6][k] = Block.stone;
-				blocks[i][5][k] = Block.stone;
-				blocks[i][4][k] = Block.stone;
-				blocks[i][3][k] = Block.stone;
-				blocks[i][2][k] = Block.stone;
-				blocks[i][1][k] = Block.stone;
-				blocks[i][0][k] = Block.stone;
+				blocks[i][15][k] = Block.grass.id;
+				blocks[i][14][k] = Block.dirt.id;
+				blocks[i][13][k] = Block.dirt.id;
+				blocks[i][12][k] = Block.dirt.id;
+				blocks[i][11][k] = Block.dirt.id;
+				blocks[i][10][k] = Block.stone.id;
+				blocks[i][9][k] = Block.stone.id;
+				blocks[i][8][k] = Block.stone.id;
+				blocks[i][7][k] = Block.stone.id;
+				blocks[i][6][k] = Block.stone.id;
+				blocks[i][5][k] = Block.stone.id;
+				blocks[i][4][k] = Block.stone.id;
+				blocks[i][3][k] = Block.stone.id;
+				blocks[i][2][k] = Block.stone.id;
+				blocks[i][1][k] = Block.stone.id;
+				blocks[i][0][k] = Block.stone.id;
 				
 			}
 		}
@@ -50,7 +50,7 @@ public class Chunk {
 		this.allocation = newAlloc;
 	}
 	
-	public Block[][][] getBlocks() {
+	public short[][][] getBlocks() {
 		return blocks;
 	}
 }
