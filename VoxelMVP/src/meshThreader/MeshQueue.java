@@ -2,16 +2,46 @@ package meshThreader;
 
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import bufferManager.SceneBufferManager;
 
 import main.Chunk;
-
 public class MeshQueue {
 
-    public static final Queue<Chunk> meshInputQueue = new ConcurrentLinkedQueue();
+    private final SceneBufferManager bufferManager;
+    private static final int THREAD_COUNT = 16;
+    private static final int MAX_FREE_THREADS = 20;
 
-    private MeshQueue() {
-        // private constructor: no one instantiates this!
+    private final ExecutorService executor;
+    private final Queue<MeshThread> freeThreads = new ConcurrentLinkedQueue<MeshThread>();
+
+    public MeshQueue(SceneBufferManager input) {
+        bufferManager = input;
+        executor = Executors.newFixedThreadPool(THREAD_COUNT);
     }
 
+    public void submit(Chunk chunk) {
+
+        MeshThread worker = freeThreads.poll();
+
+        if (worker == null) {
+            worker = new MeshThread(bufferManager, this);
+        }
+
+        worker.setChunk(chunk);
+
+        executor.submit(worker);
+    }
+
+    public void returnWorker(MeshThread worker) {
+        if (freeThreads.size() < MAX_FREE_THREADS) {
+            freeThreads.offer(worker);
+        }
+    }
+
+    public void shutdown() {
+        executor.shutdown();
+    }
 }

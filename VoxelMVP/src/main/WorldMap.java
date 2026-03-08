@@ -2,13 +2,27 @@ package main;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
 public class WorldMap {
 	private static final Map<Long, Chunk> chunks = new HashMap<Long, Chunk>();
-	private static final int blockCacheSize = 18;
+	public static final int blockCacheSize = 18;
+	
+	private final int worldSize = 32;
+	private final int worldHeight = 16;
+	
+	private Random random = new Random();
 	
 	public WorldMap() {
-		
+		for(int x = 0; x <worldSize; x++) {
+        	for(int y = 0; y < worldHeight; y++) {
+        		for (int z = 0; z < worldSize; z++) {
+            		Chunk chunk = new Chunk(ChunkCoord.pack(x,y,-z));
+        			addToWorldMap(ChunkCoord.pack(x,y,-z), chunk);
+            	}
+        	}
+        	
+        }
 	}
 	
 	public void addToWorldMap(long coords, Chunk chunk) {
@@ -23,8 +37,13 @@ public class WorldMap {
 		return chunks;
 	}
 	
-	public static short[][][] blockCache(long chunkCoords, Chunk centreChunk) {
-		short[][][] blockCache = new short[blockCacheSize][blockCacheSize][blockCacheSize];
+	public static short[][][] blockCache(long chunkCoords, Chunk centreChunk, short[][][] blockCache) {
+		
+		for (int x = 0; x < WorldMap.blockCacheSize; x++) {
+		    for (int y = 0; y < WorldMap.blockCacheSize; y++) {
+		        java.util.Arrays.fill(blockCache[x][y], (short) 0);
+		    }
+		}
 		
 		int centreX = ChunkCoord.unpackX(chunkCoords);
 		int centreY = ChunkCoord.unpackY(chunkCoords);
@@ -123,5 +142,13 @@ public class WorldMap {
 	    	}
 		}
 		return blockCache;
+	}
+	 
+	public Chunk getRandomChunk() {
+		int x = random.nextInt(32);
+		int y = random.nextInt(16);
+		int z = random.nextInt(32);
+		
+		return getChunk(ChunkCoord.pack(x, y, -z));
 	}
 }

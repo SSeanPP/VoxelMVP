@@ -8,19 +8,22 @@ import java.util.List;
 import org.lwjgl.opengl.Display;
 
 import bufferManager.SceneBufferManager;
+import meshThreader.MeshQueue;
 import meshThreader.MeshThread;
 
 
 public class Main {
 	
 	public static ShaderProgram shaderProgram;
-	public static final GameEngine gameEngine = new GameEngine();
+	public static final WorldMap gameMap = new WorldMap();
+	public static MeshQueue meshThreader;
+	public static GameEngine gameEngine;
 	public static final Renderer renderer = new Renderer();
-	public static final Thread gameEngineThread = new Thread(gameEngine);
+	public static Thread gameEngineThread;
 	public static final TextureCache textureAtlas = new TextureCache();
 	public static SceneBufferManager bufferManager;
-	public static MeshThread meshThreader;
-	public static final WorldMap gameMap = new WorldMap();
+	
+	
 	
 	private static long lastTime;
 	private static float delta;
@@ -36,8 +39,11 @@ public class Main {
     		
             init();
             bufferManager = new SceneBufferManager();
-            meshThreader = new MeshThread(bufferManager);
+            meshThreader = new MeshQueue(bufferManager);
             renderer.bindBufferMananger(bufferManager);
+            
+            gameEngine = new GameEngine(meshThreader,gameMap);
+            gameEngineThread = new Thread(gameEngine);
             
             Runtime rt = Runtime.getRuntime();
             long usedMB = (rt.totalMemory() - rt.freeMemory()) / (1024 * 1024);
@@ -55,6 +61,11 @@ public class Main {
             	lastTime = now;
             	
             	Main.shaderProgram.bind();
+            	
+            	for(int i = 0; i < 20; i++) {
+            		meshThreader.submit(gameMap.getRandomChunk());
+            	}
+            	
             	renderer.render(gameEngine.getPublishedState(), gameEngine.getPublishedAlpha());
             	
             	frames++;
@@ -94,27 +105,6 @@ public class Main {
     	TextureCache textureCache = renderer.getTextureCache();
     	MaterialCache materialCache = renderer.getMaterialCache();
     	
-    	int worldSize = 32;
-    	int worldHeight = 16;
-    	
-        for(int x = 0; x <worldSize; x++) {
-        	for(int y = 0; y < worldHeight; y++) {
-        		for (int z = 0; z < worldSize; z++) {
-            		Chunk chunk = new Chunk(ChunkCoord.pack(x,y,-z));
-            		gameMap.addToWorldMap(ChunkCoord.pack(x,y,-z), chunk);
-            		//meshThreader.meshChunk(chunk);
-            	}
-        	}
-        	
-        }
-        
-        for(int x = 0; x < worldSize; x++) {
-    		for(int y = 0; y < worldHeight; y++) {
-    			for (int z = 0; z < worldSize; z++) {
-    				meshThreader.meshChunk(gameMap.getChunk(ChunkCoord.pack(x,y,-z)));
-    			}
-    		}
-        }
         Texture atlas = textureCache.createTexture(0, "bin/resources/homemadeTerrain.png");
         return atlas;
     }

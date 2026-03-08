@@ -3,6 +3,8 @@ package main;
 import org.joml.Matrix4f;
 import org.lwjgl.input.Keyboard;
 
+import meshThreader.MeshQueue;
+
 public class GameEngine implements Runnable {
 	public volatile boolean running;
 	
@@ -11,8 +13,12 @@ public class GameEngine implements Runnable {
 	
 	private InputState inputState = new InputState();
 	
-	public GameEngine() {
-		
+	private MeshQueue meshQueue;
+	private WorldMap worldMap;
+	
+	public GameEngine(MeshQueue queue, WorldMap map) {
+		meshQueue = queue;
+		worldMap = map;
 	}
 	
 	public void gameLoop() {
@@ -82,7 +88,8 @@ public class GameEngine implements Runnable {
             }
         }
     }
-
+	
+	
 	@Override
 	public void run() {
 		this.running = true;
