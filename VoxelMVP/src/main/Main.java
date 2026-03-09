@@ -105,7 +105,7 @@ public class Main {
     	TextureCache textureCache = renderer.getTextureCache();
     	MaterialCache materialCache = renderer.getMaterialCache();
     	
-        Texture atlas = textureCache.createTexture(0, "bin/resources/homemadeTerrain.png");
+        Texture atlas = textureCache.createTexture(0, "resources/homemadeTerrain.png");
         return atlas;
     }
    
