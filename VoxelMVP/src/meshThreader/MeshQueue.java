@@ -10,7 +10,7 @@ import bufferManager.SceneBufferManager;
 import main.Chunk;
 public class MeshQueue {
 
-    private static final int THREAD_COUNT = Runtime.getRuntime().availableProcessors() - 1;
+    private static final int THREAD_COUNT = Runtime.getRuntime().availableProcessors() - 2;
     private final SceneBufferManager bufferManager;
 
     private final BlockingQueue<Chunk> meshQueue = new ArrayBlockingQueue<Chunk>(256);

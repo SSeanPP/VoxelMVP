@@ -151,4 +151,15 @@ public class WorldMap {
 		
 		return getChunk(ChunkCoord.pack(x, y, -z));
 	}
+	
+	public static boolean allMeshed() {
+
+	    for (Chunk chunk : chunks.values()) {
+	        if (chunk.needsUpdate || chunk.queuedForMeshing) {
+	            return false;
+	        }
+	    }
+
+	    return true;
+	}
 }
