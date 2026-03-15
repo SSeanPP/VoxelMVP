@@ -17,8 +17,8 @@ public class WorldMap {
 		for(int x = 0; x <worldSize; x++) {
         	for(int y = 0; y < worldHeight; y++) {
         		for (int z = 0; z < worldSize; z++) {
-            		Chunk chunk = new Chunk(ChunkCoord.pack(x,y,-z));
-        			addToWorldMap(ChunkCoord.pack(x,y,-z), chunk);
+            		Chunk chunk = new Chunk(ChunkCoord.pack(x,y,z));
+        			addToWorldMap(ChunkCoord.pack(x,y,z), chunk);
             	}
         	}
         	

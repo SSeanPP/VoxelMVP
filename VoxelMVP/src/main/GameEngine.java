@@ -1,5 +1,6 @@
 package main;
 
+import org.joml.Vector3f;
 import org.lwjgl.input.Keyboard;
 
 import meshThreader.MeshQueue;
@@ -13,14 +14,18 @@ public class GameEngine implements Runnable {
 	private InputState inputState = new InputState();
 	
 	private MeshQueue meshQueue;
-	private int chunksProcessed = 0;
-	private int loopTotal = 0;
 	
 	private WorldMap worldMap;
-	private final int renderSize = 32 * 32 * 16;
+	private final int CHUNK_SHIFT = 4; // 2^4 = 16
 	
-	double newTime;
-    double frameTime;
+	private int lastPx = Integer.MIN_VALUE;
+	private int lastPz = Integer.MIN_VALUE;
+	private static int VIEW_RADIUS = 64; // tune this
+	
+	private double newTime;
+    private double frameTime;
+    
+    private Vector3f cameraPos;
 	
 	public GameEngine(MeshQueue queue, WorldMap map) {
 		meshQueue = queue;
@@ -50,14 +55,16 @@ public class GameEngine implements Runnable {
 	        while ( accumulator >= dt )
 	        {
 	        	// Responsible for random chunk updates
-	        	chunksProcessed = 0;
+	        	/*chunksProcessed = 0;
 	        	loopTotal = 0;
 	        	while(chunksProcessed < 20 && loopTotal != renderSize) {
 	        		if(meshQueue.submit(worldMap.getRandomChunk())) {
 	        			this.chunksProcessed++;
 	        		}
 	        		loopTotal++;
-	        	}
+	        	}*/
+	        	
+	        	updateChunksAroundPlayer(state);
 	        	
 	        	state.integrate(t, dt, inputState);
 	        	
@@ -115,12 +122,47 @@ public class GameEngine implements Runnable {
         }
     }
 	
+	public void updateChunksAroundPlayer(GameState state) {
+	    cameraPos = state.getCamera().getPosition();
+
+	    int px = (int)cameraPos.x >> CHUNK_SHIFT;
+	    int py = (int)cameraPos.y >> CHUNK_SHIFT;
+	    int pz = (int)cameraPos.z >> CHUNK_SHIFT;
+
+	    if (px == lastPx && pz == lastPz) {
+	        return;
+	    }
+	    lastPx = px;
+	    lastPz = pz;
+
+	    submitChunksInRadius(px, py, pz);
+	}
+	
+	private void submitChunksInRadius(int px, int py, int pz) {
+	    for (int r = 0; r <= VIEW_RADIUS; r++) {
+	        for (int x = -r; x <= r; x++) {
+	            for (int z = -r; z <= r; z++) {
+	                if (Math.max(Math.abs(x), Math.abs(z)) != r) continue;
+
+	                int cx = px + x;
+	                int cz = pz + z;
+
+	                for (int cy = 0; cy < 16; cy++) {
+	                    long key = ChunkCoord.pack(cx, cy, cz);
+	                    Chunk chunk = worldMap.getChunk(key);
+	                    if (chunk != null && chunk.needsUpdate && !chunk.queuedForMeshing) {
+	                        meshQueue.submit(chunk);
+	                    }
+	                }
+	            }
+	        }
+	    }
+	}
+	
 	
 	@Override
 	public void run() {
 		this.running = true;
 		gameLoop();
 	}
-	
-	
 }

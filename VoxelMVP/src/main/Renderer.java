@@ -77,6 +77,8 @@ public class Renderer {
 		
 		if(!guiHelper.runGUI(state)) {
 			camera.updateCameraMatrix(Mouse.getDX(), Mouse.getDY());
+		} else {
+			System.out.println(camera.getPosition());
 		}
 		
 		gameInput();
@@ -86,7 +88,7 @@ public class Renderer {
 	
 	public void initDisplay(int width, int height) throws LWJGLException {
         Display.setDisplayMode(new DisplayMode(width, height));
-        Display.setTitle("LWJGL 2 Simple 3D Loop");
+        Display.setTitle("VoxelMVP - A maximum performance Voxel Render Engine built on Java 1.6 and LWJGL 2.9.3");
         
         Display.create();
         

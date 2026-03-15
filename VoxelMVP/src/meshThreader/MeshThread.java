@@ -139,15 +139,6 @@ public class MeshThread implements Runnable {
 		for (int i = 0; i < indexPtr; i++) {
 			sliceEBO.putInt(indices[i]);
 		}
-		//FloatBuffer fb = sliceVBO.order(ByteOrder.nativeOrder()).asFloatBuffer();
-		//fb.put(vertices, 0, vertexPtr);
-		
-		//System.out.println("FB after write: " + fb.get(0) + ", " + fb.get(1) + ", " + fb.get(2));
-		
-		//IntBuffer ib = sliceEBO.order(ByteOrder.nativeOrder()).asIntBuffer();
-		//ib.put(indices, 0, indexPtr);
-		//ib.flip();
-		
 		
 		chunk.allocation.setCounts(indexPtr);
 		
