@@ -11,7 +11,7 @@ import main.Chunk;
 public class MeshQueue {
 
     private final SceneBufferManager bufferManager;
-    private static final int THREAD_COUNT = 16;
+    private static final int THREAD_COUNT = Runtime.getRuntime().availableProcessors() - 1;;
     private static final int MAX_FREE_THREADS = 20;
 
     private final ExecutorService executor;
@@ -32,6 +32,7 @@ public class MeshQueue {
         }
         
         if (chunk.needsUpdate) {
+        	chunk.needsUpdate = false;
         	worker.setChunk(chunk);
         	executor.submit(worker);
         	return true;

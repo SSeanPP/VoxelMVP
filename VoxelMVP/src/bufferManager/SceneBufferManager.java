@@ -25,8 +25,15 @@ public class SceneBufferManager {
 	private int megaEBOid;
 	private int vaoId;
 	
+	public static long bufferSize = 1024L * 1024L * 256L; 
+	
 	private AtomicInteger vertexOffset = new AtomicInteger();
 	private AtomicInteger indexOffset = new AtomicInteger();
+	
+	public static volatile long vboFreeBytes = 0;
+	public static volatile long eboFreeBytes = 0;
+	public static volatile int vboFreeRegions = 1;
+	public static volatile int eboFreeRegions = 1;
 	
 	private final ByteBuffer megaVBO;
 	private final ByteBuffer megaEBO;
@@ -50,7 +57,8 @@ public class SceneBufferManager {
 	
 	public SceneBufferManager() {
 		
-		long bufferSize = 1024L * 1024L * 256L; // 256MB
+		vboFreeBytes = bufferSize;
+		eboFreeBytes = bufferSize;
 		
 		vertexOffset.set(0);
 		indexOffset.set(0);
@@ -105,9 +113,9 @@ public class SceneBufferManager {
 	public Allocation getAllocation(int vertexSizeBytes, int indexSizeBytes) {
 		allocLock.lock();
 		try {
-		    FreeRegion vboRegion = findFit(vboFreeList, vertexSizeBytes);
-		    FreeRegion eboRegion = findFit(eboFreeList, indexSizeBytes);
-
+		    FreeRegion vboRegion = findFit(vboFreeList, vertexSizeBytes, true);
+		    FreeRegion eboRegion = findFit(eboFreeList, indexSizeBytes, false);
+		    
 		    if (vboRegion == null || eboRegion == null) {
 		        throw new RuntimeException("Out of GPU buffer space");
 		    }
@@ -156,15 +164,17 @@ public class SceneBufferManager {
 	public void free(Allocation alloc) {
 		allocLock.lock();
 		try {
-			// Return VBO region
-		    FreeRegion vboRegion = new FreeRegion(alloc.vertexOffset, alloc.vertexLimit - alloc.vertexOffset);
-		    vboFreeList.put(vboRegion.offset, vboRegion);
-		    coalesce(vboFreeList, vboRegion);
+			FreeRegion vboRegion = new FreeRegion(alloc.vertexOffset, alloc.vertexLimit - alloc.vertexOffset);
+			vboFreeList.put(vboRegion.offset, vboRegion);
+			coalesce(vboFreeList, vboRegion);
+			vboFreeBytes += (alloc.vertexLimit - alloc.vertexOffset);
+			vboFreeRegions = vboFreeList.size();
 
-		    // Return EBO region
-		    FreeRegion eboRegion = new FreeRegion(alloc.indexOffset, alloc.indexLimit - alloc.indexOffset);
-		    eboFreeList.put(eboRegion.offset, eboRegion);
-		    coalesce(eboFreeList, eboRegion);
+			FreeRegion eboRegion = new FreeRegion(alloc.indexOffset, alloc.indexLimit - alloc.indexOffset);
+			eboFreeList.put(eboRegion.offset, eboRegion);
+			coalesce(eboFreeList, eboRegion);
+			eboFreeBytes += (alloc.indexLimit - alloc.indexOffset);
+			eboFreeRegions = eboFreeList.size();
 		} finally {
 			allocLock.unlock();
 		}
@@ -190,27 +200,34 @@ public class SceneBufferManager {
 	    }
 	}
 	
-	private FreeRegion findFit(TreeMap<Integer, FreeRegion> freeList, int sizeBytes) {
+	private FreeRegion findFit(TreeMap<Integer, FreeRegion> freeList, int sizeBytes, boolean isVBO) {
+	    Iterator<FreeRegion> it = freeList.values().iterator();
 
-		Iterator<FreeRegion> it = freeList.values().iterator();
+	    while (it.hasNext()) {
+	        FreeRegion region = it.next();
 
-		while (it.hasNext()) {
-		    FreeRegion region = it.next();
+	        if (region.size >= sizeBytes) {
+	            it.remove();
 
-		    if (region.size >= sizeBytes) {
-		        it.remove();
+	            if (isVBO) {
+	                vboFreeBytes -= sizeBytes;
+	                vboFreeRegions = freeList.size();
+	            } else {
+	                eboFreeBytes -= sizeBytes;
+	                eboFreeRegions = freeList.size();
+	            }
 
-		        if (region.size > sizeBytes) {
-		            FreeRegion remainder = new FreeRegion(
-		                    region.offset + sizeBytes,
-		                    region.size - sizeBytes
-		            );
-		            freeList.put(remainder.offset, remainder);
-		        }
+	            if (region.size > sizeBytes) {
+	                FreeRegion remainder = new FreeRegion(
+	                    region.offset + sizeBytes,
+	                    region.size - sizeBytes
+	                );
+	                freeList.put(remainder.offset, remainder);
+	            }
 
-		        return new FreeRegion(region.offset, sizeBytes);
-		    }
-		}
+	            return new FreeRegion(region.offset, sizeBytes);
+	        }
+	    }
 	    return null;
 	}
 	

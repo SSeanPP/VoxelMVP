@@ -129,18 +129,24 @@ public class MeshThread implements Runnable {
 		    );
 		}
 
-		ByteBuffer sliceVBO = bufferManager.getVBOSlice(chunk.allocation);
+		ByteBuffer sliceVBO = bufferManager.getVBOSlice(chunk.allocation).order(ByteOrder.nativeOrder());
+		
+		for (int i = 0; i < vertexPtr; i++) {
+			sliceVBO.putFloat(vertices[i]);
+		}
 		//System.out.println("Slice position: " + sliceVBO.position() + " limit: " + sliceVBO.limit());
-		ByteBuffer sliceEBO = bufferManager.getEBOSlice(chunk.allocation);
+		ByteBuffer sliceEBO = bufferManager.getEBOSlice(chunk.allocation).order(ByteOrder.nativeOrder());
 		
-		
-		FloatBuffer fb = sliceVBO.order(ByteOrder.nativeOrder()).asFloatBuffer();
-		fb.put(vertices, 0, vertexPtr);
+		for (int i = 0; i < indexPtr; i++) {
+			sliceEBO.putInt(indices[i]);
+		}
+		//FloatBuffer fb = sliceVBO.order(ByteOrder.nativeOrder()).asFloatBuffer();
+		//fb.put(vertices, 0, vertexPtr);
 		
 		//System.out.println("FB after write: " + fb.get(0) + ", " + fb.get(1) + ", " + fb.get(2));
 		
-		IntBuffer ib = sliceEBO.order(ByteOrder.nativeOrder()).asIntBuffer();
-		ib.put(indices, 0, indexPtr);
+		//IntBuffer ib = sliceEBO.order(ByteOrder.nativeOrder()).asIntBuffer();
+		//ib.put(indices, 0, indexPtr);
 		//ib.flip();
 		
 		chunk.allocation.setCounts(indexPtr);

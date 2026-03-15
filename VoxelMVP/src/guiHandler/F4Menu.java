@@ -1,11 +1,8 @@
 package guiHandler;
 
 import org.lwjgl.input.Mouse;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL14;
 
 import imgui.ImGui;
-import imgui.ImInput;
 import main.GameState;
 
 public class F4Menu {
@@ -18,7 +15,6 @@ public class F4Menu {
 	}
 	
 	public boolean run(GameState state) {
-		
 		if(state.getF4state()) {
 			if (state.getF4state() != wasGuiOpen) {
 		        Mouse.setGrabbed(!state.getF4state());

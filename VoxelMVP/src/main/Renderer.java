@@ -7,12 +7,9 @@ import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL14;
-import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL32;
 
 import bufferManager.SceneBufferManager;
-import guiHandler.F4Menu;
 import guiHandler.GUIHelper;
 import imgui.ImGui;
 import imgui.ImInput;

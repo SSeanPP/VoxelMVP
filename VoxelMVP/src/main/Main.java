@@ -20,14 +20,10 @@ public class Main {
 	public static final TextureCache textureAtlas = new TextureCache();
 	public static SceneBufferManager bufferManager;
 	
-	
-	
-	private static long lastTime;
-	private static float delta;
 	private static int fps;
 	private static int frames;
 	private static long fpsTimer;
-	private static long now;
+	
 	
 	
     public static void main(String[] args) throws InterruptedException {
@@ -55,10 +51,6 @@ public class Main {
             gameEngineThread.start();
             
             while(!Display.isCloseRequested()) {
-            	now = System.nanoTime();
-            	delta = (now - lastTime) / 1000000000f;
-            	lastTime = now;
-         
             	
             	renderer.render(gameEngine.getPublishedState(), gameEngine.getPublishedAlpha());
             	
@@ -97,7 +89,7 @@ public class Main {
     
     public static Texture testGameSetup() {
     	TextureCache textureCache = renderer.getTextureCache();
-    	MaterialCache materialCache = renderer.getMaterialCache();
+    	//MaterialCache materialCache = renderer.getMaterialCache();
     	
         Texture atlas = textureCache.createTexture(0, "resources/homemadeTerrain.png");
         return atlas;
