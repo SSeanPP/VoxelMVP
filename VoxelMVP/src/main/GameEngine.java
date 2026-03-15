@@ -148,8 +148,7 @@ public class GameEngine implements Runnable {
 	                int cz = pz + z;
 
 	                for (int cy = 0; cy < 16; cy++) {
-	                    long key = ChunkCoord.pack(cx, cy, cz);
-	                    Chunk chunk = worldMap.getChunk(key);
+	                    Chunk chunk = WorldMap.getChunkDirect(cx,cy,cz);
 	                    if (chunk != null && chunk.needsUpdate && !chunk.queuedForMeshing) {
 	                        meshQueue.submit(chunk);
 	                    }

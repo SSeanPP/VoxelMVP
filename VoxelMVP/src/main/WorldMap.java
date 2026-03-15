@@ -5,11 +5,11 @@ import java.util.Map;
 import java.util.Random;
 
 public class WorldMap {
-	private static final Map<Long, Chunk> chunks = new HashMap<Long, Chunk>();
-	public static final int blockCacheSize = 18;
+	public final static int worldSize = 32;
+	public final static int worldHeight = 16;
 	
-	private final int worldSize = 32;
-	private final int worldHeight = 16;
+	private static final Chunk[] chunks = new Chunk[worldSize * worldHeight * worldSize];
+	public static final int blockCacheSize = 18;
 	
 	private Random random = new Random();
 	
@@ -17,23 +17,28 @@ public class WorldMap {
 		for(int x = 0; x <worldSize; x++) {
         	for(int y = 0; y < worldHeight; y++) {
         		for (int z = 0; z < worldSize; z++) {
-            		Chunk chunk = new Chunk(ChunkCoord.pack(x,y,z));
-        			addToWorldMap(ChunkCoord.pack(x,y,z), chunk);
+            		chunks[chunkIndex(x, y, z)] = new Chunk(x,y,z);
             	}
         	}
         	
         }
 	}
 	
-	public void addToWorldMap(long coords, Chunk chunk) {
-		chunks.put(coords, chunk);
+	public void addToWorldMapViaIndex(int Index, Chunk chunk) {
+		chunks[Index] = chunk;
 	}
 	
-	public Chunk getChunk(long coords) {
-		return chunks.get(coords);
+	public static int chunkIndex(int x, int y, int z) {
+	    return x * worldHeight * worldSize + y * worldSize + z;
+	}
+
+	public static Chunk getChunkDirect(int x, int y, int z) {
+	    if (x < 0 || x >= worldSize || y < 0 || y >= worldHeight || z < 0 || z >= worldSize)
+	        return null;
+	    return chunks[chunkIndex(x, y, z)];
 	}
 	
-	public static Map<Long, Chunk> getChunks() {
+	public static Chunk[] getChunks() {
 		return chunks;
 	}
 	
@@ -45,9 +50,9 @@ public class WorldMap {
 		    }
 		}
 		
-		int centreX = ChunkCoord.unpackX(chunkCoords);
-		int centreY = ChunkCoord.unpackY(chunkCoords);
-		int centreZ = ChunkCoord.unpackZ(chunkCoords);
+		int centreX = centreChunk.x;
+		int centreY = centreChunk.y;
+		int centreZ = centreChunk.z;
 		
 		short[][][] centreBlocks = centreChunk.getBlocks();
 
@@ -59,7 +64,7 @@ public class WorldMap {
 		}
 		
 		//top
-		Chunk top = chunks.get(ChunkCoord.pack(centreX, centreY+1, centreZ));
+		Chunk top = getChunkDirect(centreX, centreY+1, centreZ);
 
 		if (top != null)
 		{
@@ -73,7 +78,7 @@ public class WorldMap {
 		}
 		//bottom
 		
-		Chunk bottom = chunks.get(ChunkCoord.pack(centreX, centreY-1, centreZ));
+		Chunk bottom = getChunkDirect(centreX, centreY-1, centreZ);
 
 		if (bottom != null)
 		{
@@ -88,7 +93,7 @@ public class WorldMap {
 		//side
 		
 		//N
-		Chunk north = chunks.get(ChunkCoord.pack(centreX, centreY, centreZ+1));
+		Chunk north = getChunkDirect(centreX, centreY, centreZ+1);
 
 		if (north != null)
 		{
@@ -102,7 +107,7 @@ public class WorldMap {
 		}
 		
 		//E
-		Chunk east = chunks.get(ChunkCoord.pack(centreX+1, centreY, centreZ));
+		Chunk east = getChunkDirect(centreX+1, centreY, centreZ);
 
 		if (east != null)
 		{
@@ -115,7 +120,7 @@ public class WorldMap {
 	    	}
 		}
 		//S
-		Chunk south = chunks.get(ChunkCoord.pack(centreX, centreY, centreZ-1));
+		Chunk south = getChunkDirect(centreX, centreY, centreZ-1);
 
 		if (south != null)
 		{
@@ -129,7 +134,7 @@ public class WorldMap {
 		}
 		
 		//W
-		Chunk west = chunks.get(ChunkCoord.pack(centreX-1, centreY, centreZ));
+		Chunk west = getChunkDirect(centreX-1, centreY, centreZ);
 
 		if (west != null)
 		{
@@ -149,14 +154,16 @@ public class WorldMap {
 		int y = random.nextInt(16);
 		int z = random.nextInt(32);
 		
-		return getChunk(ChunkCoord.pack(x, y, -z));
+		return getChunkDirect(x, y, -z);
 	}
 	
 	public static boolean allMeshed() {
 
-	    for (Chunk chunk : chunks.values()) {
-	        if (chunk.needsUpdate || chunk.queuedForMeshing) {
-	            return false;
+	    for (Chunk chunk : chunks) {
+	        if(chunk != null) {
+	        	if (chunk.needsUpdate || chunk.queuedForMeshing) {
+		            return false;
+		        }
 	        }
 	    }
 

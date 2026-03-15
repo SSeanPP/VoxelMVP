@@ -14,7 +14,7 @@ public class MeshQueue {
     private static int THREAD_COUNT;
     private final SceneBufferManager bufferManager;
 
-    private final BlockingQueue<Chunk> meshQueue = new LinkedBlockingQueue<Chunk>(32*32*16);
+    private final BlockingQueue<Chunk> meshQueue = new ArrayBlockingQueue<Chunk>(32*32*16);
     private final List<Thread> workers = new ArrayList<Thread>();
 
     public MeshQueue(SceneBufferManager manager) {

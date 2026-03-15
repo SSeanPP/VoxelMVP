@@ -21,6 +21,7 @@ public class GameState {
 	public GameState() {
 		camera = new Camera();
 		isF4Open = false;
+		isF3Open = true;
 	}
 	
 	public void integrate(double t, double dt, InputState input) {

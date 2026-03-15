@@ -58,8 +58,8 @@ public class Renderer {
 		Main.shaderProgram.setUniform("viewMatrix", camera.handleCameraLerpAndMatrix(alpha, renderPos));
 		Main.shaderProgram.setUniform("projectionMatrix", projection.getProjMatrix());
 		
-		for (Chunk chunk : WorldMap.getChunks().values()) {
-			if (chunk.allocation == null) continue;
+		for (Chunk chunk : WorldMap.getChunks()) {
+			if (chunk == null || chunk.allocation == null) continue;
 			
 			Main.shaderProgram.setUniform("modelMatrix", chunk.modelMatrix);
 			

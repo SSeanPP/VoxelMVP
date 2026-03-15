@@ -61,7 +61,7 @@ public class MeshThread implements Runnable {
 		vertexPtr = 0;
 		indexPtr = 0;
 		
-		WorldMap.blockCache(chunk.chunkCoord, chunk, localBlockCache);
+		WorldMap.blockCache(WorldMap.chunkIndex(chunk.x, chunk.y, chunk.z), chunk, localBlockCache);
 		int chunkSize = chunk.chunkSize;
 		
 		for(int x = 1; x < chunkSize+1; x++) {
