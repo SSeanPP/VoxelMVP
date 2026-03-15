@@ -12,6 +12,8 @@ import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL32;
 
 import bufferManager.SceneBufferManager;
+import guiHandler.F4Menu;
+import guiHandler.GUIHelper;
 import imgui.ImGui;
 import imgui.ImInput;
 
@@ -29,17 +31,15 @@ public class Renderer {
 	private SceneBufferManager bufferManager;
 	private Projection projection;
 	
-	private boolean[] open = { true };
-	private boolean wasGuiOpen = false;
-	
 	private Vector3f renderPos = new Vector3f();
 	//private Matrix4f renderMatrix = new Matrix4f();
 	private Camera camera;
+	private GUIHelper guiHelper;
 	
 	private Texture textAtlas;
 	
 	public Renderer () {
-		
+		guiHelper = new GUIHelper();
 	}
 	
 	public void bindBufferMananger(SceneBufferManager main) {
@@ -54,7 +54,6 @@ public class Renderer {
 	}
 	
 	public void render(GameState state, double alpha) {
-		
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		
 		camera = state.getCamera();
@@ -79,37 +78,7 @@ public class Renderer {
 			//System.out.println("IndexCount: " +chunk.allocation.indexCount+" IndexOffset: "+ chunk.allocation.indexOffset + " VertexOffset: " + chunk.allocation.vertexOffset / 5);
 		}
 		
-		if(state.getF3state()) {
-			if (state.getF3state() != wasGuiOpen) {
-		        Mouse.setGrabbed(!state.getF3state());
-		        wasGuiOpen = state.getF3state();
-		    }
-			
-			ImInput.handleMouseAndScroll();
-			ImGui.newFrame();
-			ImGui.setNextWindowPos(100, 100);
-
-			ImGui.begin("Test Window");
-
-			if (ImGui.button("Click me!")) {
-			    System.out.println("Button pressed!");
-			}
-			ImGui.showDemoWindow(open);
-			ImGui.end();
-
-			GL11.glEnable(GL11.GL_BLEND);
-			GL14.glBlendEquation(GL14.GL_FUNC_ADD);
-			GL14.glBlendFuncSeparate(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, GL11.GL_ONE, GL11.GL_ONE_MINUS_SRC_ALPHA);
-
-			ImGui.render();
-			
-			GL11.glDisable(GL11.GL_BLEND);
-			
-		} else {
-			if (state.getF3state() != wasGuiOpen) {
-		        Mouse.setGrabbed(!state.getF3state());
-		        wasGuiOpen = state.getF3state();
-		    }
+		if(!guiHelper.runGUI(state)) {
 			camera.updateCameraMatrix(Mouse.getDX(), Mouse.getDY());
 		}
 		

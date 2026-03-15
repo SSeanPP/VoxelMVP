@@ -15,11 +15,12 @@ public class GameState {
     private Vector3f right = new Vector3f();
     private Vector3f up = new Vector3f(0, 1, 0);
     private float yaw = 0.0f;
+    private boolean isF4Open;
     private boolean isF3Open;
     
 	public GameState() {
 		camera = new Camera();
-		isF3Open = false;
+		isF4Open = false;
 	}
 	
 	public void integrate(double t, double dt, InputState input) {
@@ -101,6 +102,14 @@ public class GameState {
     	return camera;
     }
     
+    public boolean getF4state() {
+    	return this.isF4Open;
+    }
+    
+    public void setF4state(boolean input) {
+    	this.isF4Open = input;
+    }
+    
     public boolean getF3state() {
     	return this.isF3Open;
     }
@@ -108,5 +117,4 @@ public class GameState {
     public void setF3state(boolean input) {
     	this.isF3Open = input;
     }
-    
 }

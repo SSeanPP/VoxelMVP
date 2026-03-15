@@ -103,8 +103,12 @@ public class GameEngine implements Runnable {
                     break;
                 case Keyboard.KEY_F3:
                 	if(input.getEventState()) {
-                		boolean newF3 = state.getF3state();
-                    	state.setF3state(!newF3);
+                    	state.setF3state(!state.getF3state());
+                	}
+                	break;
+                case Keyboard.KEY_F4:
+                	if(input.getEventState()) {
+                    	state.setF4state(!state.getF4state());
                 	}
                 	break;
             }
