@@ -11,7 +11,8 @@ public class WorldMap {
 	
 	private static final Chunk[] chunks = new Chunk[worldSize * worldHeight * worldSize];
 	public static final int blockCacheSize = 18;
-	private final long seed = 12345L;
+	//Sean
+	private final long seed = 5116345970222046394L;
 	
 	private Random random = new Random();
 	

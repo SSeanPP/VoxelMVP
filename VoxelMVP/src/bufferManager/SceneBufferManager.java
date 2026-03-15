@@ -209,13 +209,6 @@ public class SceneBufferManager {
 	        if (region.size >= sizeBytes) {
 	            it.remove();
 
-	            if (isVBO) {
-	                vboFreeBytes -= sizeBytes;
-	                vboFreeRegions = freeList.size();
-	            } else {
-	                eboFreeBytes -= sizeBytes;
-	                eboFreeRegions = freeList.size();
-	            }
 
 	            if (region.size > sizeBytes) {
 	                FreeRegion remainder = new FreeRegion(
@@ -223,6 +216,14 @@ public class SceneBufferManager {
 	                    region.size - sizeBytes
 	                );
 	                freeList.put(remainder.offset, remainder);
+	            }
+	            
+	            if (isVBO) {
+	                vboFreeBytes -= sizeBytes;
+	                vboFreeRegions = freeList.size();
+	            } else {
+	                eboFreeBytes -= sizeBytes;
+	                eboFreeRegions = freeList.size();
 	            }
 
 	            return new FreeRegion(region.offset, sizeBytes);

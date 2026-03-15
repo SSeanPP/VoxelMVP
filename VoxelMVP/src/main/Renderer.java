@@ -34,9 +34,14 @@ public class Renderer {
 	private GUIHelper guiHelper;
 	
 	private Texture textAtlas;
+	private int totalVertices;
+	private int totalIndices;
+
 	
 	public Renderer () {
 		guiHelper = new GUIHelper();
+		totalVertices = 0;
+		totalIndices = 0;
 	}
 	
 	public void bindBufferMananger(SceneBufferManager main) {
@@ -52,6 +57,9 @@ public class Renderer {
 	
 	public void render(GameState state, double alpha) {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		
+		totalVertices = 0;
+		totalIndices = 0;
 		
 		camera = state.getCamera();
 		
@@ -70,12 +78,14 @@ public class Renderer {
 		        chunk.allocation.indexOffset,
 		        chunk.allocation.vertexOffset / bufferManager.getStride()
 		    );
+			totalIndices += chunk.allocation.indexCount;
+		    totalVertices += chunk.allocation.indexCount / 6 * 4;
 			//int error = GL11.glGetError();
 			//if (error != 0) System.out.println("GL error after newFrame: " + error);
 			//System.out.println("IndexCount: " +chunk.allocation.indexCount+" IndexOffset: "+ chunk.allocation.indexOffset + " VertexOffset: " + chunk.allocation.vertexOffset / 5);
 		}
 		
-		if(!guiHelper.runGUI(state)) {
+		if(!guiHelper.runGUI(state, totalIndices, totalVertices)) {
 			camera.updateCameraMatrix(Mouse.getDX(), Mouse.getDY());
 		} else {
 			System.out.println(camera.getPosition());

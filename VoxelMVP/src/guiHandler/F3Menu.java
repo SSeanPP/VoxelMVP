@@ -24,7 +24,7 @@ public class F3Menu {
 	    fps = 0;
 	}
 	
-	public void run(GameState state) {
+	public void run(GameState state, int totalIndices, int totalVertices) {
 		if(state.getF3state()) {
 			
 			usedMB = (rt.totalMemory() - rt.freeMemory()) / (1024 * 1024);
@@ -71,6 +71,7 @@ public class F3Menu {
         	}
         	
         	ImGui.text("FPS: " + fps);
+        	ImGui.text("Vertices: " + totalVertices+" Indices: "+totalIndices);
 			ImGui.end();
 		}
 	}
