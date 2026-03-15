@@ -3,6 +3,7 @@ package main;
 import org.joml.Vector3f;
 import org.lwjgl.input.Keyboard;
 
+
 import meshThreader.MeshQueue;
 
 public class GameEngine implements Runnable {
@@ -15,7 +16,6 @@ public class GameEngine implements Runnable {
 	
 	private MeshQueue meshQueue;
 	
-	private WorldMap worldMap;
 	private final int CHUNK_SHIFT = 4; // 2^4 = 16
 	
 	private int lastPx = Integer.MIN_VALUE;
@@ -27,10 +27,8 @@ public class GameEngine implements Runnable {
     
     private Vector3f cameraPos;
 	
-	public GameEngine(MeshQueue queue, WorldMap map) {
+	public GameEngine(MeshQueue queue) {
 		meshQueue = queue;
-		worldMap = map;
-		
 	}
 	
 	public void gameLoop() {

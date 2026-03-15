@@ -1,7 +1,5 @@
 package guiHandler;
 
-import org.lwjgl.opengl.Display;
-
 import bufferManager.SceneBufferManager;
 import imgui.ImGui;
 import main.GameState;
@@ -50,14 +48,14 @@ public class F3Menu {
 			
 			ImGui.text("VBO");
 			float vboFill = 1.0f - (float) SceneBufferManager.vboFreeBytes / SceneBufferManager.bufferSize;
-			ImGui.progressBar(vboFill, String.format("%.1f / 256 MB", (SceneBufferManager.bufferSize - SceneBufferManager.vboFreeBytes) / (1024f * 1024f)));
+			ImGui.progressBar(vboFill, String.format("%.1f / 1024 MB", (SceneBufferManager.bufferSize - SceneBufferManager.vboFreeBytes) / (1024f * 1024f)));
 			ImGui.text("Free regions: " + SceneBufferManager.vboFreeRegions);
 
 			ImGui.separator();
 
 			ImGui.text("EBO");
 			float eboFill = 1.0f - (float) SceneBufferManager.eboFreeBytes / SceneBufferManager.bufferSize;
-			ImGui.progressBar(eboFill, String.format("%.1f / 256 MB", (SceneBufferManager.bufferSize - SceneBufferManager.eboFreeBytes) / (1024f * 1024f)));
+			ImGui.progressBar(eboFill, String.format("%.1f / 1024 MB", (SceneBufferManager.bufferSize - SceneBufferManager.eboFreeBytes) / (1024f * 1024f)));
 			ImGui.text("Free regions: " + SceneBufferManager.eboFreeRegions);
 
 			ImGui.end();

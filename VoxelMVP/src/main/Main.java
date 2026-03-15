@@ -28,7 +28,7 @@ public class Main {
             meshThreader = new MeshQueue(bufferManager);
             renderer.bindBufferMananger(bufferManager);
             
-            gameEngine = new GameEngine(meshThreader,gameMap);
+            gameEngine = new GameEngine(meshThreader);
             gameEngineThread = new Thread(gameEngine);
             
             Main.shaderProgram.bind(); 

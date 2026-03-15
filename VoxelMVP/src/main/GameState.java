@@ -26,7 +26,7 @@ public class GameState {
 	
 	public void integrate(double t, double dt, InputState input) {
 		//Should move camera in this state
-		final float speed = 10.0f;
+		final float speed = 50.0f;
 		
         for (Entity entity : entities) {
         	

@@ -1,8 +1,9 @@
 package main;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Random;
+
+import saveHelper.TerrainGeneratorClaude;
+import saveHelper.TerrainGeneratorGPT;
 
 public class WorldMap {
 	public final static int worldSize = 32;
@@ -10,14 +11,19 @@ public class WorldMap {
 	
 	private static final Chunk[] chunks = new Chunk[worldSize * worldHeight * worldSize];
 	public static final int blockCacheSize = 18;
+	private final long seed = 12345L;
 	
 	private Random random = new Random();
 	
 	public WorldMap() {
+		TerrainGeneratorGPT gen = new TerrainGeneratorGPT(seed);
+		
 		for(int x = 0; x <worldSize; x++) {
         	for(int y = 0; y < worldHeight; y++) {
         		for (int z = 0; z < worldSize; z++) {
-            		chunks[chunkIndex(x, y, z)] = new Chunk(x,y,z);
+        			Chunk chunk = new Chunk(x, y, z);
+        			gen.generate(chunk, x, y, z);
+                    chunks[chunkIndex(x, y, z)] = chunk;
             	}
         	}
         	
