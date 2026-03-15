@@ -1,53 +1,40 @@
 package meshThreader;
 
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 
 import bufferManager.SceneBufferManager;
 
 import main.Chunk;
 public class MeshQueue {
 
+    private static final int THREAD_COUNT = Runtime.getRuntime().availableProcessors() - 1;
     private final SceneBufferManager bufferManager;
-    private static final int THREAD_COUNT = Runtime.getRuntime().availableProcessors() - 1;;
-    private static final int MAX_FREE_THREADS = 20;
 
-    private final ExecutorService executor;
-    private final Queue<MeshThread> freeThreads = new ConcurrentLinkedQueue<MeshThread>();
+    private final BlockingQueue<Chunk> meshQueue = new ArrayBlockingQueue<Chunk>(256);
+    private final List<Thread> workers = new ArrayList<Thread>();
 
-    public MeshQueue(SceneBufferManager input) {
-        bufferManager = input;
-        executor = Executors.newFixedThreadPool(THREAD_COUNT);
+    public MeshQueue(SceneBufferManager manager) {
+    	bufferManager = manager;
+    	for (int i = 0; i < THREAD_COUNT; i++) {
+    	    Thread t = new Thread(new MeshThread(bufferManager, meshQueue));
+    	    t.start();
+    	    workers.add(t);
+    	}
     }
 
     //Returns true if updated, false if not
     public boolean submit(Chunk chunk) {
 
-        MeshThread worker = freeThreads.poll();
+    	if (!chunk.needsUpdate || chunk.queuedForMeshing)
+    	    return false;
 
-        if (worker == null) {
-            worker = new MeshThread(bufferManager, this);
-        }
-        
-        if (chunk.needsUpdate) {
-        	chunk.needsUpdate = false;
-        	worker.setChunk(chunk);
-        	executor.submit(worker);
-        	return true;
-        } else {
-        	return false;
-        }
+    	chunk.queuedForMeshing = true;
+    	meshQueue.offer(chunk);
+    	
+    	return true;
     }
 
-    public void returnWorker(MeshThread worker) {
-        if (freeThreads.size() < MAX_FREE_THREADS) {
-            freeThreads.offer(worker);
-        }
-    }
-
-    public void shutdown() {
-        executor.shutdown();
-    }
 }

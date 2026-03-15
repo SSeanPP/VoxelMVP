@@ -12,12 +12,14 @@ public class Chunk {
 	
 	public final int chunkSize = 16;
 	public boolean needsUpdate;
+	public boolean queuedForMeshing;
 	
 	public short[][][] blocks = new short[chunkSize][chunkSize][chunkSize];
 	
 	public Chunk(long coord) {
 		this.chunkCoord = coord;
 		this.needsUpdate = true;
+		this.queuedForMeshing = false;
 		
 		for(int i = 0; i < chunkSize; i++) {
 			for (int k = 0; k < chunkSize; k++) {

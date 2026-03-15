@@ -2,8 +2,7 @@ package meshThreader;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
+import java.util.concurrent.BlockingQueue;
 
 import bufferManager.SceneBufferManager;
 import main.Block;
@@ -21,8 +20,7 @@ public class MeshThread implements Runnable {
 	private short[][][] localBlockCache = new short[WorldMap.blockCacheSize][WorldMap.blockCacheSize][WorldMap.blockCacheSize];
 	
 	private SceneBufferManager bufferManager;
-	private Chunk chunk;
-	private MeshQueue queue;
+	private BlockingQueue<Chunk> queue;
 	
 	private int bx = 0;
 	private int by = 0;
@@ -38,26 +36,27 @@ public class MeshThread implements Runnable {
 	private final int ATLAS_SIZE = 16;   // tiles per row
 	private final float TILE_SIZE = 1f / ATLAS_SIZE;
 	
-	public MeshThread (SceneBufferManager manager, MeshQueue queueInput) {
+	public MeshThread (SceneBufferManager manager, BlockingQueue<Chunk> queueInput) {
 		this.bufferManager = manager;
 		this.queue = queueInput;
 	}
 	
-	public void setChunk(Chunk chunk) {
-        this.chunk = chunk;
-    }
-	
 	@Override
     public void run() {
-        if (chunk != null) {
-            meshChunk(chunk);
-            chunk = null; // optional, clean up for reuse
+		while (!Thread.currentThread().isInterrupted()) {
+            try {
+                Chunk chunk = queue.take();
+                meshChunk(chunk);
+            } catch (InterruptedException e) {
+                break;
+            }
         }
-        
-        queue.returnWorker(this);
     }
 	
 	public void meshChunk(Chunk chunk) {
+		
+		chunk.needsUpdate = false;
+		chunk.queuedForMeshing = false;
 		
 		vertexPtr = 0;
 		indexPtr = 0;
@@ -149,7 +148,9 @@ public class MeshThread implements Runnable {
 		//ib.put(indices, 0, indexPtr);
 		//ib.flip();
 		
+		
 		chunk.allocation.setCounts(indexPtr);
+		
 	}
 	
 	private static final float[][][] FACE_VERTICES = {
