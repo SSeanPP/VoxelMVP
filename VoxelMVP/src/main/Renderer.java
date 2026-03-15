@@ -111,7 +111,8 @@ public class Renderer {
         
         glEnable(GL11.GL_TEXTURE_2D);
         
-        glClearColor(0.2f, 0.3f, 0.4f, 1f);
+        glClearColor(0.3f, 0.55f, 0.75f, 1f);
+        //glClearColor(0.2f, 0.3f, 0.4f, 1f);
         //GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE);
         Mouse.setGrabbed(true);
         
