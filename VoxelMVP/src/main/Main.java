@@ -2,14 +2,11 @@ package main;
 
 import resourceLoader.ResourceLoader;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.lwjgl.opengl.Display;
 
 import bufferManager.SceneBufferManager;
+import imgui.ImGui;
 import meshThreader.MeshQueue;
-import meshThreader.MeshThread;
 
 
 public class Main {
@@ -30,7 +27,7 @@ public class Main {
 	private static int fps;
 	private static int frames;
 	private static long fpsTimer;
-	
+	private static long now;
 	
 	
     public static void main(String[] args) throws InterruptedException {
@@ -50,21 +47,18 @@ public class Main {
             fpsTimer = System.currentTimeMillis();
             frames = 0;
             
+            Main.shaderProgram.bind(); 
+            
             Texture atlas = testGameSetup();
             renderer.bindTextureAtlas(atlas);
              
             gameEngineThread.start();
             
             while(!Display.isCloseRequested()) {
-            	long now = System.nanoTime();
+            	now = System.nanoTime();
             	delta = (now - lastTime) / 1000000000f;
             	lastTime = now;
-            	
-            	Main.shaderProgram.bind();
-            	
-            	for(int i = 0; i < 20; i++) {
-            		meshThreader.submit(gameMap.getRandomChunk());
-            	}
+         
             	
             	renderer.render(gameEngine.getPublishedState(), gameEngine.getPublishedAlpha());
             	
@@ -83,15 +77,15 @@ public class Main {
         } finally {
             gameEngine.running = false;
             gameEngineThread.join();
+            ImGui.shutdownOpenGL3();
             shaderProgram.cleanup();
             renderer.cleanup();
-            
         }
     }
     
     public static void init() throws Exception {
     	
-    	renderer.initDisplay(960,540);
+    	renderer.initDisplay(1920,1080);
     	
         shaderProgram = new ShaderProgram();
         shaderProgram.createVertexShader(ResourceLoader.loadResourceAsString("resources/vertex.vs"));

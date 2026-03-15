@@ -1,6 +1,5 @@
 package main;
 
-import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
@@ -8,9 +7,13 @@ import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL14;
+import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL32;
 
 import bufferManager.SceneBufferManager;
+import imgui.ImGui;
+import imgui.ImInput;
 
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL13.*;
@@ -26,13 +29,17 @@ public class Renderer {
 	private SceneBufferManager bufferManager;
 	private Projection projection;
 	
+	private boolean[] open = { true };
+	private boolean wasGuiOpen = false;
+	
 	private Vector3f renderPos = new Vector3f();
-	private Matrix4f renderMatrix = new Matrix4f();
+	//private Matrix4f renderMatrix = new Matrix4f();
 	private Camera camera;
 	
 	private Texture textAtlas;
 	
 	public Renderer () {
+		
 	}
 	
 	public void bindBufferMananger(SceneBufferManager main) {
@@ -51,7 +58,6 @@ public class Renderer {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		
 		camera = state.getCamera();
-		camera.updateCameraMatrix(Mouse.getDX(), Mouse.getDY());
 		
 		Main.shaderProgram.setUniform("viewMatrix", camera.handleCameraLerpAndMatrix(alpha, renderPos));
 		Main.shaderProgram.setUniform("projectionMatrix", projection.getProjMatrix());
@@ -69,11 +75,46 @@ public class Renderer {
 		        chunk.allocation.vertexOffset / bufferManager.getStride()
 		    );
 			//int error = GL11.glGetError();
-			
+			//if (error != 0) System.out.println("GL error after newFrame: " + error);
 			//System.out.println("IndexCount: " +chunk.allocation.indexCount+" IndexOffset: "+ chunk.allocation.indexOffset + " VertexOffset: " + chunk.allocation.vertexOffset / 5);
 		}
 		
+		if(state.getF3state()) {
+			if (state.getF3state() != wasGuiOpen) {
+		        Mouse.setGrabbed(!state.getF3state());
+		        wasGuiOpen = state.getF3state();
+		    }
+			
+			ImInput.handleMouseAndScroll();
+			ImGui.newFrame();
+			ImGui.setNextWindowPos(100, 100);
+
+			ImGui.begin("Test Window");
+
+			if (ImGui.button("Click me!")) {
+			    System.out.println("Button pressed!");
+			}
+			ImGui.showDemoWindow(open);
+			ImGui.end();
+
+			GL11.glEnable(GL11.GL_BLEND);
+			GL14.glBlendEquation(GL14.GL_FUNC_ADD);
+			GL14.glBlendFuncSeparate(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, GL11.GL_ONE, GL11.GL_ONE_MINUS_SRC_ALPHA);
+
+			ImGui.render();
+			
+			GL11.glDisable(GL11.GL_BLEND);
+			
+		} else {
+			if (state.getF3state() != wasGuiOpen) {
+		        Mouse.setGrabbed(!state.getF3state());
+		        wasGuiOpen = state.getF3state();
+		    }
+			camera.updateCameraMatrix(Mouse.getDX(), Mouse.getDY());
+		}
+		
 		gameInput();
+		
 		Display.update();
 	}
 	
@@ -82,10 +123,16 @@ public class Renderer {
         Display.setTitle("LWJGL 2 Simple 3D Loop");
         
         Display.create();
-        Display.setLocation(0, 0);
+        
+        //IMGUI init
+        ImGui.createContext();
+    	ImGui.setDisplaySize(width, height);
+    	ImGui.initOpenGL3();
+        
+        //Display.setLocation(0, 0);
         System.out.println("OpenGL version: " + GL11.glGetString(GL11.GL_VERSION));
         
-        glViewport(0, 0, width, height);
+        glViewport(0, 0, width, height);        
         
         this.projection = new Projection(width, height);
         //System.out.println(projection.getProjMatrix());
@@ -97,6 +144,7 @@ public class Renderer {
         glEnable(GL11.GL_TEXTURE_2D);
         
         glClearColor(0.2f, 0.3f, 0.4f, 1f);
+        //GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE);
         Mouse.setGrabbed(true);
         
     }
@@ -111,14 +159,12 @@ public class Renderer {
 			int keyReference = Keyboard.getEventKey();
 			if (keyReference == Keyboard.KEY_ESCAPE) {
 				System.exit(0);
-			} else {
+			} else if (!ImGui.wantCaptureKeyboard()) {
 				Input.inputQueue.add(new Input(keyPress, keyReference));
+			} else {
+				ImInput.handleKeyboardEvent(keyPress, keyReference);
 			}
-			
-			
 		}
-		
-		
 	}
 	
 	public void createUniforms() {

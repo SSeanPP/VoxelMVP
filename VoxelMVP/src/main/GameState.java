@@ -2,9 +2,7 @@ package main;
 
 import java.util.ArrayList;
 
-import org.joml.Matrix4f;
 import org.joml.Vector3f;
-import org.lwjgl.input.Mouse;
 
 public class GameState {
 	
@@ -12,16 +10,16 @@ public class GameState {
 	private ArrayList<Entity> entities = new ArrayList<Entity>();
 	private Camera camera;
 	private Vector3f pos;
-	private final float speed = 2.0f; // units per second
 	
 	private Vector3f forward = new Vector3f();
     private Vector3f right = new Vector3f();
     private Vector3f up = new Vector3f(0, 1, 0);
     private float yaw = 0.0f;
+    private boolean isF3Open;
     
 	public GameState() {
 		camera = new Camera();
-		
+		isF3Open = false;
 	}
 	
 	public void integrate(double t, double dt, InputState input) {
@@ -101,6 +99,14 @@ public class GameState {
     
     public Camera getCamera() {
     	return camera;
+    }
+    
+    public boolean getF3state() {
+    	return this.isF3Open;
+    }
+    
+    public void setF3state(boolean input) {
+    	this.isF3Open = input;
     }
     
 }

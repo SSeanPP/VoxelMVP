@@ -22,17 +22,22 @@ public class MeshQueue {
         executor = Executors.newFixedThreadPool(THREAD_COUNT);
     }
 
-    public void submit(Chunk chunk) {
+    //Returns true if updated, false if not
+    public boolean submit(Chunk chunk) {
 
         MeshThread worker = freeThreads.poll();
 
         if (worker == null) {
             worker = new MeshThread(bufferManager, this);
         }
-
-        worker.setChunk(chunk);
-
-        executor.submit(worker);
+        
+        if (chunk.needsUpdate) {
+        	worker.setChunk(chunk);
+        	executor.submit(worker);
+        	return true;
+        } else {
+        	return false;
+        }
     }
 
     public void returnWorker(MeshThread worker) {

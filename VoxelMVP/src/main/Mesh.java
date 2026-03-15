@@ -12,6 +12,8 @@ import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
+//Depreciated.
+
 public class Mesh {
 	private int numVertices;
     private int vaoId;

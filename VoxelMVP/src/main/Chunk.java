@@ -11,11 +11,13 @@ public class Chunk {
 	public final Matrix4f modelMatrix;
 	
 	public final int chunkSize = 16;
+	public boolean needsUpdate;
 	
 	public short[][][] blocks = new short[chunkSize][chunkSize][chunkSize];
 	
 	public Chunk(long coord) {
 		this.chunkCoord = coord;
+		this.needsUpdate = true;
 		
 		for(int i = 0; i < chunkSize; i++) {
 			for (int k = 0; k < chunkSize; k++) {

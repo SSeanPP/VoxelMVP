@@ -50,7 +50,7 @@ public class SceneBufferManager {
 	
 	public SceneBufferManager() {
 		
-		long bufferSize = 1024L * 1024L * 256L; // 256MB example
+		long bufferSize = 1024L * 1024L * 256L; // 256MB
 		
 		vertexOffset.set(0);
 		indexOffset.set(0);
@@ -98,6 +98,7 @@ public class SceneBufferManager {
 		
 		megaEBO = ARBMapBufferRange.glMapBufferRange( GL15.GL_ELEMENT_ARRAY_BUFFER, 0, bufferSize, GL30.GL_MAP_WRITE_BIT  | ARBBufferStorage.GL_MAP_PERSISTENT_BIT | ARBBufferStorage.GL_MAP_COHERENT_BIT, null);
 		
+		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
 		glBindVertexArray(0);
 	}
 	

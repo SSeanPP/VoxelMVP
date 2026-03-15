@@ -29,7 +29,6 @@ public final class ChunkCoord {
     }
 
     public static int unpackY(long key) {
-        // If Y can be negative, you'd apply the same sign-extension logic here
         return (int)(key & 0xFF);
     }
 }

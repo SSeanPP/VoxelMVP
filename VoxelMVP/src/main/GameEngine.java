@@ -1,6 +1,5 @@
 package main;
 
-import org.joml.Matrix4f;
 import org.lwjgl.input.Keyboard;
 
 import meshThreader.MeshQueue;
@@ -14,11 +13,19 @@ public class GameEngine implements Runnable {
 	private InputState inputState = new InputState();
 	
 	private MeshQueue meshQueue;
+	private int chunksProcessed = 0;
+	private int loopTotal = 0;
+	
 	private WorldMap worldMap;
+	private final int renderSize = 32 * 32 * 16;
+	
+	double newTime;
+    double frameTime;
 	
 	public GameEngine(MeshQueue queue, WorldMap map) {
 		meshQueue = queue;
 		worldMap = map;
+		
 	}
 	
 	public void gameLoop() {
@@ -31,17 +38,26 @@ public class GameEngine implements Runnable {
 	    while ( running )
 	    {
 	    	//System.out.println("running");
-	        double newTime = System.nanoTime() / 1000000000.0;
-	        double frameTime = (newTime - currentTime);
+	    	drainInputQueue();
+	    	newTime = System.nanoTime() / 1000000000.0;
+	        frameTime = (newTime - currentTime);
 	        if ( frameTime > 0.25 )
 	            frameTime = 0.25;
 	        currentTime = newTime;
 
 	        accumulator += frameTime;
-
+	        
 	        while ( accumulator >= dt )
 	        {
-	        	drainInputQueue();
+	        	// Responsible for random chunk updates
+	        	chunksProcessed = 0;
+	        	loopTotal = 0;
+	        	while(chunksProcessed < 20 && loopTotal != renderSize) {
+	        		if(meshQueue.submit(worldMap.getRandomChunk())) {
+	        			this.chunksProcessed++;
+	        		}
+	        		loopTotal++;
+	        	}
 	        	
 	        	state.integrate(t, dt, inputState);
 	        	
@@ -85,6 +101,12 @@ public class GameEngine implements Runnable {
                 case Keyboard.KEY_LSHIFT:
                     inputState.up = input.getEventState();
                     break;
+                case Keyboard.KEY_F3:
+                	if(input.getEventState()) {
+                		boolean newF3 = state.getF3state();
+                    	state.setF3state(!newF3);
+                	}
+                	break;
             }
         }
     }

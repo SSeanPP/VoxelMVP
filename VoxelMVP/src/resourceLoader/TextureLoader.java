@@ -1,7 +1,6 @@
 package resourceLoader;
 
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 
@@ -55,7 +54,7 @@ public class TextureLoader {
                 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
 
         glBindTexture(GL_TEXTURE_2D, 0);
-
+        
         return textureID;
     }
 }
