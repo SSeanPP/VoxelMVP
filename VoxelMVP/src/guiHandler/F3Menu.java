@@ -1,5 +1,7 @@
 package guiHandler;
 
+import org.lwjgl.opengl.Display;
+
 import bufferManager.SceneBufferManager;
 import imgui.ImGui;
 import main.GameState;
@@ -9,16 +11,30 @@ public class F3Menu {
 	private double renderStartTime = System.nanoTime();
 	private double timeTaken;
 	private boolean hasFinished = false;
+	
+	private static int fps;
+	private static int frames;
+	private static long fpsTimer;
+	
+	
+	Runtime rt = Runtime.getRuntime();
+    long usedMB;
+    
 	public F3Menu() {
-		
+		fpsTimer = System.currentTimeMillis();
+	    frames = 0;
+	    fps = 0;
 	}
 	
 	public void run(GameState state) {
 		if(state.getF3state()) {
-			ImGui.setNextWindowPos(100, 100);
+			
+			usedMB = (rt.totalMemory() - rt.freeMemory()) / (1024 * 1024);
+			
+			ImGui.setNextWindowPos(10, 10);
 
 			
-			ImGui.begin("GPU Buffers");
+			ImGui.begin("Meshing");
 			
 			ImGui.text("Meshing Progress");
 			if (WorldMap.allMeshed() && !hasFinished) {
@@ -46,7 +62,18 @@ public class F3Menu {
 
 			ImGui.end();
 			
-			
+			ImGui.setNextWindowPos(210, 10);
+			ImGui.begin("General Data");
+			ImGui.text("Used MB: " + usedMB);
+			frames++;
+        	if (System.currentTimeMillis() - fpsTimer >= 1000) {
+        	    fps = frames;
+        	    frames = 0;
+        	    fpsTimer += 1000;
+        	}
+        	
+        	ImGui.text("FPS: " + fps);
+			ImGui.end();
 		}
 	}
 	

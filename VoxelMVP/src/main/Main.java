@@ -20,16 +20,9 @@ public class Main {
 	public static final TextureCache textureAtlas = new TextureCache();
 	public static SceneBufferManager bufferManager;
 	
-	private static int fps;
-	private static int frames;
-	private static long fpsTimer;
-	
-	
-	
     public static void main(String[] args) throws InterruptedException {
     	
     	try {
-    		
             init();
             bufferManager = new SceneBufferManager();
             meshThreader = new MeshQueue(bufferManager);
@@ -37,11 +30,6 @@ public class Main {
             
             gameEngine = new GameEngine(meshThreader,gameMap);
             gameEngineThread = new Thread(gameEngine);
-            
-            Runtime rt = Runtime.getRuntime();
-            long usedMB = (rt.totalMemory() - rt.freeMemory()) / (1024 * 1024);
-            fpsTimer = System.currentTimeMillis();
-            frames = 0;
             
             Main.shaderProgram.bind(); 
             
@@ -51,17 +39,7 @@ public class Main {
             gameEngineThread.start();
             
             while(!Display.isCloseRequested()) {
-            	
             	renderer.render(gameEngine.getPublishedState(), gameEngine.getPublishedAlpha());
-            	
-            	frames++;
-            	if (System.currentTimeMillis() - fpsTimer >= 1000) {
-            	    fps = frames;
-            	    frames = 0;
-            	    fpsTimer += 1000;
-            	    usedMB = (rt.totalMemory() - rt.freeMemory()) / (1024 * 1024);
-            	    Display.setTitle("FPS: " + fps + " | Used MB: " + usedMB);
-            	}
             }
           
         } catch (Exception excp) {
