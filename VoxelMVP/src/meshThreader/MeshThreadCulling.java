@@ -9,7 +9,7 @@ import main.Block;
 import main.Chunk;
 import main.WorldMap;
 
-public class MeshThread implements Runnable {
+public class MeshThreadCulling implements Runnable {
 	
 	private float[] vertices = new float[120000];
 	private int[] indices = new int[80000];
@@ -36,7 +36,7 @@ public class MeshThread implements Runnable {
 	private final int ATLAS_SIZE = 16;   // tiles per row
 	private final float TILE_SIZE = 1f / ATLAS_SIZE;
 	
-	public MeshThread (SceneBufferManager manager, BlockingQueue<Chunk> queueInput) {
+	public MeshThreadCulling (SceneBufferManager manager, BlockingQueue<Chunk> queueInput) {
 		this.bufferManager = manager;
 		this.queue = queueInput;
 	}
