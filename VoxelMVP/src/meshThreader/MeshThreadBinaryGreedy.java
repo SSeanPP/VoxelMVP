@@ -338,8 +338,8 @@ public class MeshThreadBinaryGreedy implements Runnable {
 
         // q.x = row axis, q.y = column axis within the plane
         // expand to world coords depending on face orientation
-        int r0 = q.x,       r1 = q.x + q.w;
-        int c0 = q.y,       c1 = q.y + q.h;
+        int r0 = q.x;
+        int c0 = q.y;
         int s  = axisPos;
 
         switch (face) {
