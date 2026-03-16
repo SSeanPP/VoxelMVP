@@ -87,8 +87,6 @@ public class Renderer {
 		
 		if(!guiHelper.runGUI(state, totalIndices, totalVertices)) {
 			camera.updateCameraMatrix(Mouse.getDX(), Mouse.getDY());
-		} else {
-			System.out.println(camera.getPosition());
 		}
 		
 		gameInput();

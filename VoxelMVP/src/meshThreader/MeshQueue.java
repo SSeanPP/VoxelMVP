@@ -17,14 +17,17 @@ public class MeshQueue {
     private final List<Thread> workers = new ArrayList<Thread>();
 
     public MeshQueue(SceneBufferManager manager) {
-    	THREAD_COUNT = Runtime.getRuntime().availableProcessors() - 2;
+    	THREAD_COUNT = (Runtime.getRuntime().availableProcessors() /2) -2;
     	if (THREAD_COUNT < 1) {
     		THREAD_COUNT = 1;
     	}
     	
+    			
+    	System.out.println("Mesh threads spawned: "+ THREAD_COUNT);
+    	
     	bufferManager = manager;
     	for (int i = 0; i < THREAD_COUNT; i++) {
-    	    Thread t = new Thread(new MeshThreadCulling(bufferManager, meshQueue));
+    	    Thread t = new Thread(new MeshThreadBinaryGreedy(bufferManager, meshQueue));
     	    t.start();
     	    workers.add(t);
     	}
