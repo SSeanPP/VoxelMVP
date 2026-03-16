@@ -27,7 +27,7 @@ public class MeshQueue {
     	
     	bufferManager = manager;
     	for (int i = 0; i < THREAD_COUNT; i++) {
-    	    Thread t = new Thread(new MeshThreadCulling(bufferManager, meshQueue));
+    	    Thread t = new Thread(new MeshThreadBinaryGreedy(bufferManager, meshQueue));
     	    t.start();
     	    workers.add(t);
     	}
