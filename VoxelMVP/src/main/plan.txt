@@ -1,0 +1,35 @@
+Memory:
+    Chunk[] toroidal array (SSBO index per slot)
+    SSBO draw buffer
+    Queue<EvictionRequest> evictionQueue
+    MeshPriorityQueue meshQueue
+    GLsync lastFence
+
+EvictionChecker (game thread, 20 TPS):
+    if player moved:
+        compute leaving chunks
+        push EvictionRequest to evictionQueue
+
+Render thread (each frame):
+    // 1. Wait for previous frame to finish and free slots
+    if (lastFence != null):
+        glClientWaitSync(lastFence, GL_SYNC_FLUSH_COMMANDS_BIT, timeout)
+        glDeleteSync(lastFence)
+        lastFence = null
+
+        while ((req = evictionQueue.poll()) != null):
+            null SSBO slot
+            push old allocation + req.newChunk → meshQueue
+
+    // 2. Draw
+    glMultiDrawElementsIndirect(...)
+
+    // 3. Insert fence for this frame
+    lastFence = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0)
+
+Mesh thread (worker threads):
+    while (chunk = meshQueue.pop()):
+        build mesh
+        request allocation
+        write VBO/EBO
+        write SSBO slot (commit)

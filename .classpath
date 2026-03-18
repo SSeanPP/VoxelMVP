@@ -22,5 +22,10 @@
 	</classpathentry>
 	<classpathentry kind="lib" path="C:/Program Files/Java/lwjgl-2.9.3/jar/joml-1.10.7.jar" sourcepath="C:/Program Files/Java/lwjgl-2.9.3/jar/joml-1.10.7-sources.jar"/>
 	<classpathentry kind="lib" path="C:/Program Files/Java/lwjgl-2.9.3/jar/jinput.jar"/>
+	<classpathentry kind="lib" path="C:/Users/seanp/Documents/imgui/imgui-lwjgl2-jni/out/imgui-lwjgl2-jni.jar">
+		<attributes>
+			<attribute name="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value="C:/Users/seanp/Documents/imgui/imgui-lwjgl2-jni/out"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

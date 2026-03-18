@@ -5,6 +5,7 @@ import org.joml.Matrix4f;
 import bufferManager.Allocation;
 
 public class Chunk {
+	public boolean hasBlocks = false;
 	public Allocation allocation = null; 
 	
 	public final int x;
