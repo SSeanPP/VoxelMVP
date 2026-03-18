@@ -29,8 +29,6 @@ public class GameEngine implements Runnable {
 	
 	public GameEngine(MeshQueue queue) {
 		meshQueue = queue;
-		
-		updateChunksAroundVector3f(new Vector3f(256,264,256));
 	}
 	
 	public void gameLoop() {

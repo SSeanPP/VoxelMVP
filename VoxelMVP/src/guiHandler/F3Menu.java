@@ -8,7 +8,7 @@ import main.WorldMap;
 import meshThreader.MeshQueue;
 
 public class F3Menu {
-	private double renderStartTime = System.nanoTime();
+	private double renderStartTime;
 	private double timeTaken;
 	private boolean hasFinished = false;
 	
@@ -37,7 +37,9 @@ public class F3Menu {
 			ImGui.begin("Meshing");
 			
 			ImGui.text("Meshing Progress");
-			if (MeshQueue.meshQueue.isEmpty() && !hasFinished) {
+			/*
+			 * 
+			 * if (MeshQueue.Empty && !hasFinished) {
 				timeTaken = (System.nanoTime() - renderStartTime) / 1000000000.0;
 				hasFinished=true;
 			} else if (!hasFinished) {
@@ -45,6 +47,9 @@ public class F3Menu {
 			}
 			
 			ImGui.text("Time to mesh = "+ (timeTaken));
+			 * 
+			 * */
+			
 			
 			ImGui.separator();
 			

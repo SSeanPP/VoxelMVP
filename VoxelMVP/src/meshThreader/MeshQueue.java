@@ -1,9 +1,11 @@
 package meshThreader;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.PriorityBlockingQueue;
 
 import org.joml.Vector3f;
 
@@ -16,8 +18,25 @@ public class MeshQueue {
     private static int THREAD_COUNT;
     private final SceneBufferManager bufferManager;
     
-    private Vector3f playerPos = Settings.spawnPoint;
-    public static final BlockingQueue<Chunk> meshQueue = new ArrayBlockingQueue<Chunk>(Settings.WORLD_SIZE_WIDTH*Settings.WORLD_SIZE_HEIGHT*Settings.WORLD_SIZE_WIDTH);
+    private volatile Vector3f playerChunkPos = Settings.spawnChunk;
+    public final BlockingQueue<Chunk> meshQueue = new PriorityBlockingQueue<Chunk>((Settings.RENDER_DISTANCE*Settings.RENDER_HEIGHT*Settings.RENDER_DISTANCE),
+    		new Comparator<Chunk>() {
+		    	public int compare(Chunk a, Chunk b) {
+		            int dax = (int) (a.x - playerChunkPos.x);
+		            int day = (int) (a.y - playerChunkPos.y);
+		            int daz = (int) (a.z - playerChunkPos.z);
+		            int dbx = (int) (b.x - playerChunkPos.x);
+		            int dby = (int) (b.y - playerChunkPos.y);
+		            int dbz = (int) (b.z - playerChunkPos.z);
+		            
+		            int distA = Math.max(Math.abs(dax), Math.max(Math.abs(day), Math.abs(daz)));
+		            int distB = Math.max(Math.abs(dbx), Math.max(Math.abs(dby), Math.abs(dbz)));
+		            
+		            return distA < distB ? -1 : (distA > distB ? 1 : 0);
+		        }
+    		}
+    );
+    
     private final List<Thread> workers = new ArrayList<Thread>();
 
     public MeshQueue(SceneBufferManager manager) {

@@ -38,6 +38,10 @@ public class Main {
              
             gameEngineThread.start();
             
+            for(Chunk chunk : WorldMap.getChunks()) {
+            	meshThreader.submit(chunk);
+            }
+            
             while(!Display.isCloseRequested()) {
             	renderer.render(gameEngine.getPublishedState(), gameEngine.getPublishedAlpha());
             }
