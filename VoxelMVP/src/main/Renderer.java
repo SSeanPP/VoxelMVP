@@ -127,7 +127,7 @@ public class Renderer {
     	ImGui.setDisplaySize(width, height);
     	ImGui.initOpenGL3();
         
-        Display.setLocation(0, 0);
+        //Display.setLocation(0, 0);
         System.out.println("OpenGL version: " + GL11.glGetString(GL11.GL_VERSION));
         
         glViewport(0, 0, width, height);        

@@ -19,7 +19,7 @@ public class TerrainGeneratorGPT {
     }
 
     public void generate(Chunk chunk, int cx, int cy, int cz) {
-        short[][][] blocks = chunk.getBlocks();
+        short[] blocks = chunk.getBlocks();
         int size = chunk.chunkSize;
 
         for (int lx = 0; lx < size; lx++) {
@@ -36,7 +36,7 @@ public class TerrainGeneratorGPT {
 
                     // Air above surface
                     if (wy > surfaceY) {
-                        blocks[lx][ly][lz] = Block.air.id;
+                        blocks[Chunk.blockIndex(lx,ly,lz)] = Block.air.id;
                         continue;
                     }
 
@@ -44,18 +44,18 @@ public class TerrainGeneratorGPT {
                     if (wy < surfaceY - 2) {
                         float cave = smoothNoise3D(wx / CAVE_SCALE, wy / CAVE_SCALE, wz / CAVE_SCALE);
                         if (cave > CAVE_THRESHOLD) {
-                            blocks[lx][ly][lz] = Block.air.id;
+                            blocks[Chunk.blockIndex(lx,ly,lz)] = Block.air.id;
                             continue;
                         }
                     }
 
                     // Block type
                     if (wy == surfaceY) {
-                        blocks[lx][ly][lz] = Block.grass.id;
+                        blocks[Chunk.blockIndex(lx,ly,lz)] = Block.grass.id;
                     } else if (wy >= surfaceY - 3) {
-                        blocks[lx][ly][lz] = Block.dirt.id;
+                        blocks[Chunk.blockIndex(lx,ly,lz)] = Block.dirt.id;
                     } else {
-                        blocks[lx][ly][lz] = Block.stone.id;
+                        blocks[Chunk.blockIndex(lx,ly,lz)] = Block.stone.id;
                     }
                 }
             }

@@ -1,5 +1,5 @@
-Memory:
-    Chunk[] toroidal array (SSBO index per slot)
+Memory stuff:
+    Chunk[] toroidal array (Chunks in render distance, holds SSBO index per slot)
     SSBO draw buffer
     Queue<EvictionRequest> evictionQueue
     MeshPriorityQueue meshQueue

@@ -41,7 +41,7 @@ public class TerrainGeneratorClaude {
      * cx, cy, cz are chunk coordinates (not block coordinates).
      */
     public void generate(Chunk chunk, int cx, int cy, int cz) {
-        short[][][] blocks = chunk.getBlocks();
+        short[] blocks = chunk.getBlocks();
         int chunkSize = chunk.chunkSize;
 
         for (int lx = 0; lx < chunkSize; lx++) {
@@ -79,7 +79,7 @@ public class TerrainGeneratorClaude {
                     if (wy >= surfaceY-3) density = Math.max(density, 0.1f);
                     
                     if (density <= 0.0f) {
-                        blocks[lx][ly][lz] = Block.air.id;
+                        blocks[Chunk.blockIndex(lx,ly,lz)] = Block.air.id;
                         continue;
                     }
 
@@ -96,15 +96,15 @@ public class TerrainGeneratorClaude {
                     // Carve when both samples are near zero (tube intersection)
                     float caveDensity = cave1 * cave1 + cave2 * cave2;
                     if (caveDensity < CAVE_THRESHOLD) {
-                        blocks[lx][ly][lz] = Block.air.id;
+                        blocks[Chunk.blockIndex(lx,ly,lz)] = Block.air.id;
                         continue;
                     }
 
                     // Block type by depth
                     if (wy > surfaceY - 4) {
-                        blocks[lx][ly][lz] = Block.dirt.id;
+                        blocks[Chunk.blockIndex(lx,ly,lz)] = Block.dirt.id;
                     } else {
-                        blocks[lx][ly][lz] = Block.stone.id;
+                        blocks[Chunk.blockIndex(lx,ly,lz)] = Block.stone.id;
                     }
                 }
             }
@@ -113,8 +113,8 @@ public class TerrainGeneratorClaude {
         for (int lx=0; lx<chunkSize; lx++) {
             for (int lz=0; lz<chunkSize; lz++) {
                 for (int ly=chunkSize-1; ly>=0; ly--) {
-                    if (blocks[lx][ly][lz] != Block.air.id) {
-                        blocks[lx][ly][lz] = Block.grass.id;
+                    if (blocks[Chunk.blockIndex(lx,ly,lz)] != Block.air.id) {
+                        blocks[Chunk.blockIndex(lx,ly,lz)] = Block.grass.id;
                         break;
                     }
                 }

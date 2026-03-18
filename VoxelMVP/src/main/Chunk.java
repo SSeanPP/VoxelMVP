@@ -18,33 +18,11 @@ public class Chunk {
 	public boolean needsUpdate;
 	public boolean queuedForMeshing;
 	
-	public short[][][] blocks = new short[chunkSize][chunkSize][chunkSize];
+	public short[] blocks = new short[16 * 16 * 16];
 	
 	public Chunk(int xi, int yj, int zk) {
 		this.needsUpdate = true;
 		this.queuedForMeshing = false;
-		
-		for(int i = 0; i < chunkSize; i++) {
-			for (int k = 0; k < chunkSize; k++) {
-				blocks[i][15][k] = Block.grass.id;
-				blocks[i][14][k] = Block.dirt.id;
-				blocks[i][13][k] = Block.dirt.id;
-				blocks[i][12][k] = Block.dirt.id;
-				blocks[i][11][k] = Block.dirt.id;
-				blocks[i][10][k] = Block.stone.id;
-				blocks[i][9][k] = Block.stone.id;
-				blocks[i][8][k] = Block.stone.id;
-				blocks[i][7][k] = Block.stone.id;
-				blocks[i][6][k] = Block.stone.id;
-				blocks[i][5][k] = Block.stone.id;
-				blocks[i][4][k] = Block.stone.id;
-				blocks[i][3][k] = Block.stone.id;
-				blocks[i][2][k] = Block.stone.id;
-				blocks[i][1][k] = Block.stone.id;
-				blocks[i][0][k] = Block.stone.id;
-				
-			}
-		}
 		
 		this.x = xi;
 		this.y = yj;
@@ -61,7 +39,11 @@ public class Chunk {
 		this.allocation = newAlloc;
 	}
 	
-	public short[][][] getBlocks() {
+	public short[] getBlocks() {
 		return blocks;
+	}
+	
+	public static int blockIndex(int x, int y, int z) {
+	    return x << 8 | y << 4 | z;
 	}
 }

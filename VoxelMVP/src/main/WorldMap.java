@@ -60,11 +60,11 @@ public class WorldMap {
 	    int cz = centreChunk.z;
 
 	    // --- CENTRE ---
-	    short[][][] c = centreChunk.getBlocks();
+	    short[] c = centreChunk.getBlocks();
 	    for (int x = 0; x < 16; x++)
 	    for (int y = 0; y < 16; y++)
 	    for (int z = 0; z < 16; z++)
-	        blockCache[x+1][y+1][z+1] = c[x][y][z];
+	        blockCache[x+1][y+1][z+1] = c[Chunk.blockIndex(x,y,z)];
 
 	    // --- 6 FACES ---
 	    Chunk top    = getChunkDirect(cx,   cy+1, cz  );
@@ -75,40 +75,40 @@ public class WorldMap {
 	    Chunk west   = getChunkDirect(cx-1, cy,   cz  );
 
 	    if (top != null) {
-	        short[][][] b = top.getBlocks();
+	        short[] b = top.getBlocks();
 	        for (int x = 0; x < 16; x++)
 	        for (int z = 0; z < 16; z++)
-	            blockCache[x+1][17][z+1] = b[x][0][z];
+	            blockCache[x+1][17][z+1] = b[Chunk.blockIndex(x,0,z)];
 	    }
 	    if (bottom != null) {
-	        short[][][] b = bottom.getBlocks();
+	        short[] b = bottom.getBlocks();
 	        for (int x = 0; x < 16; x++)
 	        for (int z = 0; z < 16; z++)
-	            blockCache[x+1][0][z+1] = b[x][15][z];
+	            blockCache[x+1][0][z+1] = b[Chunk.blockIndex(x,15,z)];
 	    }
 	    if (north != null) {
-	        short[][][] b = north.getBlocks();
+	        short[] b = north.getBlocks();
 	        for (int x = 0; x < 16; x++)
 	        for (int y = 0; y < 16; y++)
-	            blockCache[x+1][y+1][17] = b[x][y][0];
+	            blockCache[x+1][y+1][17] = b[Chunk.blockIndex(x,y,0)];
 	    }
 	    if (south != null) {
-	        short[][][] b = south.getBlocks();
+	        short[] b = south.getBlocks();
 	        for (int x = 0; x < 16; x++)
 	        for (int y = 0; y < 16; y++)
-	            blockCache[x+1][y+1][0] = b[x][y][15];
+	            blockCache[x+1][y+1][0] = b[Chunk.blockIndex(x,y,15)];
 	    }
 	    if (east != null) {
-	        short[][][] b = east.getBlocks();
+	        short[] b = east.getBlocks();
 	        for (int y = 0; y < 16; y++)
 	        for (int z = 0; z < 16; z++)
-	            blockCache[17][y+1][z+1] = b[0][y][z];
+	            blockCache[17][y+1][z+1] = b[Chunk.blockIndex(0,y,z)];
 	    }
 	    if (west != null) {
-	        short[][][] b = west.getBlocks();
+	        short[] b = west.getBlocks();
 	        for (int y = 0; y < 16; y++)
 	        for (int z = 0; z < 16; z++)
-	            blockCache[0][y+1][z+1] = b[15][y][z];
+	            blockCache[0][y+1][z+1] = b[Chunk.blockIndex(15,y,z)];
 	    }
 
 	    // --- 12 EDGES ---
@@ -119,24 +119,24 @@ public class WorldMap {
 	    Chunk sw = getChunkDirect(cx-1, cy, cz-1);
 
 	    if (ne != null) {
-	        short[][][] b = ne.getBlocks();
+	        short[] b = ne.getBlocks();
 	        for (int y = 0; y < 16; y++)
-	            blockCache[17][y+1][17] = b[0][y][0];
+	            blockCache[17][y+1][17] = b[Chunk.blockIndex(0,y,0)];
 	    }
 	    if (nw != null) {
-	        short[][][] b = nw.getBlocks();
+	        short[] b = nw.getBlocks();
 	        for (int y = 0; y < 16; y++)
-	            blockCache[0][y+1][17] = b[15][y][0];
+	            blockCache[0][y+1][17] = b[Chunk.blockIndex(15,y,0)];
 	    }
 	    if (se != null) {
-	        short[][][] b = se.getBlocks();
+	        short[] b = se.getBlocks();
 	        for (int y = 0; y < 16; y++)
-	            blockCache[17][y+1][0] = b[0][y][15];
+	            blockCache[17][y+1][0] = b[Chunk.blockIndex(0,y,15)];
 	    }
 	    if (sw != null) {
-	        short[][][] b = sw.getBlocks();
+	        short[]b = sw.getBlocks();
 	        for (int y = 0; y < 16; y++)
-	            blockCache[0][y+1][0] = b[15][y][15];
+	            blockCache[0][y+1][0] = b[Chunk.blockIndex(15,y,15)];
 	    }
 
 	    // 4 top edges
@@ -146,24 +146,24 @@ public class WorldMap {
 	    Chunk topWest  = getChunkDirect(cx-1, cy+1, cz  );
 
 	    if (topNorth != null) {
-	        short[][][] b = topNorth.getBlocks();
+	        short[] b = topNorth.getBlocks();
 	        for (int x = 0; x < 16; x++)
-	            blockCache[x+1][17][17] = b[x][0][0];
+	            blockCache[x+1][17][17] = b[Chunk.blockIndex(x,0,0)];
 	    }
 	    if (topSouth != null) {
-	        short[][][] b = topSouth.getBlocks();
+	        short[] b = topSouth.getBlocks();
 	        for (int x = 0; x < 16; x++)
-	            blockCache[x+1][17][0] = b[x][0][15];
+	            blockCache[x+1][17][0] = b[Chunk.blockIndex(x,0,15)];
 	    }
 	    if (topEast != null) {
-	        short[][][] b = topEast.getBlocks();
+	        short[] b = topEast.getBlocks();
 	        for (int z = 0; z < 16; z++)
-	            blockCache[17][17][z+1] = b[0][0][z];
+	            blockCache[17][17][z+1] = b[Chunk.blockIndex(0,0,z)];
 	    }
 	    if (topWest != null) {
-	        short[][][] b = topWest.getBlocks();
+	        short[] b = topWest.getBlocks();
 	        for (int z = 0; z < 16; z++)
-	            blockCache[0][17][z+1] = b[15][0][z];
+	            blockCache[0][17][z+1] = b[Chunk.blockIndex(15,0,z)];
 	    }
 
 	    // 4 bottom edges
@@ -173,24 +173,24 @@ public class WorldMap {
 	    Chunk botWest  = getChunkDirect(cx-1, cy-1, cz  );
 
 	    if (botNorth != null) {
-	        short[][][] b = botNorth.getBlocks();
+	        short[] b = botNorth.getBlocks();
 	        for (int x = 0; x < 16; x++)
-	            blockCache[x+1][0][17] = b[x][15][0];
+	            blockCache[x+1][0][17] = b[Chunk.blockIndex(x,15,0)];
 	    }
 	    if (botSouth != null) {
-	        short[][][] b = botSouth.getBlocks();
+	        short[] b = botSouth.getBlocks();
 	        for (int x = 0; x < 16; x++)
-	            blockCache[x+1][0][0] = b[x][15][15];
+	            blockCache[x+1][0][0] = b[Chunk.blockIndex(x,15,15)];
 	    }
 	    if (botEast != null) {
-	        short[][][] b = botEast.getBlocks();
+	        short[] b = botEast.getBlocks();
 	        for (int z = 0; z < 16; z++)
-	            blockCache[17][0][z+1] = b[0][15][z];
+	            blockCache[17][0][z+1] = b[Chunk.blockIndex(0,15,z)];
 	    }
 	    if (botWest != null) {
-	        short[][][] b = botWest.getBlocks();
+	        short[] b = botWest.getBlocks();
 	        for (int z = 0; z < 16; z++)
-	            blockCache[0][0][z+1] = b[15][15][z];
+	            blockCache[0][0][z+1] = b[Chunk.blockIndex(15,15,z)];
 	    }
 
 	    // --- 8 CORNERS ---
@@ -203,14 +203,14 @@ public class WorldMap {
 	    Chunk botSE = getChunkDirect(cx+1, cy-1, cz-1);
 	    Chunk botSW = getChunkDirect(cx-1, cy-1, cz-1);
 
-	    if (topNE != null) blockCache[17][17][17] = topNE.getBlocks()[0][0][0];
-	    if (topNW != null) blockCache[0][17][17]  = topNW.getBlocks()[15][0][0];
-	    if (topSE != null) blockCache[17][17][0]  = topSE.getBlocks()[0][0][15];
-	    if (topSW != null) blockCache[0][17][0]   = topSW.getBlocks()[15][0][15];
-	    if (botNE != null) blockCache[17][0][17]  = botNE.getBlocks()[0][15][0];
-	    if (botNW != null) blockCache[0][0][17]   = botNW.getBlocks()[15][15][0];
-	    if (botSE != null) blockCache[17][0][0]   = botSE.getBlocks()[0][15][15];
-	    if (botSW != null) blockCache[0][0][0]    = botSW.getBlocks()[15][15][15];
+	    if (topNE != null) blockCache[17][17][17] = topNE.getBlocks()[Chunk.blockIndex(0,0,0)];
+	    if (topNW != null) blockCache[0][17][17]  = topNW.getBlocks()[Chunk.blockIndex(15,0,0)];
+	    if (topSE != null) blockCache[17][17][0]  = topSE.getBlocks()[Chunk.blockIndex(0,0,15)];
+	    if (topSW != null) blockCache[0][17][0]   = topSW.getBlocks()[Chunk.blockIndex(0,0,0)];
+	    if (botNE != null) blockCache[17][0][17]  = botNE.getBlocks()[Chunk.blockIndex(0,15,0)];
+	    if (botNW != null) blockCache[0][0][17]   = botNW.getBlocks()[Chunk.blockIndex(15,15,0)];
+	    if (botSE != null) blockCache[17][0][0]   = botSE.getBlocks()[Chunk.blockIndex(0,15,15)];
+	    if (botSW != null) blockCache[0][0][0]    = botSW.getBlocks()[Chunk.blockIndex(15,15,15)];
 
 	    return blockCache;
 	}
