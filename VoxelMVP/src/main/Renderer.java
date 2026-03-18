@@ -78,6 +78,7 @@ public class Renderer {
 	        lastFence = null;
 	        
 	        //while loop
+	        //Test
 	        
 		}
 		
