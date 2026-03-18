@@ -78,8 +78,6 @@ public class Renderer {
 	        lastFence = null;
 	        
 	        //while loop
-	        //Test
-	        
 		}
 		
 		for (Chunk chunk : WorldMap.getChunks()) {
