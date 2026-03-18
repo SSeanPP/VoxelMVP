@@ -4,6 +4,7 @@ import bufferManager.SceneBufferManager;
 import imgui.ImGui;
 import main.GameState;
 import main.WorldMap;
+import meshThreader.MeshQueue;
 
 public class F3Menu {
 	private double renderStartTime = System.nanoTime();
@@ -35,7 +36,7 @@ public class F3Menu {
 			ImGui.begin("Meshing");
 			
 			ImGui.text("Meshing Progress");
-			if (WorldMap.allMeshed() && !hasFinished) {
+			if (MeshQueue.meshQueue.isEmpty() && !hasFinished) {
 				timeTaken = (System.nanoTime() - renderStartTime) / 1000000000.0;
 				hasFinished=true;
 			} else if (!hasFinished) {

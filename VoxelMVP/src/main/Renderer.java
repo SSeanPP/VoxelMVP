@@ -7,7 +7,12 @@ import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL31;
 import org.lwjgl.opengl.GL32;
+import org.lwjgl.opengl.GL42;
+import org.lwjgl.opengl.GL43;
+import org.lwjgl.opengl.GL45;
+import org.lwjgl.opengl.GLSync;
 
 import bufferManager.SceneBufferManager;
 import guiHandler.GUIHelper;
@@ -37,6 +42,7 @@ public class Renderer {
 	private int totalVertices;
 	private int totalIndices;
 
+	private GLSync lastFence;
 	
 	public Renderer () {
 		guiHelper = new GUIHelper();
@@ -66,8 +72,20 @@ public class Renderer {
 		Main.shaderProgram.setUniform("viewMatrix", camera.handleCameraLerpAndMatrix(alpha, renderPos));
 		Main.shaderProgram.setUniform("projectionMatrix", projection.getProjMatrix());
 		
+		if (lastFence != null) {
+			GL32.glClientWaitSync(lastFence, GL32.GL_SYNC_FLUSH_COMMANDS_BIT, 0);
+	        GL32.glDeleteSync(lastFence);
+	        lastFence = null;
+	        
+	        //while loop
+	        
+		}
+		
 		for (Chunk chunk : WorldMap.getChunks()) {
-			if (chunk == null || chunk.allocation == null) continue;
+			
+			if (chunk == null || chunk.allocation == null || !chunk.hasBlocks) continue;
+			
+			
 			
 			Main.shaderProgram.setUniform("modelMatrix", chunk.modelMatrix);
 			
@@ -80,10 +98,15 @@ public class Renderer {
 		    );
 			totalIndices += chunk.allocation.indexCount;
 		    totalVertices += chunk.allocation.indexCount / 6 * 4;
+		    
+		    
+		    
 			//int error = GL11.glGetError();
 			//if (error != 0) System.out.println("GL error after newFrame: " + error);
 			//System.out.println("IndexCount: " +chunk.allocation.indexCount+" IndexOffset: "+ chunk.allocation.indexOffset + " VertexOffset: " + chunk.allocation.vertexOffset / 5);
 		}
+		
+		lastFence = GL32.glFenceSync(GL32.GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
 		
 		if(!guiHelper.runGUI(state, totalIndices, totalVertices)) {
 			camera.updateCameraMatrix(Mouse.getDX(), Mouse.getDY());
@@ -105,7 +128,7 @@ public class Renderer {
     	ImGui.setDisplaySize(width, height);
     	ImGui.initOpenGL3();
         
-        //Display.setLocation(0, 0);
+        Display.setLocation(0, 0);
         System.out.println("OpenGL version: " + GL11.glGetString(GL11.GL_VERSION));
         
         glViewport(0, 0, width, height);        

@@ -55,7 +55,7 @@ public class Main {
     
     public static void init() throws Exception {
     	
-    	renderer.initDisplay(1920,1080);
+    	renderer.initDisplay(1280,720);
     	
         shaderProgram = new ShaderProgram();
         shaderProgram.createVertexShader(ResourceLoader.loadResourceAsString("resources/vertex.vs"));

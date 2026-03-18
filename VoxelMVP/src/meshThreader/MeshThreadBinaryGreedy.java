@@ -421,6 +421,13 @@ public class MeshThreadBinaryGreedy implements Runnable {
     // -------------------------------------------------------------------------
 
     private void uploadToGPU(Chunk chunk) {
+    	if (vertexPtr != 0 || indexPtr != 0) {
+    		chunk.hasBlocks = true;
+    	} else {
+    		chunk.hasBlocks = false;
+    		return;
+    	}
+    	
         int vertexSizeBytes = vertexPtr * 4;
         int indexSizeBytes  = indexPtr  * 4;
 
