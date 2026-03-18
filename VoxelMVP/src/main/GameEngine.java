@@ -29,6 +29,8 @@ public class GameEngine implements Runnable {
 	
 	public GameEngine(MeshQueue queue) {
 		meshQueue = queue;
+		
+		updateChunksAroundVector3f(new Vector3f(256,264,256));
 	}
 	
 	public void gameLoop() {
@@ -62,7 +64,7 @@ public class GameEngine implements Runnable {
 	        		loopTotal++;
 	        	}*/
 	        	
-	        	updateChunksAroundPlayer(state);
+	        	//updateChunksAroundPlayer(state);
 	        	
 	        	state.integrate(t, dt, inputState);
 	        	
@@ -121,7 +123,11 @@ public class GameEngine implements Runnable {
     }
 	
 	public void updateChunksAroundPlayer(GameState state) {
-	    cameraPos = state.getCamera().getPosition();
+		updateChunksAroundVector3f(state.getCamera().getPosition());
+	}
+	
+	public void updateChunksAroundVector3f(Vector3f position) {
+	    cameraPos = position;
 
 	    int px = (int)cameraPos.x >> CHUNK_SHIFT;
 	    int py = (int)cameraPos.y >> CHUNK_SHIFT;

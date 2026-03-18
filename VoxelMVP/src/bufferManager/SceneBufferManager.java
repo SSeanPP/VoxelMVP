@@ -25,7 +25,7 @@ public class SceneBufferManager {
 	private int megaEBOid;
 	private int vaoId;
 	
-	public static long bufferSize  = 1024*1024*256; ; 
+	public static long bufferSize  = 1024*1024*512; 
 	
 	private AtomicInteger vertexOffset = new AtomicInteger();
 	private AtomicInteger indexOffset = new AtomicInteger();
