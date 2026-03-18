@@ -5,15 +5,19 @@ import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
+import org.joml.Vector3f;
+
 import bufferManager.SceneBufferManager;
 
 import main.Chunk;
+import main.Settings;
 public class MeshQueue {
 
     private static int THREAD_COUNT;
     private final SceneBufferManager bufferManager;
-
-    public static final BlockingQueue<Chunk> meshQueue = new ArrayBlockingQueue<Chunk>(32*32*16);
+    
+    private Vector3f playerPos = Settings.spawnPoint;
+    public static final BlockingQueue<Chunk> meshQueue = new ArrayBlockingQueue<Chunk>(Settings.WORLD_SIZE_WIDTH*Settings.WORLD_SIZE_HEIGHT*Settings.WORLD_SIZE_WIDTH);
     private final List<Thread> workers = new ArrayList<Thread>();
 
     public MeshQueue(SceneBufferManager manager) {

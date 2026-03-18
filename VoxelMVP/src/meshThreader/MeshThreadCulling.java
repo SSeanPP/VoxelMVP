@@ -7,6 +7,7 @@ import java.util.concurrent.BlockingQueue;
 import bufferManager.SceneBufferManager;
 import main.Block;
 import main.Chunk;
+import main.Settings;
 import main.WorldMap;
 
 public class MeshThreadCulling implements Runnable {
@@ -17,7 +18,7 @@ public class MeshThreadCulling implements Runnable {
 	private int vertexPtr = 0;
 	private int indexPtr = 0;
 	
-	private short[][][] localBlockCache = new short[WorldMap.blockCacheSize][WorldMap.blockCacheSize][WorldMap.blockCacheSize];
+	private short[][][] localBlockCache = new short[Settings.blockCacheSize][Settings.blockCacheSize][Settings.blockCacheSize];
 	
 	private SceneBufferManager bufferManager;
 	private BlockingQueue<Chunk> queue;

@@ -3,6 +3,7 @@ package guiHandler;
 import bufferManager.SceneBufferManager;
 import imgui.ImGui;
 import main.GameState;
+import main.Settings;
 import main.WorldMap;
 import meshThreader.MeshQueue;
 
@@ -48,15 +49,15 @@ public class F3Menu {
 			ImGui.separator();
 			
 			ImGui.text("VBO");
-			float vboFill = 1.0f - (float) SceneBufferManager.vboFreeBytes / SceneBufferManager.bufferSize;
-			ImGui.progressBar(vboFill, String.format("%.1f / 256 MB", (SceneBufferManager.bufferSize - SceneBufferManager.vboFreeBytes) / (1024f * 1024f)));
+			float vboFill = 1.0f - (float) SceneBufferManager.vboFreeBytes / Settings.VBO_SIZE_BYTES;
+			ImGui.progressBar(vboFill, String.format("%.1f / "+Settings.VBO_SIZE_BYTES/1048576+ " MiB", (Settings.VBO_SIZE_BYTES - SceneBufferManager.vboFreeBytes) / (1024f * 1024f)));
 			ImGui.text("Free regions: " + SceneBufferManager.vboFreeRegions);
 
 			ImGui.separator();
 
 			ImGui.text("EBO");
-			float eboFill = 1.0f - (float) SceneBufferManager.eboFreeBytes / SceneBufferManager.bufferSize;
-			ImGui.progressBar(eboFill, String.format("%.1f / 256 MB", (SceneBufferManager.bufferSize - SceneBufferManager.eboFreeBytes) / (1024f * 1024f)));
+			float eboFill = 1.0f - (float) SceneBufferManager.eboFreeBytes / Settings.EBO_SIZE_BYTES;
+			ImGui.progressBar(eboFill, String.format("%.1f / "+Settings.EBO_SIZE_BYTES /1048576+ " MiB", (Settings.EBO_SIZE_BYTES - SceneBufferManager.eboFreeBytes) / (1024f * 1024f)));
 			ImGui.text("Free regions: " + SceneBufferManager.eboFreeRegions);
 
 			ImGui.end();

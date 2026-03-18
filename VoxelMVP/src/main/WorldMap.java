@@ -6,11 +6,8 @@ import saveHelper.TerrainGeneratorClaude;
 import saveHelper.TerrainGeneratorGPT;
 
 public class WorldMap {
-	public final static int worldSize = 32;
-	public final static int worldHeight = 16;
+	private static final Chunk[] chunks = new Chunk[Settings.WORLD_SIZE_WIDTH * Settings.WORLD_SIZE_HEIGHT * Settings.WORLD_SIZE_WIDTH];
 	
-	private static final Chunk[] chunks = new Chunk[worldSize * worldHeight * worldSize];
-	public static final int blockCacheSize = 18;
 	//Sean
 	private final long seed = 5116345970222046394L;
 	
@@ -19,9 +16,9 @@ public class WorldMap {
 	public WorldMap() {
 		TerrainGeneratorGPT gen = new TerrainGeneratorGPT(seed);
 		
-		for(int x = 0; x <worldSize; x++) {
-        	for(int y = 0; y < worldHeight; y++) {
-        		for (int z = 0; z < worldSize; z++) {
+		for(int x = 0; x <Settings.WORLD_SIZE_WIDTH; x++) {
+        	for(int y = 0; y < Settings.WORLD_SIZE_HEIGHT ; y++) {
+        		for (int z = 0; z < Settings.WORLD_SIZE_WIDTH; z++) {
         			Chunk chunk = new Chunk(x, y, z);
         			gen.generate(chunk, x, y, z);
                     chunks[chunkIndex(x, y, z)] = chunk;
@@ -36,11 +33,11 @@ public class WorldMap {
 	}
 	
 	public static int chunkIndex(int x, int y, int z) {
-	    return x * worldHeight * worldSize + y * worldSize + z;
+	    return x * Settings.WORLD_SIZE_HEIGHT * Settings.WORLD_SIZE_WIDTH + y * Settings.WORLD_SIZE_WIDTH + z;
 	}
 
 	public static Chunk getChunkDirect(int x, int y, int z) {
-	    if (x < 0 || x >= worldSize || y < 0 || y >= worldHeight || z < 0 || z >= worldSize)
+	    if (x < 0 || x >= Settings.WORLD_SIZE_WIDTH || y < 0 || y >= Settings.WORLD_SIZE_HEIGHT || z < 0 || z >= Settings.WORLD_SIZE_WIDTH)
 	        return null;
 	    return chunks[chunkIndex(x, y, z)];
 	}
@@ -51,8 +48,8 @@ public class WorldMap {
 	
 	public static short[][][] blockCache(long chunkCoords, Chunk centreChunk, short[][][] blockCache) {
 
-	    for (int x = 0; x < WorldMap.blockCacheSize; x++)
-	        for (int y = 0; y < WorldMap.blockCacheSize; y++)
+	    for (int x = 0; x < Settings.blockCacheSize; x++)
+	        for (int y = 0; y < Settings.blockCacheSize; y++)
 	            java.util.Arrays.fill(blockCache[x][y], (short) 0);
 
 	    int cx = centreChunk.x;

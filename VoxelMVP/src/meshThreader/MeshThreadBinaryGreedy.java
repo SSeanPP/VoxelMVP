@@ -7,6 +7,7 @@ import java.util.concurrent.BlockingQueue;
 import bufferManager.SceneBufferManager;
 import main.Block;
 import main.Chunk;
+import main.Settings;
 import main.WorldMap;
 
 public class MeshThreadBinaryGreedy implements Runnable {
@@ -16,7 +17,7 @@ public class MeshThreadBinaryGreedy implements Runnable {
     private final BlockingQueue<Chunk> queue;
 
     // --- Block cache ---
-    private final short[][][] localBlockCache = new short[WorldMap.blockCacheSize][WorldMap.blockCacheSize][WorldMap.blockCacheSize];
+    private final short[][][] localBlockCache = new short[Settings.blockCacheSize][Settings.blockCacheSize][Settings.blockCacheSize];
 
     // --- Binary meshing working data - all instance fields, zero allocation per chunk ---
     private final long[][][] axisCols    = new long[3][18][18];

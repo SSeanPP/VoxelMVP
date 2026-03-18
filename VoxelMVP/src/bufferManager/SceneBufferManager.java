@@ -3,6 +3,9 @@ package bufferManager;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL44;
+
+import main.Settings;
+
 import org.lwjgl.opengl.ARBMapBufferRange;
 
 import static org.lwjgl.opengl.GL11.GL_FLOAT;
@@ -24,8 +27,6 @@ public class SceneBufferManager {
 	private int megaVBOid;
 	private int megaEBOid;
 	private int vaoId;
-	
-	public static long bufferSize  = 1024*1024*512; 
 	
 	private AtomicInteger vertexOffset = new AtomicInteger();
 	private AtomicInteger indexOffset = new AtomicInteger();
@@ -57,17 +58,19 @@ public class SceneBufferManager {
 	
 	public SceneBufferManager() {
 		
-		vboFreeBytes = bufferSize;
-		eboFreeBytes = bufferSize;
+		vboFreeBytes = Settings.VBO_SIZE_BYTES;
+		eboFreeBytes = Settings.EBO_SIZE_BYTES;
+		
+		System.out.println("Size"+Settings.VBO_SIZE_BYTES);
 		
 		vertexOffset.set(0);
 		indexOffset.set(0);
 		
 		vboFreeList = new TreeMap<Integer, FreeRegion>();
-		vboFreeList.put(0, new FreeRegion(0, (int)bufferSize));
+		vboFreeList.put(0, new FreeRegion(0, (int)Settings.VBO_SIZE_BYTES));
 
 		eboFreeList = new TreeMap<Integer, FreeRegion>();
-		eboFreeList.put(0, new FreeRegion(0, (int)bufferSize));
+		eboFreeList.put(0, new FreeRegion(0, (int)Settings.EBO_SIZE_BYTES));
 		
 		
 		vaoId = glGenVertexArrays();
@@ -79,7 +82,7 @@ public class SceneBufferManager {
 		
 		GL44.glBufferStorage(
 				GL15.GL_ARRAY_BUFFER,
-		    bufferSize,
+			Settings.VBO_SIZE_BYTES,
 		    GL30.GL_MAP_WRITE_BIT |
 		    ARBBufferStorage.GL_MAP_PERSISTENT_BIT |
 		    ARBBufferStorage.GL_MAP_COHERENT_BIT
@@ -90,7 +93,7 @@ public class SceneBufferManager {
         glEnableVertexAttribArray(1);
         glVertexAttribPointer(1, 2, GL_FLOAT, false, stride, 3*4);
 		
-		megaVBO = ARBMapBufferRange.glMapBufferRange( GL15.GL_ARRAY_BUFFER, 0, bufferSize, GL30.GL_MAP_WRITE_BIT  | ARBBufferStorage.GL_MAP_PERSISTENT_BIT | ARBBufferStorage.GL_MAP_COHERENT_BIT, null);
+		megaVBO = ARBMapBufferRange.glMapBufferRange( GL15.GL_ARRAY_BUFFER, 0, Settings.VBO_SIZE_BYTES, GL30.GL_MAP_WRITE_BIT  | ARBBufferStorage.GL_MAP_PERSISTENT_BIT | ARBBufferStorage.GL_MAP_COHERENT_BIT, null);
 	
 		//EBO
 		megaEBOid = GL15.glGenBuffers();
@@ -98,13 +101,13 @@ public class SceneBufferManager {
 
 		GL44.glBufferStorage(
 				GL15.GL_ELEMENT_ARRAY_BUFFER,
-		    bufferSize,
+				Settings.EBO_SIZE_BYTES,
 		    GL30.GL_MAP_WRITE_BIT |
 		    ARBBufferStorage.GL_MAP_PERSISTENT_BIT |
 		    ARBBufferStorage.GL_MAP_COHERENT_BIT
 		);
 		
-		megaEBO = ARBMapBufferRange.glMapBufferRange( GL15.GL_ELEMENT_ARRAY_BUFFER, 0, bufferSize, GL30.GL_MAP_WRITE_BIT  | ARBBufferStorage.GL_MAP_PERSISTENT_BIT | ARBBufferStorage.GL_MAP_COHERENT_BIT, null);
+		megaEBO = ARBMapBufferRange.glMapBufferRange( GL15.GL_ELEMENT_ARRAY_BUFFER, 0, Settings.EBO_SIZE_BYTES, GL30.GL_MAP_WRITE_BIT  | ARBBufferStorage.GL_MAP_PERSISTENT_BIT | ARBBufferStorage.GL_MAP_COHERENT_BIT, null);
 		
 		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
 		glBindVertexArray(0);
