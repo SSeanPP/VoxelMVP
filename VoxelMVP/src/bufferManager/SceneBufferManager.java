@@ -39,8 +39,6 @@ public class SceneBufferManager {
 	private final ByteBuffer megaVBO;
 	private final ByteBuffer megaEBO;
 	
-	private int stride = 5 * 4;
-	
 	private class FreeRegion {
 		public int offset;
 		public int size;
@@ -89,9 +87,9 @@ public class SceneBufferManager {
 		);
 		
 		glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, false, stride, 0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, false, Settings.stride, 0);
         glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 2, GL_FLOAT, false, stride, 3*4);
+        glVertexAttribPointer(1, 2, GL_FLOAT, false, Settings.stride, 3*4);
 		
 		megaVBO = ARBMapBufferRange.glMapBufferRange( GL15.GL_ARRAY_BUFFER, 0, Settings.VBO_SIZE_BYTES, GL30.GL_MAP_WRITE_BIT  | ARBBufferStorage.GL_MAP_PERSISTENT_BIT | ARBBufferStorage.GL_MAP_COHERENT_BIT, null);
 	
@@ -152,12 +150,8 @@ public class SceneBufferManager {
 		glBindVertexArray(0);
 	}
 	
-	public int getStride() {
-		return stride;
-	}
-	
 	public int alignVertex(int bytes) {
-	    return ((bytes + stride - 1) / stride) * stride;
+	    return ((bytes + Settings.stride - 1) / Settings.stride) * Settings.stride;
 	}
 	
 	public int alignIndex(int bytes) {

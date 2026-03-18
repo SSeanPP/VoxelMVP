@@ -93,7 +93,7 @@ public class Renderer {
 		        chunk.allocation.indexCount,
 		        GL_UNSIGNED_INT,
 		        chunk.allocation.indexOffset,
-		        chunk.allocation.vertexOffset / bufferManager.getStride()
+		        chunk.allocation.vertexOffset / Settings.stride
 		    );
 			totalIndices += chunk.allocation.indexCount;
 		    totalVertices += chunk.allocation.indexCount / 6 * 4;
