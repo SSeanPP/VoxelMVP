@@ -18,8 +18,8 @@ public class MeshQueue {
     private static int THREAD_COUNT;
     private final SceneBufferManager bufferManager;
     
-    private volatile Vector3f playerChunkPos = Settings.spawnChunk;
-    public final BlockingQueue<Chunk> meshQueue = new PriorityBlockingQueue<Chunk>((Settings.RENDER_DISTANCE*Settings.RENDER_HEIGHT*Settings.RENDER_DISTANCE),
+    private static Vector3f playerChunkPos = Settings.spawnChunk;
+    public static final BlockingQueue<Chunk> meshQueue = new PriorityBlockingQueue<Chunk>((Settings.RENDER_DISTANCE*Settings.RENDER_HEIGHT*Settings.RENDER_DISTANCE),
     		new Comparator<Chunk>() {
 		    	public int compare(Chunk a, Chunk b) {
 		            int dax = (int) (a.x - playerChunkPos.x);

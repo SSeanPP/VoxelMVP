@@ -83,7 +83,7 @@ public class MeshThreadBinaryGreedy implements Runnable {
     public void meshChunk(Chunk chunk) {
         vertexPtr = 0;
         indexPtr  = 0;
-
+        
         WorldMap.blockCache(WorldMap.chunkIndex(chunk.x, chunk.y, chunk.z), chunk, localBlockCache);
 
         buildAxisCols();
@@ -422,39 +422,57 @@ public class MeshThreadBinaryGreedy implements Runnable {
     // -------------------------------------------------------------------------
 
     private void uploadToGPU(Chunk chunk) {
-    	if (vertexPtr != 0 || indexPtr != 0) {
-    		chunk.hasBlocks = true;
-    	} else {
-    		chunk.hasBlocks = false;
-    		return;
-    	}
-    	
-        int vertexSizeBytes = vertexPtr * 4;
-        int indexSizeBytes  = indexPtr  * 4;
+        Chunk old = chunk.previous;
 
-        int paddedVertex = bufferManager.alignVertex((int)(vertexSizeBytes * 1.1));
-        int paddedIndex  = bufferManager.alignIndex ((int)(indexSizeBytes  * 1.1));
-
-        if (chunk.allocation == null) {
-            chunk.allocation = bufferManager.getAllocation(paddedVertex, paddedIndex);
+        if (vertexPtr == 0 && indexPtr == 0) {
+            // New chunk is empty - just free old allocation if it had one
+            chunk.hasBlocks = false;
+            if (old != null && old.allocation != null) {
+                bufferManager.free(old.allocation);
+                old.allocation = null;
+            }
         } else {
-            int allocV = chunk.allocation.vertexLimit - chunk.allocation.vertexOffset;
-            int allocI = chunk.allocation.indexLimit  - chunk.allocation.indexOffset;
-            if (allocV < paddedVertex || allocI < paddedIndex) {
-                bufferManager.free(chunk.allocation);
+            chunk.hasBlocks = true;
+
+            int vertexSizeBytes = vertexPtr * 4;
+            int indexSizeBytes  = indexPtr  * 4;
+            int paddedVertex = bufferManager.alignVertex((int)(vertexSizeBytes * 1.1));
+            int paddedIndex  = bufferManager.alignIndex ((int)(indexSizeBytes  * 1.1));
+
+            if (old != null && old.allocation != null) {
+                int allocV = old.allocation.vertexLimit - old.allocation.vertexOffset;
+                int allocI = old.allocation.indexLimit  - old.allocation.indexOffset;
+
+                boolean vertexFits = allocV >= vertexSizeBytes && allocV <= paddedVertex;
+                boolean indexFits  = allocI >= indexSizeBytes  && allocI <= paddedIndex;
+
+                if (vertexFits && indexFits) {
+                    // Reuse old allocation
+                    old.allocation.setCounts(0);
+                    chunk.allocation = old.allocation;
+                    old.allocation = null;
+                } else {
+                    // Wrong size - free and allocate fresh
+                    bufferManager.free(old.allocation);
+                    old.allocation = null;
+                    chunk.allocation = bufferManager.getAllocation(paddedVertex, paddedIndex);
+                }
+            } else {
                 chunk.allocation = bufferManager.getAllocation(paddedVertex, paddedIndex);
             }
+
+            ByteBuffer vbo = bufferManager.getVBOSlice(chunk.allocation).order(ByteOrder.nativeOrder());
+            for (int i = 0; i < vertexPtr; i++) vbo.putFloat(vertices[i]);
+
+            ByteBuffer ebo = bufferManager.getEBOSlice(chunk.allocation).order(ByteOrder.nativeOrder());
+            for (int i = 0; i < indexPtr; i++) ebo.putInt(indices[i]);
+
+            chunk.allocation.setCounts(indexPtr);
         }
 
-        ByteBuffer vbo = bufferManager.getVBOSlice(chunk.allocation).order(ByteOrder.nativeOrder());
-        for (int i = 0; i < vertexPtr; i++) vbo.putFloat(vertices[i]);
-
-        ByteBuffer ebo = bufferManager.getEBOSlice(chunk.allocation).order(ByteOrder.nativeOrder());
-        for (int i = 0; i < indexPtr; i++) ebo.putInt(indices[i]);
-
-        chunk.allocation.setCounts(indexPtr);
-        chunk.needsUpdate       = false;
-        chunk.queuedForMeshing  = false;
+        chunk.previous = null; 
+        chunk.needsUpdate = false;
+        chunk.queuedForMeshing = false;
     }
 
     // -------------------------------------------------------------------------

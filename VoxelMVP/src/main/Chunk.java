@@ -18,6 +18,8 @@ public class Chunk {
 	public boolean needsUpdate;
 	public boolean queuedForMeshing;
 	
+	public Chunk previous = null;
+	
 	public short[] blocks = new short[16 * 16 * 16];
 	
 	public Chunk(int xi, int yj, int zk) {
@@ -45,5 +47,17 @@ public class Chunk {
 	
 	public static int blockIndex(int x, int y, int z) {
 	    return x << 8 | y << 4 | z;
+	}
+	
+	@Override
+	public int hashCode() {
+	    return x * 31 * 31 + y * 31 + z;
+	}
+
+	@Override
+	public boolean equals(Object o) {
+	    if (!(o instanceof Chunk)) return false;
+	    Chunk other = (Chunk) o;
+	    return x == other.x && y == other.y && z == other.z;
 	}
 }

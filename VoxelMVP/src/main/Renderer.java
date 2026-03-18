@@ -7,23 +7,22 @@ import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL31;
 import org.lwjgl.opengl.GL32;
-import org.lwjgl.opengl.GL42;
-import org.lwjgl.opengl.GL43;
-import org.lwjgl.opengl.GL45;
 import org.lwjgl.opengl.GLSync;
 
 import bufferManager.SceneBufferManager;
 import guiHandler.GUIHelper;
 import imgui.ImGui;
 import imgui.ImInput;
+import meshThreader.MeshQueue;
 
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL13.*;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class Renderer {
 	
@@ -43,11 +42,21 @@ public class Renderer {
 	private int totalIndices;
 
 	private GLSync lastFence;
+	private final Queue<Chunk> evictionQueue = new ConcurrentLinkedQueue<Chunk>();
+	private final MeshQueue meshQueue;
+	private final RenderCache renderCache;
 	
-	public Renderer () {
+	public Renderer (MeshQueue inputMeshQueue, RenderCache renderCacheInput) {
 		guiHelper = new GUIHelper();
 		totalVertices = 0;
 		totalIndices = 0;
+		meshQueue = inputMeshQueue;
+		renderCache = renderCacheInput;
+		
+		System.out.println("Input class on renderer: " + GameInput.inputQueue.getClass().getClassLoader());
+		System.out.println("Input FQN on renderer: " + GameInput.class.getName());
+		// Both sides
+		System.out.println("Queue identity  on renderer: " + System.identityHashCode(GameInput.inputQueue));
 	}
 	
 	public void bindBufferMananger(SceneBufferManager main) {
@@ -64,10 +73,13 @@ public class Renderer {
 	public void render(GameState state, double alpha) {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		
+		
+		
 		totalVertices = 0;
 		totalIndices = 0;
 		
 		camera = state.getCamera();
+
 		
 		Main.shaderProgram.setUniform("viewMatrix", camera.handleCameraLerpAndMatrix(alpha, renderPos));
 		Main.shaderProgram.setUniform("projectionMatrix", projection.getProjMatrix());
@@ -77,14 +89,17 @@ public class Renderer {
 	        GL32.glDeleteSync(lastFence);
 	        lastFence = null;
 	        
-	        //while loop
+	        Chunk chunk;
+	        
+	        while ((chunk = evictionQueue.poll()) != null) {
+	        	chunk.previous.allocation.setCounts(0);
+	        	renderCache.updateTorroid(chunk);
+	            meshQueue.submit(chunk);
+	        }
 		}
 		
-		for (Chunk chunk : WorldMap.getChunks()) {
-			
+		for (Chunk chunk : renderCache.getRenderToroid()) {
 			if (chunk == null || chunk.allocation == null || !chunk.hasBlocks) continue;
-			
-			
 			
 			Main.shaderProgram.setUniform("modelMatrix", chunk.modelMatrix);
 			
@@ -111,9 +126,10 @@ public class Renderer {
 			camera.updateCameraMatrix(Mouse.getDX(), Mouse.getDY());
 		}
 		
-		gameInput();
 		
 		Display.update();
+
+		gameInput();
 	}
 	
 	public void initDisplay(int width, int height) throws LWJGLException {
@@ -153,13 +169,18 @@ public class Renderer {
 	}
 	
 	private void gameInput() {
+		//System.out.println("Producer queue: " + System.identityHashCode(Input.inputQueue));
 		while(Keyboard.next()) {
 			boolean keyPress = Keyboard.getEventKeyState();
 			int keyReference = Keyboard.getEventKey();
 			if (keyReference == Keyboard.KEY_ESCAPE) {
 				System.exit(0);
 			} else if (!ImGui.wantCaptureKeyboard()) {
-				Input.inputQueue.add(new Input(keyPress, keyReference));
+				//System.out.println("Queue size before add: " + GameInput.inputQueue.size());
+			    GameInput.inputQueue.add(new GameInput(keyPress, keyReference));
+			    //System.out.println("Queue size after add: " + GameInput.inputQueue.size());
+
+				//System.out.println("Adding to queue: " + keyReference);
 			} else {
 				ImInput.handleKeyboardEvent(keyPress, keyReference);
 			}
@@ -184,6 +205,14 @@ public class Renderer {
 	
 	public void addModel(String name, Model model) {
 		models.put(name, model);
+	}
+	
+	public Queue<Chunk> getEvictionQueue() {
+		return this.evictionQueue;
+	}
+	
+	public RenderCache getRenderCache() {
+		return this.renderCache;
 	}
 	
 	/*

@@ -4,8 +4,6 @@ import bufferManager.SceneBufferManager;
 import imgui.ImGui;
 import main.GameState;
 import main.Settings;
-import main.WorldMap;
-import meshThreader.MeshQueue;
 
 public class F3Menu {
 	private double renderStartTime;

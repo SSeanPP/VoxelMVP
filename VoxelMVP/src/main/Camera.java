@@ -20,7 +20,7 @@ public class Camera {
         right = new Vector3f();
         up = new Vector3f();
         previousPosition = new Vector3f();
-        position = Settings.spawnPoint;
+        position = new Vector3f().set(Settings.spawnPoint);
         viewMatrix = new Matrix4f();
         rotation = new Vector2f();
     }

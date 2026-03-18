@@ -2,6 +2,7 @@ package main;
 
 import resourceLoader.ResourceLoader;
 
+import org.joml.Vector3f;
 import org.lwjgl.opengl.Display;
 
 import bufferManager.SceneBufferManager;
@@ -13,9 +14,10 @@ public class Main {
 	
 	public static ShaderProgram shaderProgram;
 	public static final WorldMap gameMap = new WorldMap();
+	private final static RenderCache renderCache = new RenderCache(new Vector3f().set(Settings.spawnChunk));
 	public static MeshQueue meshThreader;
 	public static GameEngine gameEngine;
-	public static final Renderer renderer = new Renderer();
+	public static final Renderer renderer = new Renderer(meshThreader, renderCache);
 	public static Thread gameEngineThread;
 	public static final TextureCache textureAtlas = new TextureCache();
 	public static SceneBufferManager bufferManager;
@@ -28,7 +30,7 @@ public class Main {
             meshThreader = new MeshQueue(bufferManager);
             renderer.bindBufferMananger(bufferManager);
             
-            gameEngine = new GameEngine(meshThreader);
+            gameEngine = new GameEngine(meshThreader, renderer.getEvictionQueue(), renderCache);
             gameEngineThread = new Thread(gameEngine);
             
             Main.shaderProgram.bind(); 
@@ -40,6 +42,7 @@ public class Main {
             
             for(Chunk chunk : WorldMap.getChunks()) {
             	meshThreader.submit(chunk);
+            	renderCache.updateTorroid(chunk);
             }
             
             while(!Display.isCloseRequested()) {
