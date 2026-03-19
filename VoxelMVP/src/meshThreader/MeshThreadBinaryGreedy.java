@@ -41,7 +41,7 @@ public class MeshThreadBinaryGreedy extends MeshThread {
         vertexPtr = 0;
         indexPtr  = 0;
         
-        WorldMap.blockCache(WorldMap.chunkIndex(chunk.x, chunk.y, chunk.z), chunk, localBlockCache);
+        WorldMap.blockCache(WorldMap.key(chunk.x, chunk.y, chunk.z), chunk, localBlockCache);
 
         buildAxisCols();
         buildFaceMasks();

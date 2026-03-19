@@ -1,48 +1,64 @@
 package main;
 
 import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
 
 import saveHelper.TerrainGeneratorClaude;
 import saveHelper.TerrainGeneratorGPT;
 
 public class WorldMap {
-	private static final Chunk[] chunks = new Chunk[Settings.WORLD_SIZE_WIDTH * Settings.WORLD_SIZE_HEIGHT * Settings.WORLD_SIZE_WIDTH];
-	
+	private static final ConcurrentHashMap<Long, Chunk> chunks = new ConcurrentHashMap<Long, Chunk>();
+    
+    public static long key(int x, int y, int z) {
+        return ((long)(x & 0xFFFFF) << 40) | ((long)(y & 0xFFFFF) << 20) | (z & 0xFFFFF);
+    }
+    
 	//Sean
 	private final long seed = 5116345970222046394L;
 	
 	private Random random = new Random();
+	private static TerrainGeneratorGPT gen;
 	
 	public WorldMap() {
-		TerrainGeneratorGPT gen = new TerrainGeneratorGPT(seed);
+		gen = new TerrainGeneratorGPT(seed);
 		
 		for(int x = 0; x <Settings.WORLD_SIZE_WIDTH; x++) {
         	for(int y = 0; y < Settings.WORLD_SIZE_HEIGHT ; y++) {
         		for (int z = 0; z < Settings.WORLD_SIZE_WIDTH; z++) {
         			Chunk chunk = new Chunk(x, y, z);
         			gen.generate(chunk, x, y, z);
-                    chunks[chunkIndex(x, y, z)] = chunk;
+                    chunks.put(key(x, y, z), chunk);
             	}
         	}
         	
         }
 	}
-	
+	/*
 	public void addToWorldMapViaIndex(int Index, Chunk chunk) {
 		chunks[Index] = chunk;
 	}
 	
 	public static int chunkIndex(int x, int y, int z) {
 	    return x * Settings.WORLD_SIZE_HEIGHT * Settings.WORLD_SIZE_WIDTH + y * Settings.WORLD_SIZE_WIDTH + z;
-	}
+	}*/
 
 	public static Chunk getChunkDirect(int x, int y, int z) {
-	    if (x < 0 || x >= Settings.WORLD_SIZE_WIDTH || y < 0 || y >= Settings.WORLD_SIZE_HEIGHT || z < 0 || z >= Settings.WORLD_SIZE_WIDTH)
-	        return null;
-	    return chunks[chunkIndex(x, y, z)];
+	    if (y < 0 || y >= Settings.WORLD_SIZE_HEIGHT) return null;
+	    
+	    long k = key(x, y, z);
+	    Chunk existing = chunks.get(k);
+	    if (existing != null) return existing;
+	    
+	    // Generate candidate
+	    Chunk chunk = new Chunk(x, y, z);
+	    gen.generate(chunk, x, y, z);
+	    
+	    // Only put if absent - if another thread beat us, use theirs
+	    Chunk winner = chunks.putIfAbsent(k, chunk);
+	    return winner != null ? winner : chunk;
 	}
 	
-	public static Chunk[] getChunks() {
+	public static ConcurrentHashMap<Long, Chunk> getChunks() {
 		return chunks;
 	}
 	
@@ -220,18 +236,7 @@ public class WorldMap {
 		return getChunkDirect(x, y, -z);
 	}
 	
-	public static boolean allMeshed() {
-
-	    for (Chunk chunk : chunks) {
-	        if(chunk != null) {
-	        	if (chunk.queuedForMeshing) {
-		            return false;
-		        }
-	        }
-	    }
-
-	    return true;
-	}
+	
 	
 	public static Chunk getChunkByKey(long key) {
 	    int x = (int)((key >> 40) & 0xFFFFF);

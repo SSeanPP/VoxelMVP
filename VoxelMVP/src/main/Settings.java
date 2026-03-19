@@ -5,7 +5,7 @@ import org.joml.Vector3f;
 // Immutable at runtime - buffer sizes, GL limits, fixed world dimensions
 public final class Settings {
     public static final int RENDER_DISTANCE   = 16;
-    public static final int RENDER_HEIGHT = 8;
+    public static final int RENDER_HEIGHT = 16;
     public static final int WORLD_SIZE_WIDTH      = 64;
     public static final int WORLD_SIZE_HEIGHT     = 16;
     public static final int CHUNK_SIZE        = 16;
