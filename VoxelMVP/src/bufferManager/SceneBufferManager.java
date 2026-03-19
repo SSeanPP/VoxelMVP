@@ -15,7 +15,6 @@ import static org.lwjgl.opengl.GL30.glBindVertexArray;
 import static org.lwjgl.opengl.GL30.glGenVertexArrays;
 
 import java.nio.ByteBuffer;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -198,35 +197,43 @@ public class SceneBufferManager {
 	}
 	
 	private FreeRegion findFit(TreeMap<Integer, FreeRegion> freeList, int sizeBytes, boolean isVBO) {
-	    Iterator<FreeRegion> it = freeList.values().iterator();
+	    FreeRegion bestFit = null;
+	    int bestWaste = Integer.MAX_VALUE;
 
-	    while (it.hasNext()) {
-	        FreeRegion region = it.next();
-
+	    for (FreeRegion region : freeList.values()) {
 	        if (region.size >= sizeBytes) {
-	            it.remove();
-
-
-	            if (region.size > sizeBytes) {
-	                FreeRegion remainder = new FreeRegion(
-	                    region.offset + sizeBytes,
-	                    region.size - sizeBytes
-	                );
-	                freeList.put(remainder.offset, remainder);
+	            int waste = region.size - sizeBytes;
+	            if (waste < bestWaste) {
+	                bestWaste = waste;
+	                bestFit = region;
+	                if (waste == 0) break;
 	            }
-	            
-	            if (isVBO) {
-	                vboFreeBytes -= sizeBytes;
-	                vboFreeRegions = freeList.size();
-	            } else {
-	                eboFreeBytes -= sizeBytes;
-	                eboFreeRegions = freeList.size();
-	            }
-
-	            return new FreeRegion(region.offset, sizeBytes);
 	        }
 	    }
-	    return null;
+
+	    if (bestFit == null) return null;
+
+	    freeList.remove(bestFit.offset);
+	    
+	    int remainder = bestFit.size - sizeBytes;
+	    if (remainder > Settings.stride) {
+	        // Only split if remainder is worth keeping
+	        freeList.put(bestFit.offset + sizeBytes, 
+	                     new FreeRegion(bestFit.offset + sizeBytes, remainder));
+	    } else {
+	        // Absorb sliver - give whole block
+	        sizeBytes = bestFit.size;
+	    }
+
+	    if (isVBO) {
+	        vboFreeBytes -= sizeBytes;
+	        vboFreeRegions = freeList.size();
+	    } else {
+	        eboFreeBytes -= sizeBytes;
+	        eboFreeRegions = freeList.size();
+	    }
+
+	    return new FreeRegion(bestFit.offset, sizeBytes);
 	}
 	
 }

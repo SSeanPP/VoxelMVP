@@ -66,8 +66,11 @@ public abstract class MeshThread implements Runnable {
 
             int vertexSizeBytes = vertexPtr * 4;
             int indexSizeBytes  = indexPtr  * 4;
-            int paddedVertex = bufferManager.alignVertex((int)(vertexSizeBytes * 1.1));
-            int paddedIndex  = bufferManager.alignIndex ((int)(indexSizeBytes  * 1.1));
+            //int paddedVertex = bufferManager.alignVertex((int)(vertexSizeBytes * 1.1));
+            //int paddedIndex  = bufferManager.alignIndex ((int)(indexSizeBytes  * 1.1));
+            
+            int paddedVertex = bufferManager.alignVertex((int)(vertexSizeBytes));
+            int paddedIndex  = bufferManager.alignIndex ((int)(indexSizeBytes));
 
             if (chunk.Previous != null && chunk.Previous.allocation != null) {
                 int allocV = chunk.Previous.allocation.vertexLimit - chunk.Previous.allocation.vertexOffset;
