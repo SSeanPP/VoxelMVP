@@ -1,13 +1,10 @@
 package meshThreader;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.concurrent.BlockingQueue;
 
 import bufferManager.SceneBufferManager;
 import main.Block;
 import main.Chunk;
-import main.Settings;
 import main.WorldMap;
 
 public class MeshThreadCulling extends MeshThread {

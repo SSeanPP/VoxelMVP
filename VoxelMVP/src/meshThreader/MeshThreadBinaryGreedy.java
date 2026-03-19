@@ -1,18 +1,14 @@
 package meshThreader;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.concurrent.BlockingQueue;
 
 import bufferManager.SceneBufferManager;
 import main.Block;
 import main.Chunk;
-import main.Settings;
 import main.WorldMap;
 
 public class MeshThreadBinaryGreedy extends MeshThread {
 
-    
     // --- Binary meshing working data - all instance fields, zero allocation per chunk ---
     private final long[][][] axisCols    = new long[3][18][18];
     private final long[][][] faceMasks   = new long[6][18][18];
@@ -36,8 +32,6 @@ public class MeshThreadBinaryGreedy extends MeshThread {
         for (int i = 0; i < quadPool.length; i++)
             quadPool[i] = new GreedyQuad();
     }
-
- 
 
     // -------------------------------------------------------------------------
     // Main entry point
@@ -380,12 +374,6 @@ public class MeshThreadBinaryGreedy extends MeshThread {
         vertices[vertexPtr++] = v;
     }
     
-    // -------------------------------------------------------------------------
-    // Upload to GPU
-    // -------------------------------------------------------------------------
-
-    
-
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
