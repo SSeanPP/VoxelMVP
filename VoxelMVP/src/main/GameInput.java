@@ -3,7 +3,6 @@ package main;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class GameInput {
-	public final static ConcurrentLinkedQueue<GameInput> inputQueue = new ConcurrentLinkedQueue<GameInput>();
 	
 	public boolean isPressed;
 	public int keyCode;

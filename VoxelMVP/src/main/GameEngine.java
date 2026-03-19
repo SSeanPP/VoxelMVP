@@ -20,27 +20,30 @@ public class GameEngine implements Runnable {
 	
 	private final int CHUNK_SHIFT = 4; // 2^4 = 16
 	
-	private int lastPx = Integer.MIN_VALUE;
-	private int lastPy = Integer.MIN_VALUE;
-	private int lastPz = Integer.MIN_VALUE;
+	private int lastPx = (int)(Settings.spawnChunk.x);
+	private int lastPy = (int)(Settings.spawnChunk.y);
+	private int lastPz = (int)(Settings.spawnChunk.z);
 	
 	private HashSet<Chunk> pendingEvictions = new HashSet<Chunk>();
 	private Queue<Chunk> evictionQueue;
 	private RenderCache renderCache;
+	private GameInputQueue gameInputQueue;
 	
 	private double newTime;
     private double frameTime;
     
+    
     private Vector3f cameraPos;
 	
-	public GameEngine(MeshQueue queue, Queue<Chunk> evictionQueueFromRenderer, RenderCache renderCacheFromRenderer) {
+	public GameEngine(MeshQueue queue, Queue<Chunk> evictionQueueFromRenderer, RenderCache renderCacheFromRenderer, GameInputQueue inputQueue) {
 		meshQueue = queue;
 		evictionQueue = evictionQueueFromRenderer;
 		renderCache = renderCacheFromRenderer;
+		this.gameInputQueue = inputQueue;
 		
-		System.out.println("Input class on game engine: " + GameInput.inputQueue.getClass().getClassLoader());
-		System.out.println("Input FQN  on game engine: " + GameInput.class.getName());
-		System.out.println("Queue identity  on gameEngine: " + System.identityHashCode(GameInput.inputQueue));
+		//System.out.println("Input class on game engine: " + GameInput.inputQueue.getClass().getClassLoader());
+		//System.out.println("Input FQN  on game engine: " + GameInput.class.getName());
+		//System.out.println("Queue identity  on gameEngine: " + System.identityHashCode(GameInput.inputQueue));
 	}
 	
 	public void gameLoop() {
@@ -52,6 +55,7 @@ public class GameEngine implements Runnable {
 	    
 	    while ( running )
 	    {
+	    	drainInputQueue();
 	    	//System.out.println("running");
 	    	
 	    	newTime = System.nanoTime() / 1000000000.0;
@@ -74,8 +78,8 @@ public class GameEngine implements Runnable {
 	        		loopTotal++;
 	        	}*/
 
-		        drainInputQueue();
-	        	updateChunksAroundPlayer(state);
+		        
+	        	//updateChunksAroundPlayer(state);
 	        	
 	        	state.integrate(t, dt, inputState);
 	        	
@@ -100,10 +104,12 @@ public class GameEngine implements Runnable {
 		//System.out.println("Queue class: " + Input.inputQueue.getClass().getName());
 	    //System.out.println("Queue size: " + Input.inputQueue.size());
 	    //System.out.println("Queue identity: " + System.identityHashCode(Input.inputQueue));
-		System.out.println("Drain called, size: " + GameInput.inputQueue.size());
+		//System.out.println("Drain called, size: " + gameInputQueue.inputQueue.size());
 	    GameInput input;
-        while ((input = GameInput.inputQueue.poll()) != null) {
-        	System.out.println("Draining: " + input.getEventKey());
+	   
+	    
+        while ((input = gameInputQueue.inputQueue.poll()) != null) {
+        	//System.out.println("Draining: " + input.getEventKey());
              switch (input.getEventKey()) {
              
                 case Keyboard.KEY_W:
@@ -138,110 +144,10 @@ public class GameEngine implements Runnable {
         }
     }
 	
-	public void updateChunksAroundPlayer(GameState state) {
-		updateChunksAroundVector3f(state.getCamera().getPosition());
-	}
 	
-	public void updateChunksAroundVector3f(Vector3f position) {
-	    cameraPos = position;
-
-	    int px = (int)cameraPos.x >> CHUNK_SHIFT;
-	    int py = (int)cameraPos.y >> CHUNK_SHIFT;
-	    int pz = (int)cameraPos.z >> CHUNK_SHIFT;
-
-	    
-	    if (px == lastPx && pz == lastPz && py == lastPy) {
-	        return;
-	    }
-	    
-	    int dx = px - lastPx;
-	    int dy = py - lastPy;
-	    int dz = pz - lastPz;
-	    
-	    pendingEvictions.clear();
-	    
-	    if (dx > 0) {
-	        for (int step = 0; step < dx; step++) {
-	            int evictX = lastPx + step - Settings.RENDER_DISTANCE;
-	            int loadX  = lastPx + step + Settings.RENDER_DISTANCE + 1;
-	            for (int y = py - Settings.RENDER_HEIGHT; y <= py + Settings.RENDER_HEIGHT; y++) {
-	                for (int z = pz - Settings.RENDER_DISTANCE; z <= pz + Settings.RENDER_DISTANCE; z++) {
-	                	addEviction(evictX, y, z, loadX, y, z);
-	                }
-	            }
-	        }
-	    } else if (dx < 0) {
-	        for (int step = 0; step > dx; step--) {
-	            int evictX = lastPx + step + Settings.RENDER_DISTANCE;
-	            int loadX  = lastPx + step - Settings.RENDER_DISTANCE - 1;
-	            for (int y = py - Settings.RENDER_HEIGHT; y <= py + Settings.RENDER_HEIGHT; y++) {
-	                for (int z = pz - Settings.RENDER_DISTANCE; z <= pz + Settings.RENDER_DISTANCE; z++) {
-	                	addEviction(evictX, y, z, loadX, y, z);
-	                }
-	            }
-	        }
-	    }
-	    
-	 // Handle Y slabs
-	    if (dy > 0) {
-	        for (int step = 0; step < dy; step++) {
-	            int evictY = lastPy + step - Settings.RENDER_HEIGHT;
-	            int loadY  = lastPy + step + Settings.RENDER_HEIGHT + 1;
-	            for (int x = px - Settings.RENDER_DISTANCE; x <= px + Settings.RENDER_DISTANCE; x++) {
-	                for (int z = pz - Settings.RENDER_DISTANCE; z <= pz + Settings.RENDER_DISTANCE; z++) {
-	                	addEviction(x, evictY, z, x, loadY, z);
-	                }
-	            }
-	        }
-	    } else if (dy < 0) {
-	        for (int step = 0; step > dy; step--) {
-	            int evictY = lastPy + step + Settings.RENDER_HEIGHT;
-	            int loadY  = lastPy + step - Settings.RENDER_HEIGHT - 1;
-	            for (int x = px - Settings.RENDER_DISTANCE; x <= px + Settings.RENDER_DISTANCE; x++) {
-	                for (int z = pz - Settings.RENDER_DISTANCE; z <= pz + Settings.RENDER_DISTANCE; z++) {
-	                	addEviction(x, evictY, z, x, loadY, z);
-	                }
-	            }
-	        }
-	    }
-
-	    // Handle Z slabs — exclude X overlap to avoid double-queuing corners
-	    if (dz > 0) {
-	        for (int step = 0; step < dz; step++) {
-	            int evictZ = lastPz + step - Settings.RENDER_DISTANCE;
-	            int loadZ  = lastPz + step + Settings.RENDER_DISTANCE + 1;
-	            for (int x = px - Settings.RENDER_DISTANCE + Math.abs(dx); x <= px + Settings.RENDER_DISTANCE - Math.abs(dx); x++) {
-	                for (int y = py - Settings.RENDER_HEIGHT; y <= py + Settings.RENDER_HEIGHT; y++) {
-	                	addEviction(x, y, evictZ, x, y, loadZ);
-	                }
-	            }
-	        }
-	    } else if (dz < 0) {
-	        for (int step = 0; step > dz; step--) {
-	            int evictZ = lastPz + step + Settings.RENDER_DISTANCE;
-	            int loadZ  = lastPz + step - Settings.RENDER_DISTANCE - 1;
-	            for (int x = px - Settings.RENDER_DISTANCE + Math.abs(dx); x <= px + Settings.RENDER_DISTANCE - Math.abs(dx); x++) {
-	                for (int y = py - Settings.RENDER_HEIGHT; y <= py + Settings.RENDER_HEIGHT; y++) {
-	                	addEviction(x, y, evictZ, x, y, loadZ);
-	                }
-	            }
-	        }
-	    }
-	    
-	    renderCache.updateChunkPos(cameraPos);
-	    
-	    for (Chunk chunk : pendingEvictions) {
-	    	chunk.needsUpdate = true;
-	    	evictionQueue.add(chunk);
-	    }
-	    
-	    lastPx = px;
-	    lastPy = py;
-	    lastPz = pz;
-	}
 	
 	@Deprecated
-	private void submitChunksInRadius(int px, int py, int pz) {
+	/*private void submitChunksInRadius(int px, int py, int pz) {
 	    for (int r = 0; r <= Settings.RENDER_DISTANCE; r++) {
 	        for (int x = -r; x <= r; x++) {
 	            for (int z = -r; z <= r; z++) {
@@ -259,19 +165,8 @@ public class GameEngine implements Runnable {
 	            }
 	        }
 	    }
-	}
+	}*/
 	
-	// Only add to pendingEvictions if newChunk not already present
-	private void addEviction(int evictX, int evictY, int evictZ, int loadX, int loadY, int loadZ) {
-	    Chunk newChunk = WorldMap.getChunkDirect(loadX, loadY, loadZ);
-	    if (newChunk == null) return; // out of world bounds
-	    
-	    // HashSet.add() returns false if already present - skip if so
-	    if (pendingEvictions.add(newChunk)) {
-	        Chunk oldChunk = WorldMap.getChunkDirect(evictX, evictY, evictZ);
-	        newChunk.previous = oldChunk; // safe - only written once per frame
-	    }
-	}
 	
 	
 	@Override

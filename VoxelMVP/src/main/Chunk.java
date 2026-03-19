@@ -15,15 +15,13 @@ public class Chunk {
 	public final Matrix4f modelMatrix;
 	
 	public final int chunkSize = 16;
-	public boolean needsUpdate;
+	//public boolean needsUpdate;
 	public boolean queuedForMeshing;
-	
-	public Chunk previous = null;
 	
 	public short[] blocks = new short[16 * 16 * 16];
 	
 	public Chunk(int xi, int yj, int zk) {
-		this.needsUpdate = true;
+		//this.needsUpdate = true;
 		this.queuedForMeshing = false;
 		
 		this.x = xi;

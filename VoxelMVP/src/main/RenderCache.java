@@ -1,45 +1,52 @@
 package main;
 
+import java.util.concurrent.ConcurrentHashMap;
 import org.joml.Vector3f;
 
 public class RenderCache {
-    private final int WIDTH  = Settings.RENDER_DISTANCE * 2 + 1;
-    private final int HEIGHT = Settings.RENDER_HEIGHT   * 2 + 1;
-    private final int DEPTH  = Settings.RENDER_DISTANCE * 2 + 1;
-
-    private Chunk[] renderToroidalArray = new Chunk[WIDTH * HEIGHT * DEPTH];
-    private volatile Vector3f playerChunkPos;
+    private final ConcurrentHashMap<Long, Chunk> loadedChunks = new ConcurrentHashMap<Long, Chunk>();
+    
+    private volatile int playerChunkX;
+    private volatile int playerChunkY;
+    private volatile int playerChunkZ;
 
     RenderCache(Vector3f pos) {
-        playerChunkPos = pos;
+        playerChunkX = (int) pos.x;
+        playerChunkY = (int) pos.y;
+        playerChunkZ = (int) pos.z;
     }
 
-    public Chunk[] getRenderToroid() {
-        return renderToroidalArray;
-    }
-
-    public int torroidIndex(int x, int y, int z) {
-        int rx = (int)(x - playerChunkPos.x);
-        int ry = (int)(y - playerChunkPos.y);
-        int rz = (int)(z - playerChunkPos.z);
-
-        int tx = ((rx % WIDTH)  + WIDTH)  % WIDTH;
-        int ty = ((ry % HEIGHT) + HEIGHT) % HEIGHT;
-        int tz = ((rz % DEPTH)  + DEPTH)  % DEPTH;
-
-        return tx * HEIGHT * DEPTH + ty * DEPTH + tz;
-    }
-
-    public void updateChunkPos(Vector3f newChunkPos) {
-        this.playerChunkPos = newChunkPos;
+    private static long key(int x, int y, int z) {
+        return ((long)(x & 0xFFFFF) << 40) | ((long)(y & 0xFFFFF) << 20) | (z & 0xFFFFF);
     }
 
     public void updateTorroid(Chunk chunk) {
-        renderToroidalArray[torroidIndex(chunk.x, chunk.y, chunk.z)] = chunk;
+        loadedChunks.put(key(chunk.x, chunk.y, chunk.z), chunk);
     }
 
-	public Vector3f getPlayerChunkPos() {
-		// TODO Auto-generated method stub
-		return playerChunkPos;
-	}
+    public void clearSlot(int x, int y, int z) {
+        loadedChunks.remove(key(x, y, z));
+    }
+
+    public void clearAll() {
+        loadedChunks.clear();
+    }
+
+    public Iterable<Chunk> getRenderToroid() {
+        return loadedChunks.values();
+    }
+
+    public void updateChunkPos(Vector3f pos) {
+        playerChunkX = (int) pos.x;
+        playerChunkY = (int) pos.y;
+        playerChunkZ = (int) pos.z;
+    }
+
+    public int getPlayerChunkX() { return playerChunkX; }
+    public int getPlayerChunkY() { return playerChunkY; }
+    public int getPlayerChunkZ() { return playerChunkZ; }
+    
+    public boolean contains(long key) {
+        return loadedChunks.containsKey(key);
+    }
 }

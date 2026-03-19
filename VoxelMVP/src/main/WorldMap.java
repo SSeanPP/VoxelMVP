@@ -224,12 +224,19 @@ public class WorldMap {
 
 	    for (Chunk chunk : chunks) {
 	        if(chunk != null) {
-	        	if (chunk.needsUpdate || chunk.queuedForMeshing) {
+	        	if (chunk.queuedForMeshing) {
 		            return false;
 		        }
 	        }
 	    }
 
 	    return true;
+	}
+	
+	public static Chunk getChunkByKey(long key) {
+	    int x = (int)((key >> 40) & 0xFFFFF);
+	    int y = (int)((key >> 20) & 0xFFFFF);
+	    int z = (int)(key & 0xFFFFF);
+	    return getChunkDirect(x, y, z);
 	}
 }

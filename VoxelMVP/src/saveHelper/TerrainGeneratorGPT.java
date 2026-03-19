@@ -61,7 +61,7 @@ public class TerrainGeneratorGPT {
             }
         }
 
-        chunk.needsUpdate = true;
+        //chunk.needsUpdate = true;
     }
 
     // --- Smooth deterministic noise ---

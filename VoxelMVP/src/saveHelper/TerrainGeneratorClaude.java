@@ -121,7 +121,7 @@ public class TerrainGeneratorClaude {
             }
         }
         
-        chunk.needsUpdate = true;
+        //chunk.needsUpdate = true;
     }
 
     // --- Noise internals ---

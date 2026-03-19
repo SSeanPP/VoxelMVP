@@ -20,8 +20,10 @@ import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL13.*;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class Renderer {
@@ -43,25 +45,32 @@ public class Renderer {
 
 	private GLSync lastFence;
 	private final Queue<Chunk> evictionQueue = new ConcurrentLinkedQueue<Chunk>();
-	private final MeshQueue meshQueue;
+	private final Queue<Chunk> chunkQueue = new ConcurrentLinkedQueue<Chunk>();
+	private MeshQueue meshQueue;
 	private final RenderCache renderCache;
+	private final GameInputQueue gameInputQueue;
 	
-	public Renderer (MeshQueue inputMeshQueue, RenderCache renderCacheInput) {
+	public Renderer (RenderCache renderCacheInput, GameInputQueue gameInputQueue) {
 		guiHelper = new GUIHelper();
 		totalVertices = 0;
 		totalIndices = 0;
-		meshQueue = inputMeshQueue;
 		renderCache = renderCacheInput;
 		
-		System.out.println("Input class on renderer: " + GameInput.inputQueue.getClass().getClassLoader());
-		System.out.println("Input FQN on renderer: " + GameInput.class.getName());
+		this.gameInputQueue = gameInputQueue;
+		
+		System.out.println("Input class on renderer: " + gameInputQueue.inputQueue.getClass().getClassLoader());
+		//System.out.println("Input FQN on renderer: " + gameInputQueue.class.getName());
 		// Both sides
-		System.out.println("Queue identity  on renderer: " + System.identityHashCode(GameInput.inputQueue));
+		System.out.println("Queue identity  on renderer: " + System.identityHashCode(gameInputQueue.inputQueue));
 	}
 	
 	public void bindBufferMananger(SceneBufferManager main) {
 		bufferManager = main;
 		bufferManager.bind();
+	}
+	
+	public void bindMeshQueue(MeshQueue input) {
+		this.meshQueue = input;
 	}
 	
 	public void bindTextureAtlas(Texture texture) {
@@ -73,16 +82,15 @@ public class Renderer {
 	public void render(GameState state, double alpha) {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		
-		
-		
 		totalVertices = 0;
 		totalIndices = 0;
 		
 		camera = state.getCamera();
 
-		
 		Main.shaderProgram.setUniform("viewMatrix", camera.handleCameraLerpAndMatrix(alpha, renderPos));
 		Main.shaderProgram.setUniform("projectionMatrix", projection.getProjMatrix());
+		
+		
 		
 		if (lastFence != null) {
 			GL32.glClientWaitSync(lastFence, GL32.GL_SYNC_FLUSH_COMMANDS_BIT, 0);
@@ -92,11 +100,60 @@ public class Renderer {
 	        Chunk chunk;
 	        
 	        while ((chunk = evictionQueue.poll()) != null) {
-	        	chunk.previous.allocation.setCounts(0);
+	        	
+                if (chunk.allocation != null) {
+                    chunk.allocation.setCounts(0);
+                    bufferManager.free(chunk.allocation);
+                    chunk.allocation = null;
+                }
+                chunk.hasBlocks = false;
+                renderCache.clearSlot(chunk.x, chunk.y, chunk.z);
+	           
+	        }
+	        
+	        while ((chunk = chunkQueue.poll()) != null) {
+	            //System.out.println("Processing chunkQueue: chunk(" + chunk.x + "," + chunk.y + "," + chunk.z + 
+	            //    ") queuedAt=(" + chunk.queuedAtPx + "," + chunk.queuedAtPy + "," + chunk.queuedAtPz + ")");
 	        	renderCache.updateTorroid(chunk);
 	            meshQueue.submit(chunk);
 	        }
 		}
+		
+
+		updateChunksAroundVector3f(camera.getPosition());
+		
+		/*
+		int nullSlots = 0;
+		int validChunks = 0;
+		int wrongPosition = 0;
+
+		for (int i = 0; i < renderCache.getRenderToroid().length; i++) {
+		    Chunk chunk = renderCache.getRenderToroid()[i];
+		    if (chunk == null) {
+		        nullSlots++;
+		        continue;
+		    }
+		    
+		    int expectedIdx = renderCache.torroidIndex(chunk.x, chunk.y, chunk.z);
+		    if (expectedIdx != i) {
+		        wrongPosition++;
+		        Chunk atExpected = renderCache.getRenderToroid()[expectedIdx];
+		        System.out.println("MISMATCH: chunk(" + chunk.x + "," + chunk.y + "," + chunk.z + 
+		            ") is at slot " + i + " but maps to slot " + expectedIdx +
+		            " player=(" + renderCache.playerChunkX + "," + renderCache.playerChunkY + "," + renderCache.playerChunkZ + ")" +
+		            " rx=" + (chunk.x - renderCache.playerChunkX) +
+		            " ry=" + (chunk.y - renderCache.playerChunkY) +
+		            " rz=" + (chunk.z - renderCache.playerChunkZ) +
+		            " slot " + expectedIdx + " holds: " + 
+		            (atExpected == null ? "null" : atExpected.x + "," + atExpected.y + "," + atExpected.z));
+		    } else {
+		        validChunks++;
+		    }
+		}
+
+		if (wrongPosition > 0) {
+		    System.out.println("Valid: " + validChunks + " Null: " + nullSlots + " Mismatched: " + wrongPosition);
+		}*/
 		
 		for (Chunk chunk : renderCache.getRenderToroid()) {
 			if (chunk == null || chunk.allocation == null || !chunk.hasBlocks) continue;
@@ -120,16 +177,97 @@ public class Renderer {
 			//System.out.println("IndexCount: " +chunk.allocation.indexCount+" IndexOffset: "+ chunk.allocation.indexOffset + " VertexOffset: " + chunk.allocation.vertexOffset / 5);
 		}
 		
+		
+		
 		lastFence = GL32.glFenceSync(GL32.GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
 		
 		if(!guiHelper.runGUI(state, totalIndices, totalVertices)) {
 			camera.updateCameraMatrix(Mouse.getDX(), Mouse.getDY());
 		}
 		
-		
 		Display.update();
-
 		gameInput();
+	}
+	
+private final int CHUNK_SHIFT = 4; // 2^4 = 16
+	
+	private int lastPx = (int)(Settings.spawnChunk.x);
+	private int lastPy = (int)(Settings.spawnChunk.y);
+	private int lastPz = (int)(Settings.spawnChunk.z);
+	
+	
+	public void updateChunksAroundVector3f(Vector3f position) {
+	    int px = (int)position.x >> CHUNK_SHIFT;
+	    int py = Math.max(0, Math.min((int)position.y >> CHUNK_SHIFT, Settings.WORLD_SIZE_HEIGHT - 1));
+	    int pz = (int)position.z >> CHUNK_SHIFT;
+
+	    if (px == lastPx && py == lastPy && pz == lastPz) return;
+
+	    // Build set of what SHOULD be loaded
+	    HashSet<Long> shouldBeLoaded = new HashSet<Long>();
+	    for (int x = px - Settings.RENDER_DISTANCE; x <= px + Settings.RENDER_DISTANCE; x++) {
+	        for (int y = Math.max(0, py - Settings.RENDER_HEIGHT); y <= Math.min(Settings.WORLD_SIZE_HEIGHT-1, py + Settings.RENDER_HEIGHT); y++) {
+	            for (int z = pz - Settings.RENDER_DISTANCE; z <= pz + Settings.RENDER_DISTANCE; z++) {
+	                shouldBeLoaded.add(chunkKey(x, y, z));
+	            }
+	        }
+	    }
+
+	    // Evict anything loaded that shouldn't be
+	    for (Chunk chunk : renderCache.getRenderToroid()) {
+	        long k = chunkKey(chunk.x, chunk.y, chunk.z);
+	        if (!shouldBeLoaded.contains(k)) {
+	            evictionQueue.add(chunk);
+	        }
+	    }
+
+	    // Load anything that should be loaded but isn't
+	    for (long key : shouldBeLoaded) {
+	        if (!renderCache.contains(key)) {
+	            Chunk c = WorldMap.getChunkByKey(key);
+	            if (c != null) chunkQueue.add(c);
+	        }
+	    }
+
+	    renderCache.updateChunkPos(new Vector3f(px, py, pz));
+	    meshQueue.updatePos(new Vector3f(px, py, pz));
+
+	    lastPx = px;
+	    lastPy = py;
+	    lastPz = pz;
+	}
+
+	private long chunkKey(int x, int y, int z) {
+	    return ((long)(x & 0xFFFFF) << 40) | ((long)(y & 0xFFFFF) << 20) | (z & 0xFFFFF);
+	}
+	
+	private void addEviction(int evictX, int evictY, int evictZ, 
+            int loadX, int loadY, int loadZ,
+            int playerX, int playerY, int playerZ) {
+		Chunk oldChunk = WorldMap.getChunkDirect(evictX, evictY, evictZ);
+		Chunk newChunk = WorldMap.getChunkDirect(loadX, loadY, loadZ);
+		
+		if (oldChunk != null) evictionQueue.add(oldChunk);
+		
+		if (newChunk != null) {
+		chunkQueue.add(newChunk);
+		}
+	}
+
+	private void initialLoad(int px, int py, int pz) {
+	    int yMin = Math.max(0, py - Settings.RENDER_HEIGHT);
+	    int yMax = Math.min(Settings.WORLD_SIZE_HEIGHT - 1, py + Settings.RENDER_HEIGHT);
+
+	    for (int x = px - Settings.RENDER_DISTANCE; x <= px + Settings.RENDER_DISTANCE; x++) {
+	        for (int y = yMin; y <= yMax; y++) {
+	            for (int z = pz - Settings.RENDER_DISTANCE; z <= pz + Settings.RENDER_DISTANCE; z++) {
+	                Chunk c = WorldMap.getChunkDirect(x, y, z);
+	                if (c != null) {
+	                    chunkQueue.add(c);
+	                }
+	            }
+	        }
+	    }
 	}
 	
 	public void initDisplay(int width, int height) throws LWJGLException {
@@ -176,9 +314,7 @@ public class Renderer {
 			if (keyReference == Keyboard.KEY_ESCAPE) {
 				System.exit(0);
 			} else if (!ImGui.wantCaptureKeyboard()) {
-				//System.out.println("Queue size before add: " + GameInput.inputQueue.size());
-			    GameInput.inputQueue.add(new GameInput(keyPress, keyReference));
-			    //System.out.println("Queue size after add: " + GameInput.inputQueue.size());
+				gameInputQueue.inputQueue.add(new GameInput(keyPress, keyReference));
 
 				//System.out.println("Adding to queue: " + keyReference);
 			} else {
@@ -214,6 +350,9 @@ public class Renderer {
 	public RenderCache getRenderCache() {
 		return this.renderCache;
 	}
+	
+	
+	
 	
 	/*
 	 * for (Entity entity : entities) {

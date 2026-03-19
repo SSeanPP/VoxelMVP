@@ -59,15 +59,20 @@ public class MeshQueue {
     //Returns true if updated, false if not
     public boolean submit(Chunk chunk) {
 
-    	if (!chunk.needsUpdate || chunk.queuedForMeshing) {
+    	if (chunk.queuedForMeshing) {
     		return false;
     	}
+    	
     	
     	if(meshQueue.offer(chunk)){
     		chunk.queuedForMeshing = true;
     	}
     	
     	return true;
+    }
+    
+    public void updatePos(Vector3f newPos)  {
+    	this.playerChunkPos = newPos;
     }
 
 }

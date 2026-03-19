@@ -56,7 +56,7 @@ public class MeshThreadCulling implements Runnable {
 	
 	public void meshChunk(Chunk chunk) {
 		
-		chunk.needsUpdate = false;
+		//chunk.needsUpdate = false;
 		chunk.queuedForMeshing = false;
 		
 		vertexPtr = 0;

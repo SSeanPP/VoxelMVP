@@ -13,11 +13,12 @@ import meshThreader.MeshQueue;
 public class Main {
 	
 	public static ShaderProgram shaderProgram;
+	public static final GameInputQueue gameInput= new GameInputQueue();
 	public static final WorldMap gameMap = new WorldMap();
 	private final static RenderCache renderCache = new RenderCache(new Vector3f().set(Settings.spawnChunk));
 	public static MeshQueue meshThreader;
 	public static GameEngine gameEngine;
-	public static final Renderer renderer = new Renderer(meshThreader, renderCache);
+	public static final Renderer renderer = new Renderer(renderCache, gameInput);
 	public static Thread gameEngineThread;
 	public static final TextureCache textureAtlas = new TextureCache();
 	public static SceneBufferManager bufferManager;
@@ -28,9 +29,10 @@ public class Main {
             init();
             bufferManager = new SceneBufferManager();
             meshThreader = new MeshQueue(bufferManager);
+            renderer.bindMeshQueue(meshThreader);
             renderer.bindBufferMananger(bufferManager);
             
-            gameEngine = new GameEngine(meshThreader, renderer.getEvictionQueue(), renderCache);
+            gameEngine = new GameEngine(meshThreader, renderer.getEvictionQueue(), renderCache, gameInput);
             gameEngineThread = new Thread(gameEngine);
             
             Main.shaderProgram.bind(); 
@@ -40,10 +42,6 @@ public class Main {
              
             gameEngineThread.start();
             
-            for(Chunk chunk : WorldMap.getChunks()) {
-            	meshThreader.submit(chunk);
-            	renderCache.updateTorroid(chunk);
-            }
             
             while(!Display.isCloseRequested()) {
             	renderer.render(gameEngine.getPublishedState(), gameEngine.getPublishedAlpha());
