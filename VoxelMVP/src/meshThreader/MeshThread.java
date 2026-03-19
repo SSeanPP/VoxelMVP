@@ -50,38 +50,56 @@ public abstract class MeshThread implements Runnable {
 	protected abstract void meshChunk(Chunk chunk);
 	
 	protected void uploadToGPU(Chunk chunk) {
-    	if (vertexPtr != 0 || indexPtr != 0) {
-    		chunk.hasBlocks = true;
-    	} else {
-    		chunk.hasBlocks = false;
-    		return;
-    	}
-    	
-        int vertexSizeBytes = vertexPtr * 4;
-        int indexSizeBytes  = indexPtr  * 4;
 
-        int paddedVertex = bufferManager.alignVertex((int)(vertexSizeBytes * 1.1));
-        int paddedIndex  = bufferManager.alignIndex ((int)(indexSizeBytes  * 1.1));
-
-        if (chunk.allocation == null) {
-            chunk.allocation = bufferManager.getAllocation(paddedVertex, paddedIndex);
+        if (vertexPtr == 0 && indexPtr == 0) {
+            chunk.hasBlocks = false;
+            
+            //
+            if (chunk.Previous != null && chunk.Previous.allocation != null) {
+            	chunk.Previous.hasBlocks = false;
+                bufferManager.free(chunk.Previous.allocation);
+                chunk.Previous.allocation = null;
+            }
+            
         } else {
-            int allocV = chunk.allocation.vertexLimit - chunk.allocation.vertexOffset;
-            int allocI = chunk.allocation.indexLimit  - chunk.allocation.indexOffset;
-            if (allocV < paddedVertex || allocI < paddedIndex) {
-                bufferManager.free(chunk.allocation);
+            chunk.hasBlocks = true;
+
+            int vertexSizeBytes = vertexPtr * 4;
+            int indexSizeBytes  = indexPtr  * 4;
+            int paddedVertex = bufferManager.alignVertex((int)(vertexSizeBytes * 1.1));
+            int paddedIndex  = bufferManager.alignIndex ((int)(indexSizeBytes  * 1.1));
+
+            if (chunk.Previous != null && chunk.Previous.allocation != null) {
+                int allocV = chunk.Previous.allocation.vertexLimit - chunk.Previous.allocation.vertexOffset;
+                int allocI = chunk.Previous.allocation.indexLimit  - chunk.Previous.allocation.indexOffset;
+
+                boolean vertexFits = allocV >= vertexSizeBytes && allocV <= paddedVertex;
+                boolean indexFits  = allocI >= indexSizeBytes  && allocI <= paddedIndex;
+
+                if (vertexFits && indexFits) {
+                    // Reuse old allocation
+                	chunk.Previous.allocation.setCounts(0);
+                    chunk.allocation = chunk.Previous.allocation;
+                    chunk.Previous.allocation = null;
+                } else {
+                    // Wrong size - free and allocate fresh
+                    bufferManager.free(chunk.Previous.allocation);
+                    chunk.Previous.allocation = null;
+                    chunk.allocation = bufferManager.getAllocation(paddedVertex, paddedIndex);
+                }
+            } else {
                 chunk.allocation = bufferManager.getAllocation(paddedVertex, paddedIndex);
             }
+
+            ByteBuffer vbo = bufferManager.getVBOSlice(chunk.allocation).order(ByteOrder.nativeOrder());
+            for (int i = 0; i < vertexPtr; i++) vbo.putFloat(vertices[i]);
+
+            ByteBuffer ebo = bufferManager.getEBOSlice(chunk.allocation).order(ByteOrder.nativeOrder());
+            for (int i = 0; i < indexPtr; i++) ebo.putInt(indices[i]);
+
+            chunk.allocation.setCounts(indexPtr);
         }
-        
-        ByteBuffer vbo = bufferManager.getVBOSlice(chunk.allocation).order(ByteOrder.nativeOrder());
-        for (int i = 0; i < vertexPtr; i++) vbo.putFloat(vertices[i]);
-        
-        ByteBuffer ebo = bufferManager.getEBOSlice(chunk.allocation).order(ByteOrder.nativeOrder());
-        for (int i = 0; i < indexPtr; i++) ebo.putInt(indices[i]);
-        
-        chunk.allocation.setCounts(indexPtr);
-        //chunk.needsUpdate       = false;
-        chunk.queuedForMeshing  = false;
+
+        chunk.queuedForMeshing = false;
     }
 }

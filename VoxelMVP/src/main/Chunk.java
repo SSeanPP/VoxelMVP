@@ -5,8 +5,10 @@ import org.joml.Matrix4f;
 import bufferManager.Allocation;
 
 public class Chunk {
+	
 	public boolean hasBlocks = false;
 	public Allocation allocation = null; 
+	public Chunk Previous = null;
 	
 	public final int x;
 	public final int y;
@@ -17,6 +19,7 @@ public class Chunk {
 	public final int chunkSize = 16;
 	//public boolean needsUpdate;
 	public boolean queuedForMeshing;
+	public int cacheIndex;
 	
 	public short[] blocks = new short[16 * 16 * 16];
 	

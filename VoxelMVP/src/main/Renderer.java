@@ -86,9 +86,26 @@ public class Renderer {
 		totalIndices = 0;
 		
 		camera = state.getCamera();
-
+		
 		Main.shaderProgram.setUniform("viewMatrix", camera.handleCameraLerpAndMatrix(alpha, renderPos));
 		Main.shaderProgram.setUniform("projectionMatrix", projection.getProjMatrix());
+		
+		px = (int)camera.getPosition().x >> CHUNK_SHIFT;
+	    py = (int)camera.getPosition().y >> CHUNK_SHIFT;
+	    pz = (int)camera.getPosition().z >> CHUNK_SHIFT;
+		
+		if (px != lastPx || py != lastPy || pz != lastPz) {
+		    renderCache.updateChunkPos(new Vector3f(px, py, pz));
+		    meshQueue.updatePos(new Vector3f(px, py, pz));
+		    
+		    updateChunksAroundVector3f(camera.getPosition());
+		    
+		    lastPx = px;
+		    lastPy = py;
+		    lastPz = pz;
+		}
+		
+		
 		
 		if (lastFence != null) {
 			GL32.glClientWaitSync(lastFence, GL32.GL_SYNC_FLUSH_COMMANDS_BIT, 0);
@@ -97,27 +114,20 @@ public class Renderer {
 	        
 	        Chunk chunk;
 	        
-	        while ((chunk = evictionQueue.poll()) != null) {
-	        	//System.out.println("Evicting: " + chunk.x + "," + chunk.y + "," + chunk.z);
-	            if (chunk.allocation != null) {
-	                chunk.allocation.setCounts(0);
-	                bufferManager.free(chunk.allocation);
-	                chunk.allocation = null;
-	            }
-	            chunk.hasBlocks = false;
-	            renderCache.clearSlot(chunk.x, chunk.y, chunk.z);
-	        }
-	        
 	        while ((chunk = chunkQueue.poll()) != null) {
-	            //System.out.println("Processing chunkQueue: chunk(" + chunk.x + "," + chunk.y + "," + chunk.z + 
-	            //    ") queuedAt=(" + chunk.queuedAtPx + "," + chunk.queuedAtPy + "," + chunk.queuedAtPz + ")");
+	        	
+	        	if (chunk.Previous != null && chunk.Previous != chunk) {
+	        	    if (chunk.Previous.allocation != null) {
+	        	        chunk.Previous.allocation.setCounts(0);
+	        	    }
+	        	    chunk.Previous.hasBlocks = false;
+	        	}
+	        	
 	        	renderCache.updateTorroid(chunk);
 	            meshQueue.submit(chunk);
 	        }
 		}
 		
-
-		updateChunksAroundVector3f(camera.getPosition());
 		
 		
 		for (Chunk chunk : renderCache.getRenderToroid()) {
@@ -135,11 +145,6 @@ public class Renderer {
 			totalIndices += chunk.allocation.indexCount;
 		    totalVertices += chunk.allocation.indexCount / 6 * 4;
 		    
-		    
-		    
-			//int error = GL11.glGetError();
-			//if (error != 0) System.out.println("GL error after newFrame: " + error);
-			//System.out.println("IndexCount: " +chunk.allocation.indexCount+" IndexOffset: "+ chunk.allocation.indexOffset + " VertexOffset: " + chunk.allocation.vertexOffset / 5);
 		}
 		
 		
@@ -160,53 +165,47 @@ private final int CHUNK_SHIFT = 4; // 2^4 = 16
 	private int lastPy = (int)(Settings.spawnChunk.y);
 	private int lastPz = (int)(Settings.spawnChunk.z);
 	
-	
-	public void updateChunksAroundVector3f(Vector3f position) {
-	    int px = (int)position.x >> CHUNK_SHIFT;
-	    int py = (int)position.y >> CHUNK_SHIFT;
-	    int pz = (int)position.z >> CHUNK_SHIFT;
+	int px;
+    int py;
+    int pz;
 
-	    if (px == lastPx && py == lastPy && pz == lastPz) return;
+    
+    public void updateChunksAroundVector3f(Vector3f position) {
+        px = (int)position.x >> CHUNK_SHIFT;
+        py = (int)position.y >> CHUNK_SHIFT;
+        pz = (int)position.z >> CHUNK_SHIFT;
 
-	    // Build set of what SHOULD be loaded
-	    HashSet<Long> shouldBeLoaded = new HashSet<Long>();
-	    for (int x = px - Settings.RENDER_DISTANCE; x <= px + Settings.RENDER_DISTANCE; x++) {
-	        for (int y = Math.max(0, py - Settings.RENDER_HEIGHT); y <= Math.min(Settings.WORLD_SIZE_HEIGHT-1, py + Settings.RENDER_HEIGHT); y++) {
-	            for (int z = pz - Settings.RENDER_DISTANCE; z <= pz + Settings.RENDER_DISTANCE; z++) {
-	                shouldBeLoaded.add(chunkKey(x, y, z));
-	            }
-	        }
-	    }
+        if (px == lastPx && py == lastPy && pz == lastPz) return;
 
-	    // Evict anything loaded that shouldn't be
-	    for (Chunk chunk : renderCache.getRenderToroid()) {
-	        long k = chunkKey(chunk.x, chunk.y, chunk.z);
-	        if (!shouldBeLoaded.contains(k)) {
-	        	//System.out.println("Queuing eviction: " + chunk.x + "," + chunk.y + "," + chunk.z);
-	            evictionQueue.add(chunk);
-	        }
-	    }
+        for (int rx = -Settings.RENDER_DISTANCE; rx <= Settings.RENDER_DISTANCE; rx++) {
+            for (int ry = -Settings.RENDER_HEIGHT; ry <= Settings.RENDER_HEIGHT; ry++) {
+                for (int rz = -Settings.RENDER_DISTANCE; rz <= Settings.RENDER_DISTANCE; rz++) {
+                    int wx = px + rx;
+                    int wy = py + ry;
+                    int wz = pz + rz;
 
-	    // Load anything that should be loaded but isn't
-	    for (long key : shouldBeLoaded) {
-	        if (!renderCache.contains(key)) {
-	            Chunk c = WorldMap.getChunkByKey(key);
-	            if (c != null) chunkQueue.add(c);
-	        }
-	    }
+                    // Get the stable index for this world coordinate
+                    int index = renderCache.getIndexAt(wx, wy, wz);
+                    
+                    Chunk current = renderCache.getRenderToroid()[index];
+                    Chunk correct = (wy >= 0 && wy < Settings.WORLD_SIZE_HEIGHT)
+                        ? WorldMap.getChunkDirect(wx, wy, wz)
+                        : null;
 
-	    renderCache.updateChunkPos(new Vector3f(px, py, pz));
-	    meshQueue.updatePos(new Vector3f(px, py, pz));
-
-	    lastPx = px;
-	    lastPy = py;
-	    lastPz = pz;
-	}
-
-	private long chunkKey(int x, int y, int z) {
-	    return ((long)(x & 0xFFFFF) << 40) | ((long)(y & 0xFFFFF) << 20) | (z & 0xFFFFF);
-	}
-	
+                    // If the slot is empty or contains the WRONG chunk (from a previous wrap-around)
+                    if (current != correct) {
+                        if (correct != null) {
+                            correct.Previous = current;
+                            chunkQueue.add(correct);
+                        } else if (current != null) {
+                            // Slot should be empty, clear it
+                            renderCache.clearSlot(index);
+                        }
+                    }
+                }
+            }
+        }
+    }
 	private void addEviction(int evictX, int evictY, int evictZ, 
             int loadX, int loadY, int loadZ,
             int playerX, int playerY, int playerZ) {
