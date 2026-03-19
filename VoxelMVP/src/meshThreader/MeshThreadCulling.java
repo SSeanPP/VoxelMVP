@@ -10,49 +10,17 @@ import main.Chunk;
 import main.Settings;
 import main.WorldMap;
 
-public class MeshThreadCulling implements Runnable {
-	
-	private float[] vertices = new float[120000];
-	private int[] indices = new int[80000];
-	
-	private int vertexPtr = 0;
-	private int indexPtr = 0;
-	
-	private short[][][] localBlockCache = new short[Settings.blockCacheSize][Settings.blockCacheSize][Settings.blockCacheSize];
-	
-	private SceneBufferManager bufferManager;
-	private BlockingQueue<Chunk> queue;
-	
+public class MeshThreadCulling extends MeshThread {
+
 	private int bx = 0;
 	private int by = 0;
 	private int bz = 0;
-	
-	private static final int TOP = 0;
-	private static final int BOTTOM = 1;
-	private static final int NORTH = 2;
-	private static final int SOUTH = 3;
-	private static final int EAST = 4;
-	private static final int WEST = 5;
-	
-	private final int ATLAS_SIZE = 16;   // tiles per row
-	private final float TILE_SIZE = 1f / ATLAS_SIZE;
 	
 	public MeshThreadCulling (SceneBufferManager manager, BlockingQueue<Chunk> queueInput) {
 		this.bufferManager = manager;
 		this.queue = queueInput;
 	}
 	
-	@Override
-    public void run() {
-		while (!Thread.currentThread().isInterrupted()) {
-            try {
-                Chunk chunk = queue.take();
-                meshChunk(chunk);
-            } catch (InterruptedException e) {
-                break;
-            }
-        }
-    }
 	
 	public void meshChunk(Chunk chunk) {
 		
@@ -109,39 +77,7 @@ public class MeshThreadCulling implements Runnable {
 			}
 		}
 		
-		int vertexSizeBytes = vertexPtr * 4;
-		int indexSizeBytes = indexPtr * 4;
-		
-		int paddedVertexBytes = bufferManager.alignVertex((int)(vertexSizeBytes * 1.1));
-		int paddedIndexBytes  = bufferManager.alignIndex((int)(indexSizeBytes * 1.1));
-		
-		if (chunk.allocation == null) {
-		    chunk.allocation = bufferManager.getAllocation(paddedVertexBytes, paddedIndexBytes);
-		}
-
-		int allocatedVertexSize = chunk.allocation.vertexLimit - chunk.allocation.vertexOffset;
-		int allocatedIndexSize = chunk.allocation.indexLimit - chunk.allocation.indexOffset;
-		if (allocatedVertexSize < paddedVertexBytes || allocatedIndexSize < paddedIndexBytes) {
-			
-			bufferManager.free(chunk.allocation);
-		    chunk.allocation = bufferManager.getAllocation(
-		    		paddedVertexBytes, paddedIndexBytes
-		    );
-		}
-
-		ByteBuffer sliceVBO = bufferManager.getVBOSlice(chunk.allocation).order(ByteOrder.nativeOrder());
-		
-		for (int i = 0; i < vertexPtr; i++) {
-			sliceVBO.putFloat(vertices[i]);
-		}
-		//System.out.println("Slice position: " + sliceVBO.position() + " limit: " + sliceVBO.limit());
-		ByteBuffer sliceEBO = bufferManager.getEBOSlice(chunk.allocation).order(ByteOrder.nativeOrder());
-		
-		for (int i = 0; i < indexPtr; i++) {
-			sliceEBO.putInt(indices[i]);
-		}
-		
-		chunk.allocation.setCounts(indexPtr);
+		uploadToGPU(chunk);
 		
 	}
 	

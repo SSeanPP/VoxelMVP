@@ -10,15 +10,9 @@ import main.Chunk;
 import main.Settings;
 import main.WorldMap;
 
-public class MeshThreadBinaryGreedy implements Runnable {
+public class MeshThreadBinaryGreedy extends MeshThread {
 
-    // --- Infrastructure ---
-    private final SceneBufferManager bufferManager;
-    private final BlockingQueue<Chunk> queue;
-
-    // --- Block cache ---
-    private final short[][][] localBlockCache = new short[Settings.blockCacheSize][Settings.blockCacheSize][Settings.blockCacheSize];
-
+    
     // --- Binary meshing working data - all instance fields, zero allocation per chunk ---
     private final long[][][] axisCols    = new long[3][18][18];
     private final long[][][] faceMasks   = new long[6][18][18];
@@ -34,23 +28,6 @@ public class MeshThreadBinaryGreedy implements Runnable {
     private final GreedyQuad[] quadPool = new GreedyQuad[512];
     private int quadCount = 0;
 
-    // --- Vertex/index output ---
-    private final float[] vertices = new float[300000];
-    private final int[]   indices  = new int[200000];
-    private int vertexPtr = 0;
-    private int indexPtr  = 0;
-
-    // --- Atlas constants ---
-    private static final int   ATLAS_SIZE = 16;
-    private static final float TILE_SIZE  = 1f / ATLAS_SIZE;
-
-    // --- Face constants - match your original ordering ---
-    private static final int TOP    = 0;
-    private static final int BOTTOM = 1;
-    private static final int NORTH  = 2; // +Z
-    private static final int SOUTH  = 3; // -Z
-    private static final int EAST   = 4; // +X
-    private static final int WEST   = 5; // -X
 
     public MeshThreadBinaryGreedy(SceneBufferManager manager, BlockingQueue<Chunk> queueInput) {
         this.bufferManager = manager;
@@ -60,21 +37,7 @@ public class MeshThreadBinaryGreedy implements Runnable {
             quadPool[i] = new GreedyQuad();
     }
 
-    // -------------------------------------------------------------------------
-    // Runnable
-    // -------------------------------------------------------------------------
-
-    @Override
-    public void run() {
-        while (!Thread.currentThread().isInterrupted()) {
-            try {
-                Chunk chunk = queue.take();
-                meshChunk(chunk);
-            } catch (InterruptedException e) {
-                break;
-            }
-        }
-    }
+ 
 
     // -------------------------------------------------------------------------
     // Main entry point
@@ -421,41 +384,7 @@ public class MeshThreadBinaryGreedy implements Runnable {
     // Upload to GPU
     // -------------------------------------------------------------------------
 
-    private void uploadToGPU(Chunk chunk) {
-    	if (vertexPtr != 0 || indexPtr != 0) {
-    		chunk.hasBlocks = true;
-    	} else {
-    		chunk.hasBlocks = false;
-    		return;
-    	}
-    	
-        int vertexSizeBytes = vertexPtr * 4;
-        int indexSizeBytes  = indexPtr  * 4;
-
-        int paddedVertex = bufferManager.alignVertex((int)(vertexSizeBytes * 1.1));
-        int paddedIndex  = bufferManager.alignIndex ((int)(indexSizeBytes  * 1.1));
-
-        if (chunk.allocation == null) {
-            chunk.allocation = bufferManager.getAllocation(paddedVertex, paddedIndex);
-        } else {
-            int allocV = chunk.allocation.vertexLimit - chunk.allocation.vertexOffset;
-            int allocI = chunk.allocation.indexLimit  - chunk.allocation.indexOffset;
-            if (allocV < paddedVertex || allocI < paddedIndex) {
-                bufferManager.free(chunk.allocation);
-                chunk.allocation = bufferManager.getAllocation(paddedVertex, paddedIndex);
-            }
-        }
-        
-        ByteBuffer vbo = bufferManager.getVBOSlice(chunk.allocation).order(ByteOrder.nativeOrder());
-        for (int i = 0; i < vertexPtr; i++) vbo.putFloat(vertices[i]);
-        
-        ByteBuffer ebo = bufferManager.getEBOSlice(chunk.allocation).order(ByteOrder.nativeOrder());
-        for (int i = 0; i < indexPtr; i++) ebo.putInt(indices[i]);
-        
-        chunk.allocation.setCounts(indexPtr);
-        //chunk.needsUpdate       = false;
-        chunk.queuedForMeshing  = false;
-    }
+    
 
     // -------------------------------------------------------------------------
     // Helpers

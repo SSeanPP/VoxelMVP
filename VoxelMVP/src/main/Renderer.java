@@ -90,8 +90,6 @@ public class Renderer {
 		Main.shaderProgram.setUniform("viewMatrix", camera.handleCameraLerpAndMatrix(alpha, renderPos));
 		Main.shaderProgram.setUniform("projectionMatrix", projection.getProjMatrix());
 		
-		
-		
 		if (lastFence != null) {
 			GL32.glClientWaitSync(lastFence, GL32.GL_SYNC_FLUSH_COMMANDS_BIT, 0);
 	        GL32.glDeleteSync(lastFence);
@@ -121,38 +119,6 @@ public class Renderer {
 
 		updateChunksAroundVector3f(camera.getPosition());
 		
-		/*
-		int nullSlots = 0;
-		int validChunks = 0;
-		int wrongPosition = 0;
-
-		for (int i = 0; i < renderCache.getRenderToroid().length; i++) {
-		    Chunk chunk = renderCache.getRenderToroid()[i];
-		    if (chunk == null) {
-		        nullSlots++;
-		        continue;
-		    }
-		    
-		    int expectedIdx = renderCache.torroidIndex(chunk.x, chunk.y, chunk.z);
-		    if (expectedIdx != i) {
-		        wrongPosition++;
-		        Chunk atExpected = renderCache.getRenderToroid()[expectedIdx];
-		        System.out.println("MISMATCH: chunk(" + chunk.x + "," + chunk.y + "," + chunk.z + 
-		            ") is at slot " + i + " but maps to slot " + expectedIdx +
-		            " player=(" + renderCache.playerChunkX + "," + renderCache.playerChunkY + "," + renderCache.playerChunkZ + ")" +
-		            " rx=" + (chunk.x - renderCache.playerChunkX) +
-		            " ry=" + (chunk.y - renderCache.playerChunkY) +
-		            " rz=" + (chunk.z - renderCache.playerChunkZ) +
-		            " slot " + expectedIdx + " holds: " + 
-		            (atExpected == null ? "null" : atExpected.x + "," + atExpected.y + "," + atExpected.z));
-		    } else {
-		        validChunks++;
-		    }
-		}
-
-		if (wrongPosition > 0) {
-		    System.out.println("Valid: " + validChunks + " Null: " + nullSlots + " Mismatched: " + wrongPosition);
-		}*/
 		
 		for (Chunk chunk : renderCache.getRenderToroid()) {
 			if (chunk == null || chunk.allocation == null || !chunk.hasBlocks) continue;
