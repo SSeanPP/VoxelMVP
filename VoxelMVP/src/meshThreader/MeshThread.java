@@ -81,6 +81,7 @@ public abstract class MeshThread implements Runnable {
                 	chunk.Previous.allocation.setCounts(0);
                     chunk.allocation = chunk.Previous.allocation;
                     chunk.Previous.allocation = null;
+                    
                 } else {
                     // Wrong size - free and allocate fresh
                     bufferManager.free(chunk.Previous.allocation);

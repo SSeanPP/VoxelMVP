@@ -131,14 +131,12 @@ public class Renderer {
 	        }
 	        
 	        while ((chunk = chunkQueue.poll()) != null) {
-	        	
 	        	if (chunk.Previous != null && chunk.Previous != chunk) {
 	        	    if (chunk.Previous.allocation != null) {
 	        	        chunk.Previous.allocation.setCounts(0);
 	        	    }
 	        	    chunk.Previous.hasBlocks = false;
 	        	}
-	        	
 	        	renderCache.updateTorroid(chunk);
 	            meshQueue.submit(chunk);
 	        }
