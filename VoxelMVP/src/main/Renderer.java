@@ -79,6 +79,16 @@ public class Renderer {
 		textAtlas.bind();
 	}
 	
+	private final int CHUNK_SHIFT = 4; // 2^4 = 16
+	
+	private int lastPx = (int)(Settings.spawnChunk.x);
+	private int lastPy = (int)(Settings.spawnChunk.y);
+	private int lastPz = (int)(Settings.spawnChunk.z);
+	
+	private int px;
+	private int py;
+	private int pz;
+	
 	public void render(GameState state, double alpha) {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		
@@ -95,7 +105,6 @@ public class Renderer {
 	    pz = (int)camera.getPosition().z >> CHUNK_SHIFT;
 		
 		if (px != lastPx || py != lastPy || pz != lastPz) {
-		    renderCache.updateChunkPos(new Vector3f(px, py, pz));
 		    meshQueue.updatePos(new Vector3f(px, py, pz));
 		    
 		    updateChunksAroundVector3f(camera.getPosition());
@@ -105,14 +114,21 @@ public class Renderer {
 		    lastPz = pz;
 		}
 		
-		
-		
 		if (lastFence != null) {
 			GL32.glClientWaitSync(lastFence, GL32.GL_SYNC_FLUSH_COMMANDS_BIT, 0);
 	        GL32.glDeleteSync(lastFence);
 	        lastFence = null;
 	        
 	        Chunk chunk;
+	        
+	        while ((chunk = evictionQueue.poll()) != null) {
+	            if (chunk.allocation != null) {
+	            	chunk.allocation.setCounts(0);
+	                bufferManager.free(chunk.allocation);
+	                chunk.allocation = null;
+	            }
+	            chunk.hasBlocks = false;
+	        }
 	        
 	        while ((chunk = chunkQueue.poll()) != null) {
 	        	
@@ -127,8 +143,6 @@ public class Renderer {
 	            meshQueue.submit(chunk);
 	        }
 		}
-		
-		
 		
 		for (Chunk chunk : renderCache.getRenderToroid()) {
 			if (chunk == null || chunk.allocation == null || !chunk.hasBlocks) continue;
@@ -147,8 +161,6 @@ public class Renderer {
 		    
 		}
 		
-		
-		
 		lastFence = GL32.glFenceSync(GL32.GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
 		
 		if(!guiHelper.runGUI(state, totalIndices, totalVertices)) {
@@ -158,17 +170,6 @@ public class Renderer {
 		Display.update();
 		gameInput();
 	}
-	
-private final int CHUNK_SHIFT = 4; // 2^4 = 16
-	
-	private int lastPx = (int)(Settings.spawnChunk.x);
-	private int lastPy = (int)(Settings.spawnChunk.y);
-	private int lastPz = (int)(Settings.spawnChunk.z);
-	
-	int px;
-    int py;
-    int pz;
-
     
     public void updateChunksAroundVector3f(Vector3f position) {
         px = (int)position.x >> CHUNK_SHIFT;
@@ -198,42 +199,15 @@ private final int CHUNK_SHIFT = 4; // 2^4 = 16
                             correct.Previous = current;
                             chunkQueue.add(correct);
                         } else if (current != null) {
-                            // Slot should be empty, clear it
-                            renderCache.clearSlot(index);
+                        	renderCache.clearSlot(index);
+                            // Queue for safe deallocation after fence
+                            evictionQueue.add(current);
                         }
                     }
                 }
             }
         }
     }
-	private void addEviction(int evictX, int evictY, int evictZ, 
-            int loadX, int loadY, int loadZ,
-            int playerX, int playerY, int playerZ) {
-		Chunk oldChunk = WorldMap.getChunkDirect(evictX, evictY, evictZ);
-		Chunk newChunk = WorldMap.getChunkDirect(loadX, loadY, loadZ);
-		
-		if (oldChunk != null) evictionQueue.add(oldChunk);
-		
-		if (newChunk != null) {
-		chunkQueue.add(newChunk);
-		}
-	}
-
-	private void initialLoad(int px, int py, int pz) {
-	    int yMin = Math.max(0, py - Settings.RENDER_HEIGHT);
-	    int yMax = Math.min(Settings.WORLD_SIZE_HEIGHT - 1, py + Settings.RENDER_HEIGHT);
-
-	    for (int x = px - Settings.RENDER_DISTANCE; x <= px + Settings.RENDER_DISTANCE; x++) {
-	        for (int y = yMin; y <= yMax; y++) {
-	            for (int z = pz - Settings.RENDER_DISTANCE; z <= pz + Settings.RENDER_DISTANCE; z++) {
-	                Chunk c = WorldMap.getChunkDirect(x, y, z);
-	                if (c != null) {
-	                    chunkQueue.add(c);
-	                }
-	            }
-	        }
-	    }
-	}
 	
 	public void initDisplay(int width, int height) throws LWJGLException {
         Display.setDisplayMode(new DisplayMode(width, height));
