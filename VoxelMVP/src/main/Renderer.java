@@ -100,15 +100,14 @@ public class Renderer {
 	        Chunk chunk;
 	        
 	        while ((chunk = evictionQueue.poll()) != null) {
-	        	
-                if (chunk.allocation != null) {
-                    chunk.allocation.setCounts(0);
-                    bufferManager.free(chunk.allocation);
-                    chunk.allocation = null;
-                }
-                chunk.hasBlocks = false;
-                renderCache.clearSlot(chunk.x, chunk.y, chunk.z);
-	           
+	        	//System.out.println("Evicting: " + chunk.x + "," + chunk.y + "," + chunk.z);
+	            if (chunk.allocation != null) {
+	                chunk.allocation.setCounts(0);
+	                bufferManager.free(chunk.allocation);
+	                chunk.allocation = null;
+	            }
+	            chunk.hasBlocks = false;
+	            renderCache.clearSlot(chunk.x, chunk.y, chunk.z);
 	        }
 	        
 	        while ((chunk = chunkQueue.poll()) != null) {
@@ -198,7 +197,7 @@ private final int CHUNK_SHIFT = 4; // 2^4 = 16
 	
 	public void updateChunksAroundVector3f(Vector3f position) {
 	    int px = (int)position.x >> CHUNK_SHIFT;
-	    int py = Math.max(0, Math.min((int)position.y >> CHUNK_SHIFT, Settings.WORLD_SIZE_HEIGHT - 1));
+	    int py = (int)position.y >> CHUNK_SHIFT;
 	    int pz = (int)position.z >> CHUNK_SHIFT;
 
 	    if (px == lastPx && py == lastPy && pz == lastPz) return;
@@ -217,6 +216,7 @@ private final int CHUNK_SHIFT = 4; // 2^4 = 16
 	    for (Chunk chunk : renderCache.getRenderToroid()) {
 	        long k = chunkKey(chunk.x, chunk.y, chunk.z);
 	        if (!shouldBeLoaded.contains(k)) {
+	        	//System.out.println("Queuing eviction: " + chunk.x + "," + chunk.y + "," + chunk.z);
 	            evictionQueue.add(chunk);
 	        }
 	    }
