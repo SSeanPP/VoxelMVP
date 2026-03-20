@@ -72,7 +72,7 @@ public class MeshQueue {
     }
     
     public void updatePos(Vector3f newPos)  {
-    	MeshQueue.playerChunkPos = newPos;
+    	MeshQueue.playerChunkPos.set(newPos);
     }
 
 }

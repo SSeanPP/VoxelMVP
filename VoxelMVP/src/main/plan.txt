@@ -1,6 +1,7 @@
 Memory stuff:
     Chunk[] toroidal array (Chunks in render distance, holds SSBO index per slot)
-    SSBO draw buffer
+    SSBO draw buffer A
+    SSBO draw buffer B
     Queue<EvictionRequest> evictionQueue
     MeshPriorityQueue meshQueue
     GLsync lastFence
@@ -17,10 +18,8 @@ Render thread (each frame):
         glDeleteSync(lastFence)
         lastFence = null
 
-        while ((req = evictionQueue.poll()) != null):
-            null SSBO slot
-            push old allocation + req.newChunk → meshQueue
-
+        
+		
     // 2. Draw
     glMultiDrawElementsIndirect(...)
 
@@ -33,3 +32,69 @@ Mesh thread (worker threads):
         request allocation
         write VBO/EBO
         write SSBO slot (commit)
+        
+Game thread():
+	when(tick):{
+		EvictionChecker();
+		Chunk chunk
+		while ((chunk = evictionQueue.poll()) != null):
+            torroidal array[chunk.SSBO slot] = null
+            free VBO and EBO
+        
+        while ((chunk = chunkQueue.poll()) != null):
+            torroidal array[chunk.SSBO slot] = yes, but 0 vertex Count
+            MeshQueue(Chunk) -> mesh queue will updated the chunk's SSBO vertex Count when finished
+        
+	}
+	
+	////////////////
+Render thread (each frame):
+    glClientWaitSync(lastFence)
+    glDeleteSync(lastFence)
+    fenceReady = true              // signal game thread — GPU done, safe to free
+
+    reset drawCount to 0
+    upload frustum planes
+    glDispatchCompute(...)
+    GL42.glMemoryBarrier(
+	    GL42.GL_COMMAND_BARRIER_BIT | 
+	    GL42.GL_SHADER_STORAGE_BARRIER_BIT
+	);
+    glMultiDrawElementsIndirectCountARB(...)
+    
+    lastFence = glFenceSync(...)
+    fenceReady = false
+
+Game thread (20 TPS):
+    if (fenceReady):
+        while (chunk = evictionQueue.poll()):
+            bufferManager.free(chunk.allocation)   // safe — fence fired
+            chunk.allocation = null
+            WorldMap.removeChunk(chunk)
+
+    updateChunksAroundVector3f():
+        for each slot in toroid:
+            if wrong chunk in slot:
+                ssboMapped[slot].count = 0         // GPU skips next frame
+                evictionQueue.add(current)         // freed next tick after fence
+                ssboMapped[slot].worldXYZ = new chunk pos
+                ssboMapped[slot].chunkId  = correct.id
+                slotToChunk[slot] = correct
+                meshQueue.push(correct, slot)
+
+Mesh thread (worker pool):
+    build mesh
+    write VBO/EBO via persistent mapped pointer
+    ssboMapped[slot].firstIndex = ...
+    ssboMapped[slot].baseVertex = ...
+    ssboMapped[slot].count = indexCount   // last write — visibility gate
+
+GPU compute (each frame):
+    for each slot in parallel:
+        if count == 0: skip
+        if outside frustum: skip
+        atomicAdd(drawCount, 1)
+        write DrawCommand to commandSSBO
+
+GPU draw:
+    glMultiDrawElementsIndirectCountARB

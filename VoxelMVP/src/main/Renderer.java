@@ -4,10 +4,15 @@ import org.joml.Vector3f;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
+import org.lwjgl.opengl.ARBIndirectParameters;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL32;
+import org.lwjgl.opengl.GL42;
+import org.lwjgl.opengl.GL43;
+import org.lwjgl.opengl.GL44;
+import org.lwjgl.opengl.GL45;
 import org.lwjgl.opengl.GLSync;
 
 import bufferManager.SceneBufferManager;
@@ -38,6 +43,7 @@ public class Renderer {
 	private Vector3f renderPos = new Vector3f();
 	//private Matrix4f renderMatrix = new Matrix4f();
 	private Camera camera;
+	private Vector3f cameraPos;
 	private GUIHelper guiHelper;
 	
 	private Texture textAtlas;
@@ -56,7 +62,7 @@ public class Renderer {
 		totalVertices = 0;
 		totalIndices = 0;
 		renderCache = renderCacheInput;
-		
+		pPosition = new Vector3f();
 		this.gameInputQueue = gameInputQueue;
 		
 		System.out.println("Input class on renderer: " + gameInputQueue.inputQueue.getClass().getClassLoader());
@@ -90,6 +96,8 @@ public class Renderer {
 	private int py;
 	private int pz;
 	
+	private Vector3f pPosition;
+	
 	public void render(GameState state, double alpha) {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		
@@ -97,16 +105,21 @@ public class Renderer {
 		totalIndices = 0;
 		
 		camera = state.getCamera();
+		cameraPos = camera.getPosition();
 		
 		Main.shaderProgram.setUniform("viewMatrix", camera.handleCameraLerpAndMatrix(alpha, renderPos));
 		Main.shaderProgram.setUniform("projectionMatrix", projection.getProjMatrix());
 		
-		px = (int)camera.getPosition().x >> CHUNK_SHIFT;
-	    py = (int)camera.getPosition().y >> CHUNK_SHIFT;
-	    pz = (int)camera.getPosition().z >> CHUNK_SHIFT;
+		
+		
+		px = (int)cameraPos.x >> CHUNK_SHIFT;
+	    py = (int)cameraPos.y >> CHUNK_SHIFT;
+	    pz = (int)cameraPos.z >> CHUNK_SHIFT;
 		
 		if (px != lastPx || py != lastPy || pz != lastPz) {
-		    meshQueue.updatePos(new Vector3f(px, py, pz));
+			
+			pPosition.set(px,py,pz);
+		    meshQueue.updatePos(pPosition);
 		    
 		    updateChunksAroundVector3f(camera.getPosition());
 		    
@@ -163,6 +176,7 @@ public class Renderer {
 		
 		lastFence = GL32.glFenceSync(GL32.GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
 		
+		
 		if(!guiHelper.runGUI(state, totalIndices, totalVertices)) {
 			camera.updateCameraMatrix(Mouse.getDX(), Mouse.getDY());
 		}
@@ -179,20 +193,7 @@ public class Renderer {
         pz = (int)position.z >> CHUNK_SHIFT;
 
         if (px == lastPx && py == lastPy && pz == lastPz) return;
-        /*
-        System.out.println("HashMap size: " + WorldMap.getChunks().size());
         
-        if (System.currentTimeMillis() - lastDebugTime > 1000) {
-            int withAlloc = 0;
-            int withBlocks = 0;
-            for (Chunk c : WorldMap.getChunks().values()) {
-                if (c.allocation != null) withAlloc++;
-                if (c.blocks != null) withBlocks++;
-            }
-            System.out.println("Chunks: " + WorldMap.getChunks().size() + 
-                " withAlloc: " + withAlloc + " withBlocks: " + withBlocks);
-            lastDebugTime = System.currentTimeMillis();
-        }*/
         
         for (int rx = -Settings.RENDER_DISTANCE; rx <= Settings.RENDER_DISTANCE; rx++) {
             for (int ry = -Settings.RENDER_HEIGHT; ry <= Settings.RENDER_HEIGHT; ry++) {
@@ -231,7 +232,7 @@ public class Renderer {
                 	        WorldMap.removeChunk(WorldMap.key(current != null ? current.x : 0, 
     	                            current != null ? current.y : 0,
     	                            current != null ? current.z : 0));
-                	    } else if (current != null) {
+                	    } else if (current != null ) {
                 	        // No replacement - eviction queue handles free
                 	        current.previousAllocation = null; // ensure no dangling ref
                 	        evictionQueue.add(current);
@@ -241,8 +242,6 @@ public class Renderer {
                 }
             }
         }
-        
-       
     }
 	
 	public void initDisplay(int width, int height) throws LWJGLException {
