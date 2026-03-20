@@ -113,5 +113,13 @@ public class ShaderProgram {
 		glUniform1i(uniforms.get(uniformName), value);
 		
 	}
+
+	public void setUniform(String uniformName, float relX, float relY, float relZ) {
+	    Integer location = uniforms.get(uniformName);
+	    if (location == null) {
+	        throw new RuntimeException("Could not find uniform [" + uniformName + "]");
+	    }
+	    glUniform3f(location, relX, relY, relZ);
+	}
     
 }
