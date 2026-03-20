@@ -22,16 +22,6 @@ public class WorldMap {
 	public WorldMap() {
 		gen = new TerrainGeneratorGPT(seed);
 		
-		for(int x = 0; x <Settings.WORLD_SIZE_WIDTH; x++) {
-        	for(int y = 0; y < Settings.WORLD_SIZE_HEIGHT ; y++) {
-        		for (int z = 0; z < Settings.WORLD_SIZE_WIDTH; z++) {
-        			Chunk chunk = new Chunk(x, y, z);
-        			gen.generate(chunk, x, y, z);
-                    chunks.put(key(x, y, z), chunk);
-            	}
-        	}
-        	
-        }
 	}
 	/*
 	public void addToWorldMapViaIndex(int Index, Chunk chunk) {
