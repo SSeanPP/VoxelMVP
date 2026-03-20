@@ -55,10 +55,10 @@ public abstract class MeshThread implements Runnable {
             chunk.hasBlocks = false;
             
             //
-            if (chunk.Previous != null && chunk.Previous.allocation != null) {
-            	chunk.Previous.hasBlocks = false;
-                bufferManager.free(chunk.Previous.allocation);
-                chunk.Previous.allocation = null;
+            if (chunk.previousAllocation != null && chunk.previousAllocation.allocation != null) {
+            	chunk.previousAllocation.hasBlocks = false;
+                bufferManager.free(chunk.previousAllocation.allocation);
+                chunk.previousAllocation.allocation = null;
             }
             
         } else {
@@ -72,23 +72,23 @@ public abstract class MeshThread implements Runnable {
             int paddedVertex = bufferManager.alignVertex((int)(vertexSizeBytes));
             int paddedIndex  = bufferManager.alignIndex ((int)(indexSizeBytes));
 
-            if (chunk.Previous != null && chunk.Previous.allocation != null) {
-                int allocV = chunk.Previous.allocation.vertexLimit - chunk.Previous.allocation.vertexOffset;
-                int allocI = chunk.Previous.allocation.indexLimit  - chunk.Previous.allocation.indexOffset;
+            if (chunk.previousAllocation != null && chunk.previousAllocation.allocation != null) {
+                int allocV = chunk.previousAllocation.allocation.vertexLimit - chunk.previousAllocation.allocation.vertexOffset;
+                int allocI = chunk.previousAllocation.allocation.indexLimit  - chunk.previousAllocation.allocation.indexOffset;
 
                 boolean vertexFits = allocV >= vertexSizeBytes && allocV <= paddedVertex;
                 boolean indexFits  = allocI >= indexSizeBytes  && allocI <= paddedIndex;
 
                 if (vertexFits && indexFits) {
                     // Reuse old allocation
-                	chunk.Previous.allocation.setCounts(0);
-                    chunk.allocation = chunk.Previous.allocation;
-                    chunk.Previous.allocation = null;
+                	chunk.previousAllocation.allocation.setCounts(0);
+                    chunk.allocation = chunk.previousAllocation.allocation;
+                    chunk.previousAllocation.allocation = null;
                     
                 } else {
                     // Wrong size - free and allocate fresh
-                    bufferManager.free(chunk.Previous.allocation);
-                    chunk.Previous.allocation = null;
+                    bufferManager.free(chunk.previousAllocation.allocation);
+                    chunk.previousAllocation.allocation = null;
                     chunk.allocation = bufferManager.getAllocation(paddedVertex, paddedIndex);
                 }
             } else {
@@ -105,5 +105,6 @@ public abstract class MeshThread implements Runnable {
         }
 
         chunk.queuedForMeshing = false;
+        chunk.previousAllocation = null;
     }
 }

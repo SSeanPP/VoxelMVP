@@ -8,7 +8,7 @@ public class Chunk {
 	
 	public boolean hasBlocks = false;
 	public Allocation allocation = null; 
-	public Chunk Previous = null;
+	public Chunk previousAllocation = null;
 	
 	public final int x;
 	public final int y;
@@ -60,5 +60,9 @@ public class Chunk {
 	    if (!(o instanceof Chunk)) return false;
 	    Chunk other = (Chunk) o;
 	    return x == other.x && y == other.y && z == other.z;
+	}
+
+	public void dispose() {
+		blocks = null;
 	}
 }

@@ -58,8 +58,18 @@ public class WorldMap {
 	    return winner != null ? winner : chunk;
 	}
 	
+	public static void removeChunk(long key) {
+	    Chunk c = chunks.remove(key);
+	    if (c != null) c.dispose();
+	}
+	
 	public static ConcurrentHashMap<Long, Chunk> getChunks() {
 		return chunks;
+	}
+	
+	public static Chunk getChunkIfExists(int x, int y, int z) {
+	    if (y < 0 || y >= Settings.WORLD_SIZE_HEIGHT) return null;
+	    return chunks.get(key(x, y, z));
 	}
 	
 	public static short[][][] blockCache(long chunkCoords, Chunk centreChunk, short[][][] blockCache) {
@@ -80,12 +90,12 @@ public class WorldMap {
 	        blockCache[x+1][y+1][z+1] = c[Chunk.blockIndex(x,y,z)];
 
 	    // --- 6 FACES ---
-	    Chunk top    = getChunkDirect(cx,   cy+1, cz  );
-	    Chunk bottom = getChunkDirect(cx,   cy-1, cz  );
-	    Chunk north  = getChunkDirect(cx,   cy,   cz+1);
-	    Chunk south  = getChunkDirect(cx,   cy,   cz-1);
-	    Chunk east   = getChunkDirect(cx+1, cy,   cz  );
-	    Chunk west   = getChunkDirect(cx-1, cy,   cz  );
+	    Chunk top    = getChunkIfExists(cx,   cy+1, cz  );
+	    Chunk bottom = getChunkIfExists(cx,   cy-1, cz  );
+	    Chunk north  = getChunkIfExists(cx,   cy,   cz+1);
+	    Chunk south  = getChunkIfExists(cx,   cy,   cz-1);
+	    Chunk east   = getChunkIfExists(cx+1, cy,   cz  );
+	    Chunk west   = getChunkIfExists(cx-1, cy,   cz  );
 
 	    if (top != null) {
 	        short[] b = top.getBlocks();
@@ -126,10 +136,10 @@ public class WorldMap {
 
 	    // --- 12 EDGES ---
 	    // 4 vertical edges (Y axis edges, varying X and Z)
-	    Chunk ne = getChunkDirect(cx+1, cy, cz+1);
-	    Chunk nw = getChunkDirect(cx-1, cy, cz+1);
-	    Chunk se = getChunkDirect(cx+1, cy, cz-1);
-	    Chunk sw = getChunkDirect(cx-1, cy, cz-1);
+	    Chunk ne = getChunkIfExists(cx+1, cy, cz+1);
+	    Chunk nw = getChunkIfExists(cx-1, cy, cz+1);
+	    Chunk se = getChunkIfExists(cx+1, cy, cz-1);
+	    Chunk sw = getChunkIfExists(cx-1, cy, cz-1);
 
 	    if (ne != null) {
 	        short[] b = ne.getBlocks();
@@ -153,10 +163,10 @@ public class WorldMap {
 	    }
 
 	    // 4 top edges
-	    Chunk topNorth = getChunkDirect(cx,   cy+1, cz+1);
-	    Chunk topSouth = getChunkDirect(cx,   cy+1, cz-1);
-	    Chunk topEast  = getChunkDirect(cx+1, cy+1, cz  );
-	    Chunk topWest  = getChunkDirect(cx-1, cy+1, cz  );
+	    Chunk topNorth = getChunkIfExists(cx,   cy+1, cz+1);
+	    Chunk topSouth = getChunkIfExists(cx,   cy+1, cz-1);
+	    Chunk topEast  = getChunkIfExists(cx+1, cy+1, cz  );
+	    Chunk topWest  = getChunkIfExists(cx-1, cy+1, cz  );
 
 	    if (topNorth != null) {
 	        short[] b = topNorth.getBlocks();
@@ -180,10 +190,10 @@ public class WorldMap {
 	    }
 
 	    // 4 bottom edges
-	    Chunk botNorth = getChunkDirect(cx,   cy-1, cz+1);
-	    Chunk botSouth = getChunkDirect(cx,   cy-1, cz-1);
-	    Chunk botEast  = getChunkDirect(cx+1, cy-1, cz  );
-	    Chunk botWest  = getChunkDirect(cx-1, cy-1, cz  );
+	    Chunk botNorth = getChunkIfExists(cx,   cy-1, cz+1);
+	    Chunk botSouth = getChunkIfExists(cx,   cy-1, cz-1);
+	    Chunk botEast  = getChunkIfExists(cx+1, cy-1, cz  );
+	    Chunk botWest  = getChunkIfExists(cx-1, cy-1, cz  );
 
 	    if (botNorth != null) {
 	        short[] b = botNorth.getBlocks();
@@ -207,14 +217,14 @@ public class WorldMap {
 	    }
 
 	    // --- 8 CORNERS ---
-	    Chunk topNE = getChunkDirect(cx+1, cy+1, cz+1);
-	    Chunk topNW = getChunkDirect(cx-1, cy+1, cz+1);
-	    Chunk topSE = getChunkDirect(cx+1, cy+1, cz-1);
-	    Chunk topSW = getChunkDirect(cx-1, cy+1, cz-1);
-	    Chunk botNE = getChunkDirect(cx+1, cy-1, cz+1);
-	    Chunk botNW = getChunkDirect(cx-1, cy-1, cz+1);
-	    Chunk botSE = getChunkDirect(cx+1, cy-1, cz-1);
-	    Chunk botSW = getChunkDirect(cx-1, cy-1, cz-1);
+	    Chunk topNE = getChunkIfExists(cx+1, cy+1, cz+1);
+	    Chunk topNW = getChunkIfExists(cx-1, cy+1, cz+1);
+	    Chunk topSE = getChunkIfExists(cx+1, cy+1, cz-1);
+	    Chunk topSW = getChunkIfExists(cx-1, cy+1, cz-1);
+	    Chunk botNE = getChunkIfExists(cx+1, cy-1, cz+1);
+	    Chunk botNW = getChunkIfExists(cx-1, cy-1, cz+1);
+	    Chunk botSE = getChunkIfExists(cx+1, cy-1, cz-1);
+	    Chunk botSW = getChunkIfExists(cx-1, cy-1, cz-1);
 
 	    if (topNE != null) blockCache[17][17][17] = topNE.getBlocks()[Chunk.blockIndex(0,0,0)];
 	    if (topNW != null) blockCache[0][17][17]  = topNW.getBlocks()[Chunk.blockIndex(15,0,0)];
@@ -226,22 +236,5 @@ public class WorldMap {
 	    if (botSW != null) blockCache[0][0][0]    = botSW.getBlocks()[Chunk.blockIndex(15,15,15)];
 
 	    return blockCache;
-	}
-	 
-	public Chunk getRandomChunk() {
-		int x = random.nextInt(32);
-		int y = random.nextInt(16);
-		int z = random.nextInt(32);
-		
-		return getChunkDirect(x, y, -z);
-	}
-	
-	
-	
-	public static Chunk getChunkByKey(long key) {
-	    int x = (int)((key >> 40) & 0xFFFFF);
-	    int y = (int)((key >> 20) & 0xFFFFF);
-	    int z = (int)(key & 0xFFFFF);
-	    return getChunkDirect(x, y, z);
 	}
 }

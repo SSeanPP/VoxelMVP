@@ -21,6 +21,7 @@ import static org.lwjgl.opengl.GL13.*;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
@@ -128,14 +129,16 @@ public class Renderer {
 	                chunk.allocation = null;
 	            }
 	            chunk.hasBlocks = false;
+
+            	renderCache.clearSlot(chunk.cacheIndex);
 	        }
 	        
 	        while ((chunk = chunkQueue.poll()) != null) {
-	        	if (chunk.Previous != null && chunk.Previous != chunk) {
-	        	    if (chunk.Previous.allocation != null) {
-	        	        chunk.Previous.allocation.setCounts(0);
+	        	if (chunk.previousAllocation != null && chunk.previousAllocation != chunk) {
+	        	    if (chunk.previousAllocation.allocation != null) {
+	        	        chunk.previousAllocation.allocation.setCounts(0);
 	        	    }
-	        	    chunk.Previous.hasBlocks = false;
+	        	    chunk.previousAllocation.hasBlocks = false;
 	        	}
 	        	renderCache.updateTorroid(chunk);
 	            meshQueue.submit(chunk);
@@ -169,13 +172,29 @@ public class Renderer {
 		gameInput();
 	}
     
+	private long lastDebugTime;
+	
     public void updateChunksAroundVector3f(Vector3f position) {
         px = (int)position.x >> CHUNK_SHIFT;
         py = (int)position.y >> CHUNK_SHIFT;
         pz = (int)position.z >> CHUNK_SHIFT;
 
         if (px == lastPx && py == lastPy && pz == lastPz) return;
-
+        
+        System.out.println("HashMap size: " + WorldMap.getChunks().size());
+        
+        if (System.currentTimeMillis() - lastDebugTime > 1000) {
+            int withAlloc = 0;
+            int withBlocks = 0;
+            for (Chunk c : WorldMap.getChunks().values()) {
+                if (c.allocation != null) withAlloc++;
+                if (c.blocks != null) withBlocks++;
+            }
+            System.out.println("Chunks: " + WorldMap.getChunks().size() + 
+                " withAlloc: " + withAlloc + " withBlocks: " + withBlocks);
+            lastDebugTime = System.currentTimeMillis();
+        }
+        
         for (int rx = -Settings.RENDER_DISTANCE; rx <= Settings.RENDER_DISTANCE; rx++) {
             for (int ry = -Settings.RENDER_HEIGHT; ry <= Settings.RENDER_HEIGHT; ry++) {
                 for (int rz = -Settings.RENDER_DISTANCE; rz <= Settings.RENDER_DISTANCE; rz++) {
@@ -187,22 +206,63 @@ public class Renderer {
                     int index = renderCache.getIndexAt(wx, wy, wz);
                     
                     Chunk current = renderCache.getRenderToroid()[index];
-                    Chunk correct = (wy >= 0 && wy < Settings.WORLD_SIZE_HEIGHT)
-                        ? WorldMap.getChunkDirect(wx, wy, wz)
-                        : null;
 
-                    // If the slot is empty or contains the WRONG chunk (from a previous wrap-around)
-                    if (current != correct) {
-                        if (correct != null) {
-                            correct.Previous = current;
-                            chunkQueue.add(correct);
-                        } else if (current != null) {
-                        	renderCache.clearSlot(index);
-                            // Queue for safe deallocation after fence
-                            evictionQueue.add(current);
-                        }
-                    }
+	                 // Only bother looking up/generating if slot might need updating
+	                 if (wy < 0 || wy >= Settings.WORLD_SIZE_HEIGHT) {
+	                     if (current != null) {
+	                         renderCache.clearSlot(index);
+	                         evictionQueue.add(current);
+	                     }
+	                     continue;
+	                 }
+	
+	                 
+	                 
+	                 if (current != null && (current.x != wx || current.y != wy || current.z != wz)) {
+	                	    renderCache.clearSlot(index);
+	                	    evictionQueue.add(current);
+	                	}
+	
+	                 Chunk correct = WorldMap.getChunkDirect(wx, wy, wz);
+	
+	                 if (current != correct) {
+	                	    if (correct != null) {
+	                	        correct.previousAllocation = current;
+	                	        chunkQueue.add(correct);
+	                	    } else if (current != null) {
+	                	        renderCache.clearSlot(index);
+	                	        evictionQueue.add(current);
+	                	    }
+	                	}
                 }
+            }
+        }
+        
+        Iterator<Map.Entry<Long, Chunk>> it = WorldMap.getChunks().entrySet().iterator();
+
+        while (it.hasNext()) {
+            Chunk c = it.next().getValue();
+
+            int dx = Math.abs(c.x - px);
+            int dy = Math.abs(c.y - py);
+            int dz = Math.abs(c.z - pz);
+
+            if (dx > Settings.RENDER_DISTANCE ||
+                dy > Settings.RENDER_HEIGHT ||
+                dz > Settings.RENDER_DISTANCE) {
+
+                // Remove from render cache if still somehow referenced
+                // (optional safety)
+
+            	Chunk[] cache = renderCache.getRenderToroid();
+            	if (c.cacheIndex >= 0 && cache[c.cacheIndex] == c) {
+            	    renderCache.clearSlot(c.cacheIndex);
+            	}
+                evictionQueue.add(c);
+
+            	c.blocks = null;
+                it.remove();
+
             }
         }
     }
