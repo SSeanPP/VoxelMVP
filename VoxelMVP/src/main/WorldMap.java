@@ -2,13 +2,16 @@ package main;
 
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import saveHelper.TerrainGeneratorClaude;
 import saveHelper.TerrainGeneratorGPT;
 
 public class WorldMap {
 	private static final ConcurrentHashMap<Long, Chunk> chunks = new ConcurrentHashMap<Long, Chunk>();
-    
+	private static final ConcurrentLinkedQueue<short[]> blockPool = 
+		    new ConcurrentLinkedQueue<short[]>();
+
     public static long key(int x, int y, int z) {
         return ((long)(x & 0xFFFFF) << 40) | ((long)(y & 0xFFFFF) << 20) | (z & 0xFFFFF);
     }
@@ -49,7 +52,14 @@ public class WorldMap {
 	}
 	
 	public static void removeChunk(long key) {
-	    Chunk c = chunks.remove(key);
+		Chunk c = chunks.remove(key);
+	    if (c != null) {
+	        if (c.queuedForMeshing) {
+	            c.pendingDisposal = true; // mesh thread will dispose when done
+	        } else {
+	            c.dispose(); // safe to dispose now
+	        }
+	    }
 	}
 	
 	public static ConcurrentHashMap<Long, Chunk> getChunks() {
@@ -225,5 +235,20 @@ public class WorldMap {
 	    if (botSW != null) blockCache[0][0][0]    = botSW.getBlocks()[Chunk.blockIndex(15,15,15)];
 
 	    return blockCache;
+	}
+	
+
+	public static short[] acquireBlocks() {
+	    short[] blocks = blockPool.poll();
+	    if (blocks == null) {
+	        blocks = new short[16 * 16 * 16];
+	    } else {
+	        java.util.Arrays.fill(blocks, (short)0); // clear before reuse
+	    }
+	    return blocks;
+	}
+	
+	public static void releaseBlocks(short[] blocks) {
+	    blockPool.offer(blocks);
 	}
 }

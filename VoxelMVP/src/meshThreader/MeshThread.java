@@ -99,5 +99,8 @@ public abstract class MeshThread implements Runnable {
         
         chunk.queuedForMeshing = false;
         chunk.previousAllocation = null;
+        if (chunk.pendingDisposal) {
+            chunk.dispose();
+        }
     }
 }

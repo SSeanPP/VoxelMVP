@@ -9,6 +9,7 @@ public class Chunk {
 	public boolean hasBlocks = false;
 	public Allocation allocation = null; 
 	public Allocation previousAllocation = null;
+	public boolean pendingDisposal = false;
 	
 	public final int x;
 	public final int y;
@@ -21,7 +22,7 @@ public class Chunk {
 	public boolean queuedForMeshing;
 	public int cacheIndex;
 	
-	public short[] blocks = new short[16 * 16 * 16];
+	public short[] blocks;
 	
 	public Chunk(int xi, int yj, int zk) {
 		//this.needsUpdate = true;
@@ -30,6 +31,8 @@ public class Chunk {
 		this.x = xi;
 		this.y = yj;
 		this.z= zk;
+		
+		this.blocks = WorldMap.acquireBlocks();
 		
 		modelMatrix = new Matrix4f().translation(x * chunkSize, y * chunkSize, z * chunkSize);
 	}
@@ -61,5 +64,11 @@ public class Chunk {
 	    Chunk other = (Chunk) o;
 	    return x == other.x && y == other.y && z == other.z;
 	}
-
+	
+	public void dispose() {
+		if (blocks != null) {
+		    WorldMap.releaseBlocks(blocks);
+		    blocks = null;
+		}
+	}
 }
