@@ -60,7 +60,6 @@ public class WorldMap {
 	
 	public static void removeChunk(long key) {
 	    Chunk c = chunks.remove(key);
-	    if (c != null) c.dispose();
 	}
 	
 	public static ConcurrentHashMap<Long, Chunk> getChunks() {

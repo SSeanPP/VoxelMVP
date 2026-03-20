@@ -123,6 +123,7 @@ public class Renderer {
 	        Chunk chunk;
 	        
 	        while ((chunk = evictionQueue.poll()) != null) {
+	        	
 	            if (chunk.allocation != null) {
 	            	chunk.allocation.setCounts(0);
 	                bufferManager.free(chunk.allocation);
@@ -134,11 +135,9 @@ public class Renderer {
 	        }
 	        
 	        while ((chunk = chunkQueue.poll()) != null) {
-	        	if (chunk.previousAllocation != null && chunk.previousAllocation != chunk) {
-	        	    if (chunk.previousAllocation.allocation != null) {
-	        	        chunk.previousAllocation.allocation.setCounts(0);
-	        	    }
-	        	    chunk.previousAllocation.hasBlocks = false;
+	        
+	        	if (chunk.previousAllocation != null) {
+	        		chunk.previousAllocation.setCounts(0);
 	        	}
 	        	renderCache.updateTorroid(chunk);
 	            meshQueue.submit(chunk);
@@ -180,7 +179,7 @@ public class Renderer {
         pz = (int)position.z >> CHUNK_SHIFT;
 
         if (px == lastPx && py == lastPy && pz == lastPz) return;
-        
+        /*
         System.out.println("HashMap size: " + WorldMap.getChunks().size());
         
         if (System.currentTimeMillis() - lastDebugTime > 1000) {
@@ -193,7 +192,7 @@ public class Renderer {
             System.out.println("Chunks: " + WorldMap.getChunks().size() + 
                 " withAlloc: " + withAlloc + " withBlocks: " + withBlocks);
             lastDebugTime = System.currentTimeMillis();
-        }
+        }*/
         
         for (int rx = -Settings.RENDER_DISTANCE; rx <= Settings.RENDER_DISTANCE; rx++) {
             for (int ry = -Settings.RENDER_HEIGHT; ry <= Settings.RENDER_HEIGHT; ry++) {
@@ -216,55 +215,34 @@ public class Renderer {
 	                     continue;
 	                 }
 	
-	                 
-	                 
 	                 if (current != null && (current.x != wx || current.y != wy || current.z != wz)) {
-	                	    renderCache.clearSlot(index);
-	                	    evictionQueue.add(current);
-	                	}
-	
-	                 Chunk correct = WorldMap.getChunkDirect(wx, wy, wz);
-	
-	                 if (current != correct) {
-	                	    if (correct != null) {
-	                	        correct.previousAllocation = current;
-	                	        chunkQueue.add(correct);
-	                	    } else if (current != null) {
-	                	        renderCache.clearSlot(index);
-	                	        evictionQueue.add(current);
-	                	    }
-	                	}
+                	    renderCache.clearSlot(index);
+                	    // Don't add to evictionQueue here - let correct handle the allocation
+                	}
+
+                	Chunk correct = WorldMap.getChunkDirect(wx, wy, wz);
+
+                	if (current != correct) {
+                	    if (correct != null) {
+                	        // Pass current's allocation to correct for reuse/free
+                	        correct.previousAllocation = (current != null) ? current.allocation : null;
+                	        if (current != null) current.allocation = null; // prevent double free
+                	        chunkQueue.add(correct);
+                	        WorldMap.removeChunk(WorldMap.key(current != null ? current.x : 0, 
+    	                            current != null ? current.y : 0,
+    	                            current != null ? current.z : 0));
+                	    } else if (current != null) {
+                	        // No replacement - eviction queue handles free
+                	        current.previousAllocation = null; // ensure no dangling ref
+                	        evictionQueue.add(current);
+                	        WorldMap.removeChunk(WorldMap.key(current.x, current.y, current.z));
+                	    }
+                	}
                 }
             }
         }
         
-        Iterator<Map.Entry<Long, Chunk>> it = WorldMap.getChunks().entrySet().iterator();
-
-        while (it.hasNext()) {
-            Chunk c = it.next().getValue();
-
-            int dx = Math.abs(c.x - px);
-            int dy = Math.abs(c.y - py);
-            int dz = Math.abs(c.z - pz);
-
-            if (dx > Settings.RENDER_DISTANCE ||
-                dy > Settings.RENDER_HEIGHT ||
-                dz > Settings.RENDER_DISTANCE) {
-
-                // Remove from render cache if still somehow referenced
-                // (optional safety)
-
-            	Chunk[] cache = renderCache.getRenderToroid();
-            	if (c.cacheIndex >= 0 && cache[c.cacheIndex] == c) {
-            	    renderCache.clearSlot(c.cacheIndex);
-            	}
-                evictionQueue.add(c);
-
-            	c.blocks = null;
-                it.remove();
-
-            }
-        }
+       
     }
 	
 	public void initDisplay(int width, int height) throws LWJGLException {

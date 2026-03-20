@@ -8,7 +8,7 @@ public class Chunk {
 	
 	public boolean hasBlocks = false;
 	public Allocation allocation = null; 
-	public Chunk previousAllocation = null;
+	public Allocation previousAllocation = null;
 	
 	public final int x;
 	public final int y;
@@ -62,7 +62,4 @@ public class Chunk {
 	    return x == other.x && y == other.y && z == other.z;
 	}
 
-	public void dispose() {
-		blocks = null;
-	}
 }
