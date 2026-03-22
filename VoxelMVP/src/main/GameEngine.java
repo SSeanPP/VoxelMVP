@@ -20,30 +20,34 @@ public class GameEngine implements Runnable {
 	
 	private final int CHUNK_SHIFT = 4; // 2^4 = 16
 	
-	private int lastPx = (int)(Settings.spawnChunk.x);
-	private int lastPy = (int)(Settings.spawnChunk.y);
-	private int lastPz = (int)(Settings.spawnChunk.z);
-	
-	private HashSet<Chunk> pendingEvictions = new HashSet<Chunk>();
 	private Queue<Chunk> evictionQueue;
+	private Queue<Chunk> chunkQueue;
 	private RenderCache renderCache;
 	private GameInputQueue gameInputQueue;
 	
 	private double newTime;
     private double frameTime;
     
-    
+    private int lastPx = (int)(Settings.spawnChunk.x);
+	private int lastPy = (int)(Settings.spawnChunk.y);
+	private int lastPz = (int)(Settings.spawnChunk.z);
+	
+	private int px;
+	private int py;
+	private int pz;
+	
+	private Vector3f pPosition;
     private Vector3f cameraPos;
 	
-	public GameEngine(MeshQueue queue, Queue<Chunk> evictionQueueFromRenderer, RenderCache renderCacheFromRenderer, GameInputQueue inputQueue) {
+	public GameEngine(MeshQueue queue, Queue<Chunk> evictionQueueFromRenderer, RenderCache renderCacheFromRenderer, GameInputQueue inputQueue, Queue<Chunk> chunkQueueFromRenderer) {
 		meshQueue = queue;
 		evictionQueue = evictionQueueFromRenderer;
 		renderCache = renderCacheFromRenderer;
 		this.gameInputQueue = inputQueue;
+		this.chunkQueue = chunkQueueFromRenderer;
 		
-		//System.out.println("Input class on game engine: " + GameInput.inputQueue.getClass().getClassLoader());
-		//System.out.println("Input FQN  on game engine: " + GameInput.class.getName());
-		//System.out.println("Queue identity  on gameEngine: " + System.identityHashCode(GameInput.inputQueue));
+		this.pPosition = new Vector3f();
+		this.cameraPos = state.getCamera().getPosition();
 	}
 	
 	public void gameLoop() {
@@ -68,18 +72,22 @@ public class GameEngine implements Runnable {
 	        
 	        while ( accumulator >= dt )
 	        {
-	        	// Responsible for random chunk updates
-	        	/*chunksProcessed = 0;
-	        	loopTotal = 0;
-	        	while(chunksProcessed < 20 && loopTotal != renderSize) {
-	        		if(meshQueue.submit(worldMap.getRandomChunk())) {
-	        			this.chunksProcessed++;
-	        		}
-	        		loopTotal++;
-	        	}*/
 
-		        
-	        	//updateChunksAroundPlayer(state);
+	        	px = (int)cameraPos.x >> CHUNK_SHIFT;
+	    	    py = (int)cameraPos.y >> CHUNK_SHIFT;
+	    	    pz = (int)cameraPos.z >> CHUNK_SHIFT;
+	    		
+	    		if (px != lastPx || py != lastPy || pz != lastPz) {
+	    			
+	    			pPosition.set(px,py,pz);
+	    		    meshQueue.updatePos(pPosition);
+	    		    
+	    		    updateChunksAroundPlayer();
+	    		    
+	    		    lastPx = px;
+	    		    lastPy = py;
+	    		    lastPz = pz;
+	    		}
 	        	
 	        	state.integrate(t, dt, inputState);
 	        	
@@ -88,9 +96,53 @@ public class GameEngine implements Runnable {
 	        }
 
 	        this.alpha = accumulator / dt;
-	        //System.out.println("Alpha: " + alpha); 
 	    }
 	}
+	
+	 public void updateChunksAroundPlayer() {
+	        for (int rx = -Settings.RENDER_DISTANCE; rx <= Settings.RENDER_DISTANCE; rx++) {
+	            for (int ry = -Settings.RENDER_HEIGHT; ry <= Settings.RENDER_HEIGHT; ry++) {
+	                for (int rz = -Settings.RENDER_DISTANCE; rz <= Settings.RENDER_DISTANCE; rz++) {
+	                    int wx = px + rx;
+	                    int wy = py + ry;
+	                    int wz = pz + rz;
+
+	                    int index = renderCache.getIndexAt(wx, wy, wz);
+	                    
+	                    Chunk current = renderCache.getRenderToroid()[index];
+
+		                 if (wy < 0 || wy >= Settings.WORLD_SIZE_HEIGHT) {
+		                     if (current != null) {
+		                         renderCache.clearSlot(index);
+		                         evictionQueue.add(current);
+		                     }
+		                     continue;
+		                 }
+		
+		                 if (current != null && (current.x != wx || current.y != wy || current.z != wz)) {
+	                	    renderCache.clearSlot(index);
+	                	}
+
+	                	Chunk correct = WorldMap.getChunkDirect(wx, wy, wz);
+
+	                	if (current != correct) {
+	                	    if (correct != null) {
+	                	        correct.previousAllocation = (current != null) ? current.allocation : null;
+	                	        if (current != null) current.allocation = null;
+	                	        chunkQueue.add(correct);
+	                	        WorldMap.removeChunk(WorldMap.key(current != null ? current.x : 0, 
+	    	                            current != null ? current.y : 0,
+	    	                            current != null ? current.z : 0));
+	                	    } else if (current != null ) {
+	                	        current.previousAllocation = null;
+	                	        evictionQueue.add(current);
+	                	        WorldMap.removeChunk(WorldMap.key(current.x, current.y, current.z));
+	                	    }
+	                	}
+	                }
+	            }
+	        }
+	    }
 	
 	public GameState getPublishedState() {
 	    return state;
@@ -101,15 +153,10 @@ public class GameEngine implements Runnable {
 	}
 	
 	private void drainInputQueue() {
-		//System.out.println("Queue class: " + Input.inputQueue.getClass().getName());
-	    //System.out.println("Queue size: " + Input.inputQueue.size());
-	    //System.out.println("Queue identity: " + System.identityHashCode(Input.inputQueue));
-		//System.out.println("Drain called, size: " + gameInputQueue.inputQueue.size());
 	    GameInput input;
 	   
 	    
         while ((input = gameInputQueue.inputQueue.poll()) != null) {
-        	//System.out.println("Draining: " + input.getEventKey());
              switch (input.getEventKey()) {
              
                 case Keyboard.KEY_W:
@@ -143,31 +190,6 @@ public class GameEngine implements Runnable {
             }
         }
     }
-	
-	
-	
-	@Deprecated
-	/*private void submitChunksInRadius(int px, int py, int pz) {
-	    for (int r = 0; r <= Settings.RENDER_DISTANCE; r++) {
-	        for (int x = -r; x <= r; x++) {
-	            for (int z = -r; z <= r; z++) {
-	                if (Math.max(Math.abs(x), Math.abs(z)) != r) continue;
-
-	                int cx = px + x;
-	                int cz = pz + z;
-
-	                for (int cy = 0; cy < 16; cy++) {
-	                    Chunk chunk = WorldMap.getChunkDirect(cx,cy,cz);
-	                    if (chunk != null && chunk.needsUpdate && !chunk.queuedForMeshing) {
-	                        meshQueue.submit(chunk);
-	                    }
-	                }
-	            }
-	        }
-	    }
-	}*/
-	
-	
 	
 	@Override
 	public void run() {

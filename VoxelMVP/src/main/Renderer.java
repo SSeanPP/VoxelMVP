@@ -43,7 +43,6 @@ public class Renderer {
 	private Vector3f renderPos = new Vector3f();
 	//private Matrix4f renderMatrix = new Matrix4f();
 	private Camera camera;
-	private Vector3f cameraPos;
 	private GUIHelper guiHelper;
 	
 	private Texture textAtlas;
@@ -62,13 +61,7 @@ public class Renderer {
 		totalVertices = 0;
 		totalIndices = 0;
 		renderCache = renderCacheInput;
-		pPosition = new Vector3f();
 		this.gameInputQueue = gameInputQueue;
-		
-		System.out.println("Input class on renderer: " + gameInputQueue.inputQueue.getClass().getClassLoader());
-		//System.out.println("Input FQN on renderer: " + gameInputQueue.class.getName());
-		// Both sides
-		System.out.println("Queue identity  on renderer: " + System.identityHashCode(gameInputQueue.inputQueue));
 	}
 	
 	public void bindBufferMananger(SceneBufferManager main) {
@@ -86,17 +79,7 @@ public class Renderer {
 		textAtlas.bind();
 	}
 	
-	private final int CHUNK_SHIFT = 4; // 2^4 = 16
 	
-	private int lastPx = (int)(Settings.spawnChunk.x);
-	private int lastPy = (int)(Settings.spawnChunk.y);
-	private int lastPz = (int)(Settings.spawnChunk.z);
-	
-	private int px;
-	private int py;
-	private int pz;
-	
-	private Vector3f pPosition;
 	
 	public void render(GameState state, double alpha) {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -105,28 +88,10 @@ public class Renderer {
 		totalIndices = 0;
 		
 		camera = state.getCamera();
-		cameraPos = camera.getPosition();
 		
 		Main.shaderProgram.setUniform("viewMatrix", camera.handleCameraLerpAndMatrix(alpha, renderPos));
 		Main.shaderProgram.setUniform("projectionMatrix", projection.getProjMatrix());
 		Main.shaderProgram.setUniform("cameraPos", renderPos);
-		
-		
-		px = (int)cameraPos.x >> CHUNK_SHIFT;
-	    py = (int)cameraPos.y >> CHUNK_SHIFT;
-	    pz = (int)cameraPos.z >> CHUNK_SHIFT;
-		
-		if (px != lastPx || py != lastPy || pz != lastPz) {
-			
-			pPosition.set(px,py,pz);
-		    meshQueue.updatePos(pPosition);
-		    
-		    updateChunksAroundVector3f(camera.getPosition());
-		    
-		    lastPx = px;
-		    lastPy = py;
-		    lastPz = pz;
-		}
 		
 		if (lastFence != null) {
 			GL32.glClientWaitSync(lastFence, GL32.GL_SYNC_FLUSH_COMMANDS_BIT, 0);
@@ -184,65 +149,8 @@ public class Renderer {
 		Display.update();
 		gameInput();
 	}
-    
-	private long lastDebugTime;
 	
-    public void updateChunksAroundVector3f(Vector3f position) {
-        px = (int)position.x >> CHUNK_SHIFT;
-        py = (int)position.y >> CHUNK_SHIFT;
-        pz = (int)position.z >> CHUNK_SHIFT;
-
-        if (px == lastPx && py == lastPy && pz == lastPz) return;
-        
-        
-        for (int rx = -Settings.RENDER_DISTANCE; rx <= Settings.RENDER_DISTANCE; rx++) {
-            for (int ry = -Settings.RENDER_HEIGHT; ry <= Settings.RENDER_HEIGHT; ry++) {
-                for (int rz = -Settings.RENDER_DISTANCE; rz <= Settings.RENDER_DISTANCE; rz++) {
-                    int wx = px + rx;
-                    int wy = py + ry;
-                    int wz = pz + rz;
-
-                    // Get the stable index for this world coordinate
-                    int index = renderCache.getIndexAt(wx, wy, wz);
-                    
-                    Chunk current = renderCache.getRenderToroid()[index];
-
-	                 // Only bother looking up/generating if slot might need updating
-	                 if (wy < 0 || wy >= Settings.WORLD_SIZE_HEIGHT) {
-	                     if (current != null) {
-	                         renderCache.clearSlot(index);
-	                         evictionQueue.add(current);
-	                     }
-	                     continue;
-	                 }
-	
-	                 if (current != null && (current.x != wx || current.y != wy || current.z != wz)) {
-                	    renderCache.clearSlot(index);
-                	    // Don't add to evictionQueue here - let correct handle the allocation
-                	}
-
-                	Chunk correct = WorldMap.getChunkDirect(wx, wy, wz);
-
-                	if (current != correct) {
-                	    if (correct != null) {
-                	        // Pass current's allocation to correct for reuse/free
-                	        correct.previousAllocation = (current != null) ? current.allocation : null;
-                	        if (current != null) current.allocation = null; // prevent double free
-                	        chunkQueue.add(correct);
-                	        WorldMap.removeChunk(WorldMap.key(current != null ? current.x : 0, 
-    	                            current != null ? current.y : 0,
-    	                            current != null ? current.z : 0));
-                	    } else if (current != null ) {
-                	        // No replacement - eviction queue handles free
-                	        current.previousAllocation = null; // ensure no dangling ref
-                	        evictionQueue.add(current);
-                	        WorldMap.removeChunk(WorldMap.key(current.x, current.y, current.z));
-                	    }
-                	}
-                }
-            }
-        }
-    }
+   
     
 	public void initDisplay(int width, int height) throws LWJGLException {
         Display.setDisplayMode(new DisplayMode(width, height));
@@ -322,34 +230,11 @@ public class Renderer {
 		return this.evictionQueue;
 	}
 	
+	public Queue<Chunk> getChunkQueue() {
+		return this.chunkQueue;
+	}
+	
 	public RenderCache getRenderCache() {
 		return this.renderCache;
 	}
-	
-	
-	
-	
-	/*
-	 * for (Entity entity : entities) {
-			renderMatrix = entity.getModelMatrix();
-			entity.lerpPos(alpha, renderPos);
-	        renderMatrix.translationRotateScale(renderPos, entity.getRotation(), entity.getScale());
-	        
-	        Main.shaderProgram.setUniform("modelMatrix", renderMatrix);
-	        
-	        Model model = models.get(entity.getModelId());
-			for (Mesh mesh : model.getMeshList()) {
-				glActiveTexture(GL_TEXTURE0);
-				mesh.getMaterial().getTexture().bind();
-				glBindVertexArray(mesh.getVaoId());
-				glDrawElements(GL_TRIANGLES, mesh.getNumVertices(), GL_UNSIGNED_INT, 0);
-				//System.out.println("drawn something");
-				/*
-				int error = glGetError();
-				if (error != GL_NO_ERROR) {
-			        System.out.println("Draw error: " + error);
-				}*/
-			//}
-		//}
-	// */
 }

@@ -32,7 +32,7 @@ public class Main {
             renderer.bindMeshQueue(meshThreader);
             renderer.bindBufferMananger(bufferManager);
             
-            gameEngine = new GameEngine(meshThreader, renderer.getEvictionQueue(), renderCache, gameInput);
+            gameEngine = new GameEngine(meshThreader, renderer.getEvictionQueue(), renderCache, gameInput, renderer.getChunkQueue());
             gameEngineThread = new Thread(gameEngine);
             
             Main.shaderProgram.bind(); 
