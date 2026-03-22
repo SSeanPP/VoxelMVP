@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.joml.Matrix4f;
+import org.joml.Vector3f;
 
 public class ShaderProgram {
 	public final int programId;
@@ -120,6 +121,15 @@ public class ShaderProgram {
 	        throw new RuntimeException("Could not find uniform [" + uniformName + "]");
 	    }
 	    glUniform3f(location, relX, relY, relZ);
+	}
+
+	public void setUniform(String uniformName, Vector3f renderPos) {
+		Integer location = uniforms.get(uniformName);
+	    if (location == null) {
+	        throw new RuntimeException("Could not find uniform [" + uniformName + "]");
+	    }
+	    glUniform3f(location, renderPos.x,renderPos.y,renderPos.z);
+		
 	}
     
 }

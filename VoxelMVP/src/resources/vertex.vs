@@ -8,9 +8,12 @@ out vec2 outTextCoord;
 uniform mat4 projectionMatrix;
 uniform mat4 viewMatrix;
 uniform mat4 modelMatrix;
+uniform vec3 cameraPos;
 
 void main()
 {
-    gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position, 1.0);
+    vec4 worldPos = modelMatrix * vec4(position, 1.0);
+    worldPos.xyz -= cameraPos;
+    gl_Position = projectionMatrix * viewMatrix * worldPos;
     outTextCoord = texCoord;
 }

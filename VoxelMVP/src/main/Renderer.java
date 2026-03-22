@@ -109,7 +109,7 @@ public class Renderer {
 		
 		Main.shaderProgram.setUniform("viewMatrix", camera.handleCameraLerpAndMatrix(alpha, renderPos));
 		Main.shaderProgram.setUniform("projectionMatrix", projection.getProjMatrix());
-		
+		Main.shaderProgram.setUniform("cameraPos", renderPos);
 		
 		
 		px = (int)cameraPos.x >> CHUNK_SHIFT;
@@ -243,7 +243,7 @@ public class Renderer {
             }
         }
     }
-	
+    
 	public void initDisplay(int width, int height) throws LWJGLException {
         Display.setDisplayMode(new DisplayMode(width, height));
         Display.setTitle("VoxelMVP - A maximum performance Voxel Render Engine built on Java 1.6 and LWJGL 2.9.3");
@@ -302,6 +302,7 @@ public class Renderer {
 		Main.shaderProgram.createUniform("modelMatrix");
 		Main.shaderProgram.createUniform("txtSampler");
 		Main.shaderProgram.createUniform("viewMatrix");
+		Main.shaderProgram.createUniform("cameraPos");
 		Main.shaderProgram.setUniform("txtSampler", 0);
 	}
 	

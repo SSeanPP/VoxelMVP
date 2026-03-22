@@ -48,8 +48,7 @@ public class Camera {
         
         viewMatrix.identity()
             .rotateX(rotation.x)
-            .rotateY(rotation.y)
-            .translate(-vec.x, -vec.y, -vec.z);
+            .rotateY(rotation.y);
         
         return viewMatrix;
     }
