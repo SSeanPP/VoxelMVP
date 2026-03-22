@@ -20,7 +20,7 @@ public class WorldMap {
 	private final long seed = 5116345970222046394L;
 	
 	private Random random = new Random();
-	private static TerrainGeneratorGPT gen;
+	public static TerrainGeneratorGPT gen;
 	
 	public WorldMap() {
 		gen = new TerrainGeneratorGPT(seed);
@@ -44,11 +44,14 @@ public class WorldMap {
 	    
 	    // Generate candidate
 	    Chunk chunk = new Chunk(x, y, z);
-	    gen.generate(chunk, x, y, z);
 	    
 	    // Only put if absent - if another thread beat us, use theirs
 	    Chunk winner = chunks.putIfAbsent(k, chunk);
-	    return winner != null ? winner : chunk;
+	    if (winner != null) {
+	        chunk.dispose(); // release the block array we just acquired
+	        return winner;
+	    }
+	    return chunk;
 	}
 	
 	public static void removeChunk(long key) {

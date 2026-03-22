@@ -23,6 +23,7 @@ public class Chunk {
 	public int cacheIndex;
 	
 	public short[] blocks;
+	public boolean hasGenned;
 	
 	public Chunk(int xi, int yj, int zk) {
 		//this.needsUpdate = true;
@@ -33,6 +34,7 @@ public class Chunk {
 		this.z= zk;
 		
 		this.blocks = WorldMap.acquireBlocks();
+		this.hasGenned = false;
 		
 		modelMatrix = new Matrix4f().translation(x * chunkSize, y * chunkSize, z * chunkSize);
 	}

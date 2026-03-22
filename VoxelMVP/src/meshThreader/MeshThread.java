@@ -7,6 +7,7 @@ import java.util.concurrent.BlockingQueue;
 import bufferManager.SceneBufferManager;
 import main.Chunk;
 import main.Settings;
+import main.WorldMap;
 
 public abstract class MeshThread implements Runnable {
 	// --- Infrastructure ---
@@ -40,6 +41,10 @@ public abstract class MeshThread implements Runnable {
         while (!Thread.currentThread().isInterrupted()) {
             try {
                 Chunk chunk = queue.take();
+                if(!chunk.hasGenned) {
+                	chunk.hasGenned = true;
+                	WorldMap.gen.generate(chunk, chunk.x, chunk.y, chunk.z);
+                }
                 meshChunk(chunk);
             } catch (InterruptedException e) {
                 break;
