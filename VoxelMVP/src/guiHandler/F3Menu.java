@@ -121,7 +121,6 @@ public class F3Menu {
             buf[offset++] = '0';
             return 1;
         }
-        int start = offset;
         long temp = l;
         int digits = 0;
         while (temp > 0) { temp /= 10; digits++; }

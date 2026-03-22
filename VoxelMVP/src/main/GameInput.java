@@ -1,7 +1,5 @@
 package main;
 
-import java.util.concurrent.ConcurrentLinkedQueue;
-
 public class GameInput {
 	
 	public boolean isPressed;

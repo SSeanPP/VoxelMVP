@@ -1,6 +1,5 @@
 package main;
 
-import java.util.HashSet;
 import java.util.Queue;
 
 import org.joml.Vector3f;
