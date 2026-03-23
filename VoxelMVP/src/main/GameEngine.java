@@ -5,6 +5,7 @@ import java.util.Queue;
 import org.joml.Vector3f;
 import org.lwjgl.input.Keyboard;
 
+import bufferManager.ChunkSSBO;
 import meshThreader.MeshQueue;
 
 public class GameEngine implements Runnable {
@@ -20,8 +21,7 @@ public class GameEngine implements Runnable {
 	private final int CHUNK_SHIFT = 4; // 2^4 = 16
 	
 	private Queue<Chunk> evictionQueue;
-	private Queue<Chunk> chunkQueue;
-	private RenderCache renderCache;
+	private ChunkSSBO renderTorroid;
 	private GameInputQueue gameInputQueue;
 	
 	private double newTime;
@@ -38,12 +38,11 @@ public class GameEngine implements Runnable {
 	private Vector3f pPosition;
     private Vector3f cameraPos;
 	
-	public GameEngine(MeshQueue queue, Queue<Chunk> evictionQueueFromRenderer, RenderCache renderCacheFromRenderer, GameInputQueue inputQueue, Queue<Chunk> chunkQueueFromRenderer) {
+	public GameEngine(MeshQueue queue, Queue<Chunk> evictionQueueFromRenderer, ChunkSSBO renderCacheFromRenderer, GameInputQueue inputQueue) {
 		meshQueue = queue;
 		evictionQueue = evictionQueueFromRenderer;
-		renderCache = renderCacheFromRenderer;
+		renderTorroid = renderCacheFromRenderer;
 		this.gameInputQueue = inputQueue;
-		this.chunkQueue = chunkQueueFromRenderer;
 		
 		this.pPosition = new Vector3f();
 		this.cameraPos = state.getCamera().getPosition();
@@ -98,50 +97,50 @@ public class GameEngine implements Runnable {
 	    }
 	}
 	
-	 public void updateChunksAroundPlayer() {
-	        for (int rx = -Settings.RENDER_DISTANCE; rx <= Settings.RENDER_DISTANCE; rx++) {
-	            for (int ry = -Settings.RENDER_HEIGHT; ry <= Settings.RENDER_HEIGHT; ry++) {
-	                for (int rz = -Settings.RENDER_DISTANCE; rz <= Settings.RENDER_DISTANCE; rz++) {
-	                    int wx = px + rx;
-	                    int wy = py + ry;
-	                    int wz = pz + rz;
+	public void updateChunksAroundPlayer() {
+	    for (int rx = -Settings.RENDER_DISTANCE; rx <= Settings.RENDER_DISTANCE; rx++) {
+	        for (int ry = -Settings.RENDER_HEIGHT; ry <= Settings.RENDER_HEIGHT; ry++) {
+	            for (int rz = -Settings.RENDER_DISTANCE; rz <= Settings.RENDER_DISTANCE; rz++) {
+	                int wx = px + rx;
+	                int wy = py + ry;
+	                int wz = pz + rz;
 
-	                    int index = renderCache.getIndexAt(wx, wy, wz);
-	                    
-	                    Chunk current = renderCache.getRenderToroid()[index];
+	                int slot = renderTorroid.getIndexAt(wx, wy, wz);
+	                Chunk current = renderTorroid.getRenderToroid()[slot];
 
-		                 if (wy < 0 || wy >= Settings.WORLD_SIZE_HEIGHT) {
-		                     if (current != null) {
-		                         renderCache.clearSlot(index);
-		                         evictionQueue.add(current);
-		                     }
-		                     continue;
-		                 }
-		
-		                 if (current != null && (current.x != wx || current.y != wy || current.z != wz)) {
-	                	    renderCache.clearSlot(index);
-	                	}
+	                if (wy < 0 || wy >= Settings.WORLD_SIZE_HEIGHT) {
+	                    if (current != null) {
+	                    	renderTorroid.clear(current);
+	                        evictionQueue.add(current);
+	                    }
+	                    continue;
+	                }
 
-	                	Chunk correct = WorldMap.getChunkDirect(wx, wy, wz);
+	                if (current != null && (current.x != wx || current.y != wy || current.z != wz)) {
+	                	renderTorroid.clear(current);
+	                    evictionQueue.add(current);
+	                    WorldMap.removeChunk(WorldMap.key(current.x, current.y, current.z));
+	                    current = null;
+	                }
 
-	                	if (current != correct) {
-	                	    if (correct != null) {
-	                	        correct.previousAllocation = (current != null) ? current.allocation : null;
-	                	        if (current != null) current.allocation = null;
-	                	        chunkQueue.add(correct);
-	                	        WorldMap.removeChunk(WorldMap.key(current != null ? current.x : 0, 
-	    	                            current != null ? current.y : 0,
-	    	                            current != null ? current.z : 0));
-	                	    } else if (current != null ) {
-	                	        current.previousAllocation = null;
-	                	        evictionQueue.add(current);
-	                	        WorldMap.removeChunk(WorldMap.key(current.x, current.y, current.z));
-	                	    }
-	                	}
+	                Chunk correct = WorldMap.getChunkDirect(wx, wy, wz);
+
+	                if (current != correct) {
+	                    if (correct != null) {
+	                        correct.previousAllocation = (current != null) ? current.allocation : null;
+	                        if (current != null) current.allocation = null;
+	                        renderTorroid.write(correct);
+	                        meshQueue.submit(correct);
+	                    } else if (current != null) {
+	                        current.previousAllocation = null;
+	                        evictionQueue.add(current);
+	                        WorldMap.removeChunk(WorldMap.key(current.x, current.y, current.z));
+	                    }
 	                }
 	            }
 	        }
 	    }
+	}
 	
 	public GameState getPublishedState() {
 	    return state;

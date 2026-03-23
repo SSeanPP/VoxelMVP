@@ -86,6 +86,7 @@ public class WorldMap {
 
 	    // --- CENTRE ---
 	    short[] c = centreChunk.getBlocks();
+	    if (c == null) return blockCache;
 	    for (int x = 0; x < 16; x++)
 	    for (int y = 0; y < 16; y++)
 	    for (int z = 0; z < 16; z++)
@@ -99,123 +100,61 @@ public class WorldMap {
 	    Chunk east   = getChunkIfExists(cx+1, cy,   cz  );
 	    Chunk west   = getChunkIfExists(cx-1, cy,   cz  );
 
-	    if (top != null) {
-	        short[] b = top.getBlocks();
-	        for (int x = 0; x < 16; x++)
-	        for (int z = 0; z < 16; z++)
-	            blockCache[x+1][17][z+1] = b[Chunk.blockIndex(x,0,z)];
+	    for (int x = 0; x < 16; x++)
+	    for (int z = 0; z < 16; z++) {
+	        blockCache[x+1][17][z+1] = getBlock(top,    x,  0,  z);
+	        blockCache[x+1][0] [z+1] = getBlock(bottom, x,  15, z);
 	    }
-	    if (bottom != null) {
-	        short[] b = bottom.getBlocks();
-	        for (int x = 0; x < 16; x++)
-	        for (int z = 0; z < 16; z++)
-	            blockCache[x+1][0][z+1] = b[Chunk.blockIndex(x,15,z)];
+	    for (int x = 0; x < 16; x++)
+	    for (int y = 0; y < 16; y++) {
+	        blockCache[x+1][y+1][17] = getBlock(north, x, y, 0 );
+	        blockCache[x+1][y+1][0]  = getBlock(south, x, y, 15);
 	    }
-	    if (north != null) {
-	        short[] b = north.getBlocks();
-	        for (int x = 0; x < 16; x++)
-	        for (int y = 0; y < 16; y++)
-	            blockCache[x+1][y+1][17] = b[Chunk.blockIndex(x,y,0)];
-	    }
-	    if (south != null) {
-	        short[] b = south.getBlocks();
-	        for (int x = 0; x < 16; x++)
-	        for (int y = 0; y < 16; y++)
-	            blockCache[x+1][y+1][0] = b[Chunk.blockIndex(x,y,15)];
-	    }
-	    if (east != null) {
-	        short[] b = east.getBlocks();
-	        for (int y = 0; y < 16; y++)
-	        for (int z = 0; z < 16; z++)
-	            blockCache[17][y+1][z+1] = b[Chunk.blockIndex(0,y,z)];
-	    }
-	    if (west != null) {
-	        short[] b = west.getBlocks();
-	        for (int y = 0; y < 16; y++)
-	        for (int z = 0; z < 16; z++)
-	            blockCache[0][y+1][z+1] = b[Chunk.blockIndex(15,y,z)];
+	    for (int y = 0; y < 16; y++)
+	    for (int z = 0; z < 16; z++) {
+	        blockCache[17][y+1][z+1] = getBlock(east, 0,  y, z);
+	        blockCache[0] [y+1][z+1] = getBlock(west, 15, y, z);
 	    }
 
 	    // --- 12 EDGES ---
-	    // 4 vertical edges (Y axis edges, varying X and Z)
 	    Chunk ne = getChunkIfExists(cx+1, cy, cz+1);
 	    Chunk nw = getChunkIfExists(cx-1, cy, cz+1);
 	    Chunk se = getChunkIfExists(cx+1, cy, cz-1);
 	    Chunk sw = getChunkIfExists(cx-1, cy, cz-1);
 
-	    if (ne != null) {
-	        short[] b = ne.getBlocks();
-	        for (int y = 0; y < 16; y++)
-	            blockCache[17][y+1][17] = b[Chunk.blockIndex(0,y,0)];
-	    }
-	    if (nw != null) {
-	        short[] b = nw.getBlocks();
-	        for (int y = 0; y < 16; y++)
-	            blockCache[0][y+1][17] = b[Chunk.blockIndex(15,y,0)];
-	    }
-	    if (se != null) {
-	        short[] b = se.getBlocks();
-	        for (int y = 0; y < 16; y++)
-	            blockCache[17][y+1][0] = b[Chunk.blockIndex(0,y,15)];
-	    }
-	    if (sw != null) {
-	        short[]b = sw.getBlocks();
-	        for (int y = 0; y < 16; y++)
-	            blockCache[0][y+1][0] = b[Chunk.blockIndex(15,y,15)];
+	    for (int y = 0; y < 16; y++) {
+	        blockCache[17][y+1][17] = getBlock(ne, 0,  y, 0 );
+	        blockCache[0] [y+1][17] = getBlock(nw, 15, y, 0 );
+	        blockCache[17][y+1][0]  = getBlock(se, 0,  y, 15);
+	        blockCache[0] [y+1][0]  = getBlock(sw, 15, y, 15);
 	    }
 
-	    // 4 top edges
 	    Chunk topNorth = getChunkIfExists(cx,   cy+1, cz+1);
 	    Chunk topSouth = getChunkIfExists(cx,   cy+1, cz-1);
 	    Chunk topEast  = getChunkIfExists(cx+1, cy+1, cz  );
 	    Chunk topWest  = getChunkIfExists(cx-1, cy+1, cz  );
 
-	    if (topNorth != null) {
-	        short[] b = topNorth.getBlocks();
-	        for (int x = 0; x < 16; x++)
-	            blockCache[x+1][17][17] = b[Chunk.blockIndex(x,0,0)];
+	    for (int x = 0; x < 16; x++) {
+	        blockCache[x+1][17][17] = getBlock(topNorth, x, 0, 0 );
+	        blockCache[x+1][17][0]  = getBlock(topSouth, x, 0, 15);
 	    }
-	    if (topSouth != null) {
-	        short[] b = topSouth.getBlocks();
-	        for (int x = 0; x < 16; x++)
-	            blockCache[x+1][17][0] = b[Chunk.blockIndex(x,0,15)];
-	    }
-	    if (topEast != null) {
-	        short[] b = topEast.getBlocks();
-	        for (int z = 0; z < 16; z++)
-	            blockCache[17][17][z+1] = b[Chunk.blockIndex(0,0,z)];
-	    }
-	    if (topWest != null) {
-	        short[] b = topWest.getBlocks();
-	        for (int z = 0; z < 16; z++)
-	            blockCache[0][17][z+1] = b[Chunk.blockIndex(15,0,z)];
+	    for (int z = 0; z < 16; z++) {
+	        blockCache[17][17][z+1] = getBlock(topEast, 0,  0, z);
+	        blockCache[0] [17][z+1] = getBlock(topWest, 15, 0, z);
 	    }
 
-	    // 4 bottom edges
 	    Chunk botNorth = getChunkIfExists(cx,   cy-1, cz+1);
 	    Chunk botSouth = getChunkIfExists(cx,   cy-1, cz-1);
 	    Chunk botEast  = getChunkIfExists(cx+1, cy-1, cz  );
 	    Chunk botWest  = getChunkIfExists(cx-1, cy-1, cz  );
 
-	    if (botNorth != null) {
-	        short[] b = botNorth.getBlocks();
-	        for (int x = 0; x < 16; x++)
-	            blockCache[x+1][0][17] = b[Chunk.blockIndex(x,15,0)];
+	    for (int x = 0; x < 16; x++) {
+	        blockCache[x+1][0][17] = getBlock(botNorth, x, 15, 0 );
+	        blockCache[x+1][0][0]  = getBlock(botSouth, x, 15, 15);
 	    }
-	    if (botSouth != null) {
-	        short[] b = botSouth.getBlocks();
-	        for (int x = 0; x < 16; x++)
-	            blockCache[x+1][0][0] = b[Chunk.blockIndex(x,15,15)];
-	    }
-	    if (botEast != null) {
-	        short[] b = botEast.getBlocks();
-	        for (int z = 0; z < 16; z++)
-	            blockCache[17][0][z+1] = b[Chunk.blockIndex(0,15,z)];
-	    }
-	    if (botWest != null) {
-	        short[] b = botWest.getBlocks();
-	        for (int z = 0; z < 16; z++)
-	            blockCache[0][0][z+1] = b[Chunk.blockIndex(15,15,z)];
+	    for (int z = 0; z < 16; z++) {
+	        blockCache[17][0][z+1] = getBlock(botEast, 0,  15, z);
+	        blockCache[0] [0][z+1] = getBlock(botWest, 15, 15, z);
 	    }
 
 	    // --- 8 CORNERS ---
@@ -228,18 +167,24 @@ public class WorldMap {
 	    Chunk botSE = getChunkIfExists(cx+1, cy-1, cz-1);
 	    Chunk botSW = getChunkIfExists(cx-1, cy-1, cz-1);
 
-	    if (topNE != null) blockCache[17][17][17] = topNE.getBlocks()[Chunk.blockIndex(0,0,0)];
-	    if (topNW != null) blockCache[0][17][17]  = topNW.getBlocks()[Chunk.blockIndex(15,0,0)];
-	    if (topSE != null) blockCache[17][17][0]  = topSE.getBlocks()[Chunk.blockIndex(0,0,15)];
-	    if (topSW != null) blockCache[0][17][0]   = topSW.getBlocks()[Chunk.blockIndex(0,0,0)];
-	    if (botNE != null) blockCache[17][0][17]  = botNE.getBlocks()[Chunk.blockIndex(0,15,0)];
-	    if (botNW != null) blockCache[0][0][17]   = botNW.getBlocks()[Chunk.blockIndex(15,15,0)];
-	    if (botSE != null) blockCache[17][0][0]   = botSE.getBlocks()[Chunk.blockIndex(0,15,15)];
-	    if (botSW != null) blockCache[0][0][0]    = botSW.getBlocks()[Chunk.blockIndex(15,15,15)];
+	    blockCache[17][17][17] = getBlock(topNE, 0,  0,  0 );
+	    blockCache[0] [17][17] = getBlock(topNW, 15, 0,  0 );
+	    blockCache[17][17][0]  = getBlock(topSE, 0,  0,  15);
+	    blockCache[0] [17][0]  = getBlock(topSW, 15, 0,  0 );
+	    blockCache[17][0] [17] = getBlock(botNE, 0,  15, 0 );
+	    blockCache[0] [0] [17] = getBlock(botNW, 15, 15, 0 );
+	    blockCache[17][0] [0]  = getBlock(botSE, 0,  15, 15);
+	    blockCache[0] [0] [0]  = getBlock(botSW, 15, 15, 15);
 
 	    return blockCache;
 	}
 	
+	private static short getBlock(Chunk chunk, int x, int y, int z) {
+	    if (chunk == null) return 0;
+	    short[] b = chunk.getBlocks();
+	    if (b == null) return 0;
+	    return b[Chunk.blockIndex(x, y, z)];
+	}
 
 	public static short[] acquireBlocks() {
 	    short[] blocks = blockPool.poll();

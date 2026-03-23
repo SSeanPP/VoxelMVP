@@ -10,6 +10,7 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL32;
 import org.lwjgl.opengl.GLSync;
 
+import bufferManager.ChunkSSBO;
 import bufferManager.SceneBufferManager;
 import guiHandler.GUIHelper;
 import imgui.ImGui;
@@ -43,17 +44,19 @@ public class Renderer {
 
 	private GLSync lastFence;
 	private final Queue<Chunk> evictionQueue = new ConcurrentLinkedQueue<Chunk>();
-	private final Queue<Chunk> chunkQueue = new ConcurrentLinkedQueue<Chunk>();
 	private MeshQueue meshQueue;
-	private final RenderCache renderCache;
+	private ChunkSSBO chunkSSBO;
 	private final GameInputQueue gameInputQueue;
 	
-	public Renderer (RenderCache renderCacheInput, GameInputQueue gameInputQueue) {
+	public Renderer (GameInputQueue gameInputQueue) {
 		guiHelper = new GUIHelper();
 		totalVertices = 0;
 		totalIndices = 0;
-		renderCache = renderCacheInput;
 		this.gameInputQueue = gameInputQueue;
+	}
+	
+	public void setChunkSSBO(ChunkSSBO input) {
+		this.chunkSSBO = input;
 	}
 	
 	public void bindBufferMananger(SceneBufferManager main) {
@@ -72,7 +75,6 @@ public class Renderer {
 	}
 	
 	
-	
 	public void render(GameState state, double alpha) {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		
@@ -86,49 +88,38 @@ public class Renderer {
 		Main.shaderProgram.setUniform("cameraPos", renderPos);
 		
 		if (lastFence != null) {
-			GL32.glClientWaitSync(lastFence, GL32.GL_SYNC_FLUSH_COMMANDS_BIT, 0);
-	        GL32.glDeleteSync(lastFence);
-	        lastFence = null;
-	        
-	        Chunk chunk;
-	        
-	        while ((chunk = evictionQueue.poll()) != null) {
-	        	
-	            if (chunk.allocation != null) {
-	            	chunk.allocation.setCounts(0);
-	                bufferManager.free(chunk.allocation);
-	                chunk.allocation = null;
-	            }
-	            chunk.hasBlocks = false;
+		    GL32.glClientWaitSync(lastFence, GL32.GL_SYNC_FLUSH_COMMANDS_BIT, 0);
+		    GL32.glDeleteSync(lastFence);
+		    lastFence = null;
 
-            	renderCache.clearSlot(chunk.cacheIndex);
-	        }
-	        
-	        while ((chunk = chunkQueue.poll()) != null) {
-	        
-	        	if (chunk.previousAllocation != null) {
-	        		chunk.previousAllocation.setCounts(0);
-	        	}
-	        	renderCache.updateTorroid(chunk);
-	            meshQueue.submit(chunk);
-	        }
+		    Chunk chunk;
+		    while ((chunk = evictionQueue.poll()) != null) {
+		        if (chunk.allocation != null) {
+		            chunk.allocation.setCounts(0);
+		            bufferManager.free(chunk.allocation);
+		            chunk.allocation = null;
+		        }
+		        chunk.hasBlocks = false;
+		        if (chunk.queuedForMeshing) {
+		            chunk.pendingDisposal = true;
+		        } else {
+		            chunk.dispose();
+		        }
+		    }
 		}
-		
-		for (Chunk chunk : renderCache.getRenderToroid()) {
-			if (chunk == null || chunk.allocation == null || !chunk.hasBlocks) continue;
-			
-			Main.shaderProgram.setUniform("modelMatrix", chunk.modelMatrix);
-			
-			GL32.glDrawElementsBaseVertex(
+
+		for (Chunk chunk : chunkSSBO.getRenderToroid()) {
+		    if (chunk == null || chunk.allocation == null || !chunk.hasBlocks) continue;
+
+		    Main.shaderProgram.setUniform("modelMatrix", chunk.modelMatrix);
+
+		    GL32.glDrawElementsBaseVertex(
 		        GL_TRIANGLES,
 		        chunk.allocation.indexCount,
 		        GL_UNSIGNED_INT,
 		        chunk.allocation.indexOffset,
 		        chunk.allocation.vertexOffset / Settings.stride
 		    );
-			totalIndices += chunk.allocation.indexCount;
-		    totalVertices += chunk.allocation.indexCount / 6 * 4;
-		    
 		}
 		
 		lastFence = GL32.glFenceSync(GL32.GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
@@ -220,13 +211,5 @@ public class Renderer {
 	
 	public Queue<Chunk> getEvictionQueue() {
 		return this.evictionQueue;
-	}
-	
-	public Queue<Chunk> getChunkQueue() {
-		return this.chunkQueue;
-	}
-	
-	public RenderCache getRenderCache() {
-		return this.renderCache;
 	}
 }

@@ -5,6 +5,7 @@ import resourceLoader.ResourceLoader;
 import org.joml.Vector3f;
 import org.lwjgl.opengl.Display;
 
+import bufferManager.ChunkSSBO;
 import bufferManager.SceneBufferManager;
 import imgui.ImGui;
 import meshThreader.MeshQueue;
@@ -15,13 +16,13 @@ public class Main {
 	public static ShaderProgram shaderProgram;
 	public static final GameInputQueue gameInput= new GameInputQueue();
 	public static final WorldMap gameMap = new WorldMap();
-	private final static RenderCache renderCache = new RenderCache(new Vector3f().set(Settings.spawnChunk));
 	public static MeshQueue meshThreader;
 	public static GameEngine gameEngine;
-	public static final Renderer renderer = new Renderer(renderCache, gameInput);
+	public static final Renderer renderer = new Renderer(gameInput);
 	public static Thread gameEngineThread;
 	public static final TextureCache textureAtlas = new TextureCache();
 	public static SceneBufferManager bufferManager;
+	public static ChunkSSBO renderTorroid;
 	
     public static void main(String[] args) throws InterruptedException {
     	
@@ -31,8 +32,10 @@ public class Main {
             meshThreader = new MeshQueue(bufferManager);
             renderer.bindMeshQueue(meshThreader);
             renderer.bindBufferMananger(bufferManager);
+            renderTorroid = new ChunkSSBO();
+            renderer.setChunkSSBO(renderTorroid);
             
-            gameEngine = new GameEngine(meshThreader, renderer.getEvictionQueue(), renderCache, gameInput, renderer.getChunkQueue());
+            gameEngine = new GameEngine(meshThreader, renderer.getEvictionQueue(), renderTorroid, gameInput);
             gameEngineThread = new Thread(gameEngine);
             
             Main.shaderProgram.bind(); 
