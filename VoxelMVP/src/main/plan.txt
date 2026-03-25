@@ -98,3 +98,51 @@ GPU compute (each frame):
 
 GPU draw:
     glMultiDrawElementsIndirectCountARB
+    
+    
+    
+    
+    
+    
+    
+chunk - block[] blockData
+
+slot - int x,y,z, Allocation V/EBOallocation, boolean queued
+
+Allocation - offsets and count.
+
+Game thread — CheckView(playerPos):
+    for (Slot slot : toroid):
+        if (slot.escapedRenderDistance(playerPos) && !slot.queued):
+            slot.x = newX
+            slot.y = newY
+            slot.z = newZ
+            slot.queued = true
+            meshQueue.submit(slot)
+
+Mesh thread — submit(slot):
+    slot.setCount(0)
+    Chunk chunk = WorldMap.getAt(slot.x, slot.y, slot.z)
+    if (chunk != null):
+        if (!chunk.hasGenned):
+            WorldMap.gen(chunk)
+            chunk.hasGenned = true
+        meshChunk()
+        slot.writeAllocation(meshData)
+        slot.setCount(indexCount)
+        WorldMap.returnChunk(chunk)
+    else:
+        slot.freeAllocation()
+    slot.queued = false
+
+slot.writeAllocation(meshData):
+    if slot.allocation == null:
+        slot.allocation = bufferManager.alloc(meshData.size)
+    else if slot.allocation too small:
+        freeQueue.add(slot.allocation)
+        slot.allocation = bufferManager.alloc(meshData.size)
+    write meshData to slot.allocation
+
+Game thread — after fence fires:
+    while (alloc = freeQueue.poll()):
+        bufferManager.free(alloc)

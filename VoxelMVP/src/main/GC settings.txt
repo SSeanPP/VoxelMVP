@@ -1,0 +1,11 @@
+-XX:+UseConcMarkSweepGC
+-XX:+UseParNewGC
+-XX:+CMSParallelRemarkEnabled
+-XX:CMSInitiatingOccupancyFraction=90
+-XX:+UseCMSInitiatingOccupancyOnly
+-XX:+CMSScavengeBeforeRemark
+-XX:+UseCMSCompactAtFullCollection
+-XX:CMSFullGCsBeforeCompaction=1
+-Xms512m -Xmx512m
+-server
+-XX:CompileThreshold=1500

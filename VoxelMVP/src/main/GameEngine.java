@@ -108,13 +108,6 @@ public class GameEngine implements Runnable {
 	                int slot = renderTorroid.getIndexAt(wx, wy, wz);
 	                Chunk current = renderTorroid.getRenderToroid()[slot];
 
-	                if (wy < 0 || wy >= Settings.WORLD_SIZE_HEIGHT) {
-	                    if (current != null) {
-	                    	renderTorroid.clear(current);
-	                        evictionQueue.add(current);
-	                    }
-	                    continue;
-	                }
 
 	                if (current != null && (current.x != wx || current.y != wy || current.z != wz)) {
 	                	renderTorroid.clear(current);
@@ -132,7 +125,7 @@ public class GameEngine implements Runnable {
 	                        renderTorroid.write(correct);
 	                        meshQueue.submit(correct);
 	                    } else if (current != null) {
-	                        current.previousAllocation = null;
+	                    	renderTorroid.clear(current);
 	                        evictionQueue.add(current);
 	                        WorldMap.removeChunk(WorldMap.key(current.x, current.y, current.z));
 	                    }
