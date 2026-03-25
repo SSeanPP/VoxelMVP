@@ -99,6 +99,7 @@ public class Renderer {
 		            bufferManager.free(chunk.allocation);
 		            chunk.allocation = null;
 		        }
+		        
 		        chunk.hasBlocks = false;
 		        if (chunk.queuedForMeshing) {
 		            chunk.pendingDisposal = true;
