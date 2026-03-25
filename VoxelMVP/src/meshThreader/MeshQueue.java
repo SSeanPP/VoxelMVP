@@ -44,7 +44,6 @@ public class MeshQueue {
     		THREAD_COUNT = 1;
     	}
     	
-    			
     	System.out.println("Mesh threads spawned: "+ THREAD_COUNT);
     	
     	bufferManager = manager;
