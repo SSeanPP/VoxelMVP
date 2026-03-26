@@ -6,29 +6,29 @@ import bufferManager.SceneBufferManager;
 import main.Block;
 import main.Chunk;
 import main.WorldMap;
-
+/*
 public class MeshThreadCulling extends MeshThread {
 
 	private int bx = 0;
 	private int by = 0;
 	private int bz = 0;
 	
-	public MeshThreadCulling (SceneBufferManager manager, BlockingQueue<Chunk> queueInput) {
+	public MeshThreadCulling (SceneBufferManager manager, BlockingQueue<Slot> queueInput) {
 		this.bufferManager = manager;
 		this.queue = queueInput;
 	}
 	
 	
-	public void meshChunk(Chunk chunk) {
+	public void meshChunk(Slot slot) {
 		
 		//chunk.needsUpdate = false;
-		chunk.queuedForMeshing = false;
+		chunk. = false;
 		
 		vertexPtr = 0;
 		indexPtr = 0;
 		
-		WorldMap.blockCache(WorldMap.key(chunk.x, chunk.y, chunk.z), chunk, localBlockCache);
-		int chunkSize = chunk.chunkSize;
+		WorldMap.blockCache(WorldMap.key(slot.x, slot.y, slot.z), slot, localBlockCache);
+		int chunkSize = slot.chunkSize;
 		
 		for(int x = 1; x < chunkSize+1; x++) {
 			for (int y = 1; y < chunkSize+1; y++) {
@@ -74,7 +74,7 @@ public class MeshThreadCulling extends MeshThread {
 			}
 		}
 		
-		uploadToGPU(chunk);
+		uploadToGPU(slot);
 		
 	}
 	
@@ -195,4 +195,4 @@ public class MeshThreadCulling extends MeshThread {
 		};
 	
 	
-}
+}*/

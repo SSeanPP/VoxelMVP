@@ -6,6 +6,7 @@ import org.joml.Vector3f;
 import org.lwjgl.input.Keyboard;
 
 import bufferManager.ChunkSSBO;
+import bufferManager.ChunkSSBO.Slot;
 import meshThreader.MeshQueue;
 
 public class GameEngine implements Runnable {
@@ -20,7 +21,7 @@ public class GameEngine implements Runnable {
 	
 	private final int CHUNK_SHIFT = 4; // 2^4 = 16
 	
-	private Queue<Chunk> evictionQueue;
+	private Queue<Slot> evictionQueue;
 	private ChunkSSBO renderTorroid;
 	private GameInputQueue gameInputQueue;
 	
@@ -38,7 +39,7 @@ public class GameEngine implements Runnable {
 	private Vector3f pPosition;
     private Vector3f cameraPos;
 	
-	public GameEngine(MeshQueue queue, Queue<Chunk> evictionQueueFromRenderer, ChunkSSBO renderCacheFromRenderer, GameInputQueue inputQueue) {
+	public GameEngine(MeshQueue queue, Queue<Slot> evictionQueueFromRenderer, ChunkSSBO renderCacheFromRenderer, GameInputQueue inputQueue) {
 		meshQueue = queue;
 		evictionQueue = evictionQueueFromRenderer;
 		renderTorroid = renderCacheFromRenderer;
@@ -105,14 +106,20 @@ public class GameEngine implements Runnable {
 	                int wy = py + ry;
 	                int wz = pz + rz;
 
-	                int slot = renderTorroid.getIndexAt(wx, wy, wz);
-	                Chunk current = renderTorroid.getRenderToroid()[slot];
-
-
-	                if (current != null && (current.x != wx || current.y != wy || current.z != wz)) {
-	                	renderTorroid.clear(current);
-	                    evictionQueue.add(current);
-	                    WorldMap.removeChunk(WorldMap.key(current.x, current.y, current.z));
+	                int slotKey = renderTorroid.getIndexAt(wx, wy, wz);
+	                Slot slot = renderTorroid.getRenderToroid()[slotKey];
+	                
+	                if(slot == null) {
+	                	slot = new Slot(wx,wy,wz);
+	                	renderTorroid.getRenderToroid()[slotKey] = slot;
+	                }
+	                
+	                Chunk current = slot.chunk;
+	                
+	                if (current != null && (slot.x != wx || slot.y != wy || slot.z != wz)) {
+	                	renderTorroid.clear(slot);
+	                    evictionQueue.add(slot);
+	                    WorldMap.removeChunk(WorldMap.key(slot.x, slot.y, slot.z));
 	                    current = null;
 	                }
 
@@ -120,14 +127,16 @@ public class GameEngine implements Runnable {
 
 	                if (current != correct) {
 	                    if (correct != null) {
-	                        correct.previousAllocation = (current != null) ? current.allocation : null;
-	                        if (current != null) current.allocation = null;
-	                        renderTorroid.write(correct);
-	                        meshQueue.submit(correct);
+	                        if(current!=null) {
+	                        	current.dispose();
+	                        }
+	                        slot.chunk = correct;
+	                        renderTorroid.write(slot);
+	                        meshQueue.submit(slot);
 	                    } else if (current != null) {
-	                    	renderTorroid.clear(current);
-	                        evictionQueue.add(current);
-	                        WorldMap.removeChunk(WorldMap.key(current.x, current.y, current.z));
+	                    	renderTorroid.clear(slot);
+	                        evictionQueue.add(slot);
+	                        WorldMap.removeChunk(WorldMap.key(slot.x, slot.y, slot.z));
 	                    }
 	                }
 	            }

@@ -1,7 +1,7 @@
 package main;
 
 import org.joml.Vector3f;
-
+/*
 public class RenderCache {
     private final int WIDTH  = Settings.RENDER_DISTANCE * 2 + 1;
     private final int HEIGHT = Settings.RENDER_HEIGHT   * 2 + 1;
@@ -58,4 +58,4 @@ public class RenderCache {
         }
         return r;
     }
-}
+}*/

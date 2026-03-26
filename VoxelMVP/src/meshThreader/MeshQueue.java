@@ -8,6 +8,7 @@ import java.util.concurrent.PriorityBlockingQueue;
 
 import org.joml.Vector3f;
 
+import bufferManager.ChunkSSBO.Slot;
 import bufferManager.SceneBufferManager;
 
 import main.Chunk;
@@ -18,9 +19,9 @@ public class MeshQueue {
     private final SceneBufferManager bufferManager;
     
     private static Vector3f playerChunkPos = Settings.spawnChunk;
-    public static final BlockingQueue<Chunk> meshQueue = new PriorityBlockingQueue<Chunk>((Settings.RENDER_DISTANCE*Settings.RENDER_HEIGHT*Settings.RENDER_DISTANCE),
-    		new Comparator<Chunk>() {
-		    	public int compare(Chunk a, Chunk b) {
+    public static final BlockingQueue<Slot> meshQueue = new PriorityBlockingQueue<Slot>((Settings.RENDER_DISTANCE*Settings.RENDER_HEIGHT*Settings.RENDER_DISTANCE),
+    		new Comparator<Slot>() {
+		    	public int compare(Slot a, Slot b) {
 		            int dax = (int) (a.x - playerChunkPos.x);
 		            int day = (int) (a.y - playerChunkPos.y);
 		            int daz = (int) (a.z - playerChunkPos.z);
@@ -55,15 +56,15 @@ public class MeshQueue {
     }
 
     //Returns true if updated, false if not
-    public boolean submit(Chunk chunk) {
+    public boolean submit(Slot correct) {
 
-    	if (chunk.queuedForMeshing) {
+    	if (correct.queued) {
     		return false;
     	}
     	
     	
-    	if(meshQueue.offer(chunk)){
-    		chunk.queuedForMeshing = true;
+    	if(meshQueue.offer(correct)){
+    		correct.queued = true;
     	}
     	
     	return true;

@@ -4,7 +4,7 @@ import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import saveHelper.TerrainGeneratorClaude;
+import bufferManager.ChunkSSBO.Slot;
 import saveHelper.TerrainGeneratorGPT;
 
 public class WorldMap {
@@ -43,7 +43,7 @@ public class WorldMap {
 	    if (existing != null) return existing;
 	    
 	    // Generate candidate
-	    Chunk chunk = new Chunk(x, y, z);
+	    Chunk chunk = new Chunk();
 	    
 	    // Only put if absent - if another thread beat us, use theirs
 	    Chunk winner = chunks.putIfAbsent(k, chunk);
@@ -57,11 +57,7 @@ public class WorldMap {
 	public static void removeChunk(long key) {
 		Chunk c = chunks.remove(key);
 	    if (c != null) {
-	        if (c.queuedForMeshing) {
-	            c.pendingDisposal = true; // mesh thread will dispose when done
-	        } else {
-	            c.dispose(); // safe to dispose now
-	        }
+	    	c.dispose();
 	    }
 	}
 	
@@ -74,7 +70,7 @@ public class WorldMap {
 	    return chunks.get(key(x, y, z));
 	}
 	
-	public static short[][][] blockCache(long chunkCoords, Chunk centreChunk, short[][][] blockCache) {
+	public static short[][][] blockCache(Slot centreChunk, short[][][] blockCache) {
 
 	    for (int x = 0; x < Settings.blockCacheSize; x++)
 	        for (int y = 0; y < Settings.blockCacheSize; y++)
@@ -85,7 +81,7 @@ public class WorldMap {
 	    int cz = centreChunk.z;
 
 	    // --- CENTRE ---
-	    short[] c = centreChunk.getBlocks();
+	    short[] c = centreChunk.chunk.getBlocks();
 	    if (c == null) return blockCache;
 	    for (int x = 0; x < 16; x++)
 	    for (int y = 0; y < 16; y++)

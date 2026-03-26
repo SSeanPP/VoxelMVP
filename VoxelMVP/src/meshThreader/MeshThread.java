@@ -4,6 +4,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.concurrent.BlockingQueue;
 
+import bufferManager.ChunkSSBO.Slot;
 import bufferManager.SceneBufferManager;
 import main.Chunk;
 import main.Settings;
@@ -12,7 +13,7 @@ import main.WorldMap;
 public abstract class MeshThread implements Runnable {
 	// --- Infrastructure ---
     protected SceneBufferManager bufferManager;
-    protected BlockingQueue<Chunk> queue;
+    protected BlockingQueue<Slot> queue;
 
     // --- Block cache ---
     protected final short[][][] localBlockCache = new short[Settings.blockCacheSize][Settings.blockCacheSize][Settings.blockCacheSize];
@@ -40,33 +41,28 @@ public abstract class MeshThread implements Runnable {
     public void run() {
         while (!Thread.currentThread().isInterrupted()) {
             try {
-                Chunk chunk = queue.take();
-                if(!chunk.hasGenned) {
-                	chunk.hasGenned = true;
-                	WorldMap.gen.generate(chunk, chunk.x, chunk.y, chunk.z);
+                Slot slot = queue.take();
+                if(!slot.chunk.hasGenned) {
+                	slot.chunk.hasGenned = true;
+                	WorldMap.gen.generate(slot.chunk, slot.x, slot.y, slot.z);
                 }
-                meshChunk(chunk);
+                meshChunk(slot);
             } catch (InterruptedException e) {
                 break;
             }
         }
     }
 
-	protected abstract void meshChunk(Chunk chunk);
+	protected abstract void meshChunk(Slot slot);
 	
-	protected void uploadToGPU(Chunk chunk) {
+	protected void uploadToGPU(Slot slot) {
 
         if (vertexPtr == 0 && indexPtr == 0) {
-            chunk.hasBlocks = false;
+            slot.chunk.hasBlocks = false;
             
-            //
-            if (chunk.previousAllocation != null) {
-                bufferManager.free(chunk.previousAllocation);
-                chunk.previousAllocation = null;
-            }
             
         } else {
-            chunk.hasBlocks = true;
+            slot.chunk.hasBlocks = true;
 
             int vertexSizeBytes = vertexPtr * 4;
             int indexSizeBytes  = indexPtr  * 4;
@@ -76,36 +72,32 @@ public abstract class MeshThread implements Runnable {
             //int paddedVertex = bufferManager.alignVertex((int)(vertexSizeBytes));
             //int paddedIndex  = bufferManager.alignIndex ((int)(indexSizeBytes));
 
-            if (chunk.previousAllocation != null) {
-                int allocV = chunk.previousAllocation.vertexLimit - chunk.previousAllocation.vertexOffset;
-                int allocI = chunk.previousAllocation.indexLimit  - chunk.previousAllocation.indexOffset;
+            if (slot.allocation != null) {
+                int allocV = slot.allocation.vertexLimit - slot.allocation.vertexOffset;
+                int allocI = slot.allocation.indexLimit  - slot.allocation.indexOffset;
 
                 if (allocV >= paddedVertex && allocI >= paddedIndex) {
-                    chunk.previousAllocation.setCounts(0);
-                    chunk.allocation = chunk.previousAllocation;
-                    chunk.previousAllocation = null;
+                    slot.allocation.setCounts(0);
                 } else {
-                    bufferManager.free(chunk.previousAllocation);
-                    chunk.previousAllocation = null;
-                    chunk.allocation = bufferManager.getAllocation(paddedVertex, paddedIndex);
+                    bufferManager.free(slot.allocation);
+                    slot.allocation = bufferManager.getAllocation(paddedVertex, paddedIndex);
                 }
             } else {
-                chunk.allocation = bufferManager.getAllocation(paddedVertex, paddedIndex);
+                slot.allocation = bufferManager.getAllocation(paddedVertex, paddedIndex);
             }
 
-            ByteBuffer vbo = bufferManager.getVBOSlice(chunk.allocation).order(ByteOrder.nativeOrder());
+            ByteBuffer vbo = bufferManager.getVBOSlice(slot.allocation).order(ByteOrder.nativeOrder());
             for (int i = 0; i < vertexPtr; i++) vbo.putFloat(vertices[i]);
 
-            ByteBuffer ebo = bufferManager.getEBOSlice(chunk.allocation).order(ByteOrder.nativeOrder());
+            ByteBuffer ebo = bufferManager.getEBOSlice(slot.allocation).order(ByteOrder.nativeOrder());
             for (int i = 0; i < indexPtr; i++) ebo.putInt(indices[i]);
 
-            chunk.allocation.setCounts(indexPtr);
+            slot.allocation.setCounts(indexPtr);
         }
         
-        chunk.queuedForMeshing = false;
-        chunk.previousAllocation = null;
-        if (chunk.pendingDisposal) {
-            chunk.dispose();
+        slot.queued = false;
+        if (slot.pendingDisposal) {
+            slot.chunk.dispose();
         }
     }
 }

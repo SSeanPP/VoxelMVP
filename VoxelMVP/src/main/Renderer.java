@@ -1,5 +1,6 @@
 package main;
 
+import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
@@ -11,6 +12,7 @@ import org.lwjgl.opengl.GL32;
 import org.lwjgl.opengl.GLSync;
 
 import bufferManager.ChunkSSBO;
+import bufferManager.ChunkSSBO.Slot;
 import bufferManager.SceneBufferManager;
 import guiHandler.GUIHelper;
 import imgui.ImGui;
@@ -34,7 +36,7 @@ public class Renderer {
 	private Projection projection;
 	
 	private Vector3f renderPos = new Vector3f();
-	//private Matrix4f renderMatrix = new Matrix4f();
+	private Matrix4f renderMatrix = new Matrix4f();
 	private Camera camera;
 	private GUIHelper guiHelper;
 	
@@ -43,7 +45,7 @@ public class Renderer {
 	private int totalIndices;
 
 	private GLSync lastFence;
-	private final Queue<Chunk> evictionQueue = new ConcurrentLinkedQueue<Chunk>();
+	private final Queue<Slot> evictionQueue = new ConcurrentLinkedQueue<Slot>();
 	private MeshQueue meshQueue;
 	private ChunkSSBO chunkSSBO;
 	private final GameInputQueue gameInputQueue;
@@ -52,6 +54,7 @@ public class Renderer {
 		guiHelper = new GUIHelper();
 		totalVertices = 0;
 		totalIndices = 0;
+		renderMatrix = new Matrix4f();
 		this.gameInputQueue = gameInputQueue;
 	}
 	
@@ -92,34 +95,35 @@ public class Renderer {
 		    GL32.glDeleteSync(lastFence);
 		    lastFence = null;
 
-		    Chunk chunk;
-		    while ((chunk = evictionQueue.poll()) != null) {
-		        if (chunk.allocation != null) {
-		            chunk.allocation.setCounts(0);
-		            bufferManager.free(chunk.allocation);
-		            chunk.allocation = null;
+		    Slot slot;
+		    while ((slot = evictionQueue.poll()) != null) {
+		        if (slot.allocation != null) {
+		            slot.allocation.setCounts(0);
+		            bufferManager.free(slot.allocation);
+		            slot.allocation = null;
 		        }
 		        
-		        chunk.hasBlocks = false;
-		        if (chunk.queuedForMeshing) {
-		            chunk.pendingDisposal = true;
+		        slot.chunk.hasBlocks = false;
+		        if (slot.queued) {
+		            slot.pendingDisposal = true;
 		        } else {
-		            chunk.dispose();
+		            slot.chunk.dispose();
 		        }
 		    }
 		}
 
-		for (Chunk chunk : chunkSSBO.getRenderToroid()) {
-		    if (chunk == null || chunk.allocation == null || !chunk.hasBlocks) continue;
+		for (Slot slot : chunkSSBO.getRenderToroid()) {
+		    if (slot == null || slot.allocation == null || !slot.chunk.hasBlocks) continue;
 
-		    Main.shaderProgram.setUniform("modelMatrix", chunk.modelMatrix);
+		    renderMatrix.translation(slot.x * Settings.CHUNK_SIZE, slot.y * Settings.CHUNK_SIZE, slot.z * Settings.CHUNK_SIZE);
+		    Main.shaderProgram.setUniform("modelMatrix", renderMatrix);
 
 		    GL32.glDrawElementsBaseVertex(
 		        GL_TRIANGLES,
-		        chunk.allocation.indexCount,
+		        slot.allocation.indexCount,
 		        GL_UNSIGNED_INT,
-		        chunk.allocation.indexOffset,
-		        chunk.allocation.vertexOffset / Settings.stride
+		        slot.allocation.indexOffset,
+		        slot.allocation.vertexOffset / Settings.stride
 		    );
 		}
 		
@@ -210,7 +214,7 @@ public class Renderer {
 		models.put(name, model);
 	}
 	
-	public Queue<Chunk> getEvictionQueue() {
+	public Queue<Slot> getEvictionQueue() {
 		return this.evictionQueue;
 	}
 }

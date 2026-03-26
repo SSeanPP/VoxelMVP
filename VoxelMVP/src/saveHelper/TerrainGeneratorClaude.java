@@ -5,6 +5,7 @@ import java.util.Random;
 import main.Block;
 import main.Chunk;
 
+/*
 public class TerrainGeneratorClaude {
 
     private final int[] perm = new int[512];
@@ -35,11 +36,11 @@ public class TerrainGeneratorClaude {
         // Double the table to avoid index wrapping
         for (int i = 0; i < 512; i++) perm[i] = base[i & 255];
     }
-
+    */
     /**
      * Fill a chunk's block array based on world-space coordinates.
      * cx, cy, cz are chunk coordinates (not block coordinates).
-     */
+     *//*
     public void generate(Chunk chunk, int cx, int cy, int cz) {
         short[] blocks = chunk.getBlocks();
         int chunkSize = chunk.chunkSize;
@@ -198,4 +199,4 @@ public class TerrainGeneratorClaude {
         float v = (h & 2) == 0 ? z : -z;
         return u + v;
     }
-}
+}*/

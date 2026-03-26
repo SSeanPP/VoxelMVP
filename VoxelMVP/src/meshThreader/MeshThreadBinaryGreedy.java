@@ -2,6 +2,7 @@ package meshThreader;
 
 import java.util.concurrent.BlockingQueue;
 
+import bufferManager.ChunkSSBO.Slot;
 import bufferManager.SceneBufferManager;
 import main.Block;
 import main.Chunk;
@@ -25,7 +26,7 @@ public class MeshThreadBinaryGreedy extends MeshThread {
     private int quadCount = 0;
 
 
-    public MeshThreadBinaryGreedy(SceneBufferManager manager, BlockingQueue<Chunk> queueInput) {
+    public MeshThreadBinaryGreedy(SceneBufferManager manager, BlockingQueue<Slot> queueInput) {
         this.bufferManager = manager;
         this.queue = queueInput;
         // pre-allocate quad pool
@@ -37,17 +38,17 @@ public class MeshThreadBinaryGreedy extends MeshThread {
     // Main entry point
     // -------------------------------------------------------------------------
 
-    public void meshChunk(Chunk chunk) {
+    public void meshChunk(Slot slot) {
         vertexPtr = 0;
         indexPtr  = 0;
         
-        WorldMap.blockCache(WorldMap.key(chunk.x, chunk.y, chunk.z), chunk, localBlockCache);
+        WorldMap.blockCache(slot, localBlockCache);
 
         buildAxisCols();
         buildFaceMasks();
         buildPlanes();
         emitAllQuads();
-        uploadToGPU(chunk);
+        uploadToGPU(slot);
     }
 
     // -------------------------------------------------------------------------

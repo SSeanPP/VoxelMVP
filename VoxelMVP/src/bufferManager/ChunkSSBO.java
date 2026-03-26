@@ -2,6 +2,7 @@ package bufferManager;
 
 import java.nio.ByteBuffer;
 
+import org.joml.Matrix4f;
 import org.lwjgl.opengl.ARBBufferStorage;
 import org.lwjgl.opengl.ARBMapBufferRange;
 import org.lwjgl.opengl.GL15;
@@ -36,11 +37,13 @@ public class ChunkSSBO {
     private final int HEIGHT = Settings.RENDER_HEIGHT   * 2 + 1;
     
     // CPU mirror - so game thread can read back chunkId without touching GL
-    private final Chunk[] renderTorroid;
+    private final Slot[] renderTorroid;
     
     public ChunkSSBO() {
     	slotCount = WIDTH * HEIGHT * WIDTH;
-    	renderTorroid = new Chunk[slotCount];
+    	renderTorroid = new Slot[slotCount];
+    	
+    	
     	
     	chunkSSBOid = GL15.glGenBuffers();
     	GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, chunkSSBOid);
@@ -64,6 +67,38 @@ public class ChunkSSBO {
     			GL44.GL_DYNAMIC_STORAGE_BIT);
     }
     
+    public static class Slot {
+    	public volatile int x,y,z;
+    	public volatile Allocation allocation;
+    	public volatile boolean queued;
+    	public volatile int ssboIndex;
+    	public volatile Chunk chunk;
+		public volatile boolean pendingDisposal;
+    	
+    	public Slot(int xi, int yj, int zk) {
+    		this.queued = false;
+    		this.chunk = new Chunk();
+    		this.x = xi;
+    		this.y = yj;
+    		this.z= zk;
+    		
+    	}
+    	
+    	
+    	
+    	@Override
+    	public int hashCode() {
+    	    return x * 31 * 31 + y * 31 + z;
+    	}
+
+    	@Override
+    	public boolean equals(Object o) {
+    	    if (!(o instanceof Slot)) return false;
+    	    Slot other = (Slot) o;
+    	    return x == other.x && y == other.y && z == other.z;
+    	}
+    }
+    
     private int index(int wx, int wy, int wz) {
         int tx = floorMod(wx, WIDTH);
         int ty = floorMod(wy, HEIGHT);
@@ -76,21 +111,21 @@ public class ChunkSSBO {
         return index(wx, wy, wz);
     }
     
-    public void write(Chunk chunk) {
+    public void write(Slot chunk) {
         int slot = getIndexAt(chunk.x, chunk.y, chunk.z);
         writeSlotMeta(slot, chunk.x, chunk.y, chunk.z);
         renderTorroid[slot] = chunk;
     }
     
-    public void commit(Chunk chunk, int firstIndex, int baseVertex, int indexCount) {
+    public void commit(Slot chunk, int firstIndex, int baseVertex, int indexCount) {
     	commitSlot(getIndexAt(chunk.x, chunk.y, chunk.z), firstIndex, baseVertex, indexCount);
     }
     
-    public void clear(Chunk chunk) {
-    	clearSlot(getIndexAt(chunk.x, chunk.y, chunk.z));
+    public void clear(Slot current) {
+    	clearSlot(getIndexAt(current.x, current.y, current.z));
     }
 
-    public Chunk[] getRenderToroid() {
+    public Slot[] getRenderToroid() {
         return renderTorroid;
     }
     
