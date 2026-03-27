@@ -38,17 +38,14 @@ public class MeshThreadBinaryGreedy extends MeshThread {
     // Main entry point
     // -------------------------------------------------------------------------
 
-    public void meshChunk(Slot slot) {
-        vertexPtr = 0;
-        indexPtr  = 0;
+    public void meshChunk(Slot slot, Chunk chunk) {
         
-        WorldMap.blockCache(slot, localBlockCache);
+        WorldMap.blockCache(slot, chunk, localBlockCache);
 
         buildAxisCols();
         buildFaceMasks();
         buildPlanes();
         emitAllQuads();
-        uploadToGPU(slot);
     }
 
     // -------------------------------------------------------------------------

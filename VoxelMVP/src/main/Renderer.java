@@ -89,31 +89,10 @@ public class Renderer {
 		Main.shaderProgram.setUniform("viewMatrix", camera.handleCameraLerpAndMatrix(alpha, renderPos));
 		Main.shaderProgram.setUniform("projectionMatrix", projection.getProjMatrix());
 		Main.shaderProgram.setUniform("cameraPos", renderPos);
-		
-		if (lastFence != null) {
-		    GL32.glClientWaitSync(lastFence, GL32.GL_SYNC_FLUSH_COMMANDS_BIT, 0);
-		    GL32.glDeleteSync(lastFence);
-		    lastFence = null;
-
-		    Slot slot;
-		    while ((slot = evictionQueue.poll()) != null) {
-		        if (slot.allocation != null) {
-		            slot.allocation.setCounts(0);
-		            bufferManager.free(slot.allocation);
-		            slot.allocation = null;
-		        }
-		        
-		        slot.chunk.hasBlocks = false;
-		        if (slot.queued) {
-		            slot.pendingDisposal = true;
-		        } else {
-		            slot.chunk.dispose();
-		        }
-		    }
-		}
+	
 
 		for (Slot slot : chunkSSBO.getRenderToroid()) {
-		    if (slot == null || slot.allocation == null || !slot.chunk.hasBlocks) continue;
+		    if (slot == null || slot.allocation == null || slot.allocation.getCounts() == 0) continue;
 
 		    renderMatrix.translation(slot.x * Settings.CHUNK_SIZE, slot.y * Settings.CHUNK_SIZE, slot.z * Settings.CHUNK_SIZE);
 		    Main.shaderProgram.setUniform("modelMatrix", renderMatrix);
@@ -126,8 +105,6 @@ public class Renderer {
 		        slot.allocation.vertexOffset / Settings.stride
 		    );
 		}
-		
-		lastFence = GL32.glFenceSync(GL32.GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
 		
 		
 		if(!guiHelper.runGUI(state, totalIndices, totalVertices)) {

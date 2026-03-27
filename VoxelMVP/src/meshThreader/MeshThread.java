@@ -41,42 +41,47 @@ public abstract class MeshThread implements Runnable {
     public void run() {
         while (!Thread.currentThread().isInterrupted()) {
             try {
-                Slot slot = queue.take();
-                if(!slot.chunk.hasGenned) {
-                	slot.chunk.hasGenned = true;
-                	WorldMap.gen.generate(slot.chunk, slot.x, slot.y, slot.z);
-                }
-                meshChunk(slot);
+            	vertexPtr = 0;
+                indexPtr  = 0;
+                
+            	Slot slot = queue.take();
+            	
+            	Chunk chunk = WorldMap.getChunkDirect(slot.x, slot.y, slot.z);
+            	if (chunk != null) {
+            	    WorldMap.gen.generate(chunk, slot.x, slot.y, slot.z);
+            	    meshChunk(slot, chunk); 
+            	}
+            	uploadToGPU(slot);
+            	slot.queued = false;
             } catch (InterruptedException e) {
                 break;
             }
         }
     }
 
-	protected abstract void meshChunk(Slot slot);
+	protected abstract void meshChunk(Slot slot, Chunk chunk);
 	
 	protected void uploadToGPU(Slot slot) {
 
-        if (vertexPtr == 0 && indexPtr == 0) {
-            slot.chunk.hasBlocks = false;
-            
-            
-        } else {
-            slot.chunk.hasBlocks = true;
-
+		if (vertexPtr == 0 && indexPtr == 0) {
+		    if (slot.allocation != null) {
+		        bufferManager.free(slot.allocation);
+		        slot.allocation = null;
+		    }
+		    return;
+		} else {
             int vertexSizeBytes = vertexPtr * 4;
             int indexSizeBytes  = indexPtr  * 4;
-            int paddedVertex = bufferManager.alignVertex((int)(vertexSizeBytes * 1.1));
-            int paddedIndex  = bufferManager.alignIndex ((int)(indexSizeBytes  * 1.1));
-            
-            //int paddedVertex = bufferManager.alignVertex((int)(vertexSizeBytes));
-            //int paddedIndex  = bufferManager.alignIndex ((int)(indexSizeBytes));
+            int paddedVertex = bufferManager.alignVertex((int)(vertexSizeBytes));
+            int paddedIndex  = bufferManager.alignIndex ((int)(indexSizeBytes));
 
             if (slot.allocation != null) {
                 int allocV = slot.allocation.vertexLimit - slot.allocation.vertexOffset;
                 int allocI = slot.allocation.indexLimit  - slot.allocation.indexOffset;
 
-                if (allocV >= paddedVertex && allocI >= paddedIndex) {
+                if (allocV >= paddedVertex && allocI >= paddedIndex
+                		&& allocV <= paddedVertex + (paddedVertex >> 2)  
+                	    && allocI <= paddedIndex  + (paddedIndex  >> 2)) {
                     slot.allocation.setCounts(0);
                 } else {
                     bufferManager.free(slot.allocation);
@@ -87,17 +92,12 @@ public abstract class MeshThread implements Runnable {
             }
 
             ByteBuffer vbo = bufferManager.getVBOSlice(slot.allocation).order(ByteOrder.nativeOrder());
-            for (int i = 0; i < vertexPtr; i++) vbo.putFloat(vertices[i]);
-
+            vbo.asFloatBuffer().put(vertices, 0, vertexPtr);
+            
             ByteBuffer ebo = bufferManager.getEBOSlice(slot.allocation).order(ByteOrder.nativeOrder());
-            for (int i = 0; i < indexPtr; i++) ebo.putInt(indices[i]);
+            ebo.asIntBuffer().put(indices, 0, indexPtr);
 
             slot.allocation.setCounts(indexPtr);
-        }
-        
-        slot.queued = false;
-        if (slot.pendingDisposal) {
-            slot.chunk.dispose();
         }
     }
 }

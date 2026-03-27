@@ -70,18 +70,18 @@ public class WorldMap {
 	    return chunks.get(key(x, y, z));
 	}
 	
-	public static short[][][] blockCache(Slot centreChunk, short[][][] blockCache) {
+	public static short[][][] blockCache(Slot slot, Chunk centreChunk, short[][][] blockCache) {
 
 	    for (int x = 0; x < Settings.blockCacheSize; x++)
 	        for (int y = 0; y < Settings.blockCacheSize; y++)
 	            java.util.Arrays.fill(blockCache[x][y], (short) 0);
 
-	    int cx = centreChunk.x;
-	    int cy = centreChunk.y;
-	    int cz = centreChunk.z;
+	    int cx = slot.x;
+	    int cy = slot.y;
+	    int cz = slot.z;
 
 	    // --- CENTRE ---
-	    short[] c = centreChunk.chunk.getBlocks();
+	    short[] c = centreChunk.blocks;
 	    if (c == null) return blockCache;
 	    for (int x = 0; x < 16; x++)
 	    for (int y = 0; y < 16; y++)
@@ -177,7 +177,7 @@ public class WorldMap {
 	
 	private static short getBlock(Chunk chunk, int x, int y, int z) {
 	    if (chunk == null) return 0;
-	    short[] b = chunk.getBlocks();
+	    short[] b = chunk.blocks;
 	    if (b == null) return 0;
 	    return b[Chunk.blockIndex(x, y, z)];
 	}

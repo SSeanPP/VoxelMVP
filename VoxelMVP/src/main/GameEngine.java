@@ -47,6 +47,8 @@ public class GameEngine implements Runnable {
 		
 		this.pPosition = new Vector3f();
 		this.cameraPos = state.getCamera().getPosition();
+		
+		
 	}
 	
 	public void gameLoop() {
@@ -81,7 +83,7 @@ public class GameEngine implements Runnable {
 	    			pPosition.set(px,py,pz);
 	    		    meshQueue.updatePos(pPosition);
 	    		    
-	    		    updateChunksAroundPlayer();
+	    		    checkView();
 	    		    
 	    		    lastPx = px;
 	    		    lastPy = py;
@@ -98,51 +100,20 @@ public class GameEngine implements Runnable {
 	    }
 	}
 	
-	public void updateChunksAroundPlayer() {
-	    for (int rx = -Settings.RENDER_DISTANCE; rx <= Settings.RENDER_DISTANCE; rx++) {
-	        for (int ry = -Settings.RENDER_HEIGHT; ry <= Settings.RENDER_HEIGHT; ry++) {
-	            for (int rz = -Settings.RENDER_DISTANCE; rz <= Settings.RENDER_DISTANCE; rz++) {
-	                int wx = px + rx;
-	                int wy = py + ry;
-	                int wz = pz + rz;
+	
+    public void checkView() {
+        for(Slot slot : renderTorroid.getRenderToroid()) {
 
-	                int slotKey = renderTorroid.getIndexAt(wx, wy, wz);
-	                Slot slot = renderTorroid.getRenderToroid()[slotKey];
-	                
-	                if(slot == null) {
-	                	slot = new Slot(wx,wy,wz);
-	                	renderTorroid.getRenderToroid()[slotKey] = slot;
-	                }
-	                
-	                Chunk current = slot.chunk;
-	                
-	                if (current != null && (slot.x != wx || slot.y != wy || slot.z != wz)) {
-	                	renderTorroid.clear(slot);
-	                    evictionQueue.add(slot);
-	                    WorldMap.removeChunk(WorldMap.key(slot.x, slot.y, slot.z));
-	                    current = null;
-	                }
+            if (!slot.queued && slot.escaped(this.pPosition)) {
+            	slot.queued = true; 
+                WorldMap.removeChunk(WorldMap.key(slot.x, slot.y, slot.z));
+                slot.newPos(this.pPosition);
 
-	                Chunk correct = WorldMap.getChunkDirect(wx, wy, wz);
-
-	                if (current != correct) {
-	                    if (correct != null) {
-	                        if(current!=null) {
-	                        	current.dispose();
-	                        }
-	                        slot.chunk = correct;
-	                        renderTorroid.write(slot);
-	                        meshQueue.submit(slot);
-	                    } else if (current != null) {
-	                    	renderTorroid.clear(slot);
-	                        evictionQueue.add(slot);
-	                        WorldMap.removeChunk(WorldMap.key(slot.x, slot.y, slot.z));
-	                    }
-	                }
-	            }
-	        }
-	    }
-	}
+                meshQueue.submit(slot);
+            }
+        }
+    }
+ 
 	
 	public GameState getPublishedState() {
 	    return state;

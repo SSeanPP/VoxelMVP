@@ -19,8 +19,10 @@ public class TerrainGeneratorGPT {
     }
 
     public void generate(Chunk chunk, int cx, int cy, int cz) {
-        short[] blocks = chunk.getBlocks();
-        int size = chunk.chunkSize;
+    	
+        short[] blocks = chunk.blocks;
+        
+        int size = 16;
 
         for (int lx = 0; lx < size; lx++) {
             for (int lz = 0; lz < size; lz++) {

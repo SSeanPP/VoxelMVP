@@ -55,19 +55,8 @@ public class MeshQueue {
     	}
     }
 
-    //Returns true if updated, false if not
-    public boolean submit(Slot correct) {
-
-    	if (correct.queued) {
-    		return false;
-    	}
-    	
-    	
-    	if(meshQueue.offer(correct)){
-    		correct.queued = true;
-    	}
-    	
-    	return true;
+    public void submit(Slot correct) {
+    	meshQueue.offer(correct);
     }
     
     public void updatePos(Vector3f newPos)  {

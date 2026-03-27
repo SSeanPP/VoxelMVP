@@ -3,6 +3,7 @@ package bufferManager;
 import java.nio.ByteBuffer;
 
 import org.joml.Matrix4f;
+import org.joml.Vector3f;
 import org.lwjgl.opengl.ARBBufferStorage;
 import org.lwjgl.opengl.ARBMapBufferRange;
 import org.lwjgl.opengl.GL15;
@@ -33,8 +34,8 @@ public class ChunkSSBO {
     
     private final int slotCount;
     
-    private final int WIDTH  = Settings.RENDER_DISTANCE * 2 + 1;
-    private final int HEIGHT = Settings.RENDER_HEIGHT   * 2 + 1;
+    private final static int WIDTH  = Settings.RENDER_DISTANCE * 2 + 1;
+    private final static int HEIGHT = Settings.RENDER_HEIGHT   * 2 + 1;
     
     // CPU mirror - so game thread can read back chunkId without touching GL
     private final Slot[] renderTorroid;
@@ -43,7 +44,16 @@ public class ChunkSSBO {
     	slotCount = WIDTH * HEIGHT * WIDTH;
     	renderTorroid = new Slot[slotCount];
     	
-    	
+    	int i = 0;
+        for (int x = 0; x < WIDTH; x++)
+        for (int y = 0; y < HEIGHT; y++)
+        for (int z = 0; z < WIDTH; z++) {
+            Slot s = new Slot();
+            s.x = (int)Settings.spawnChunk.x - Settings.RENDER_DISTANCE + x;
+            s.y = (int)Settings.spawnChunk.y - Settings.RENDER_HEIGHT   + y;
+            s.z = (int)Settings.spawnChunk.z - Settings.RENDER_DISTANCE + z;
+            renderTorroid[i++] = s;
+        }
     	
     	chunkSSBOid = GL15.glGenBuffers();
     	GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, chunkSSBOid);
@@ -71,20 +81,22 @@ public class ChunkSSBO {
     	public volatile int x,y,z;
     	public volatile Allocation allocation;
     	public volatile boolean queued;
-    	public volatile int ssboIndex;
-    	public volatile Chunk chunk;
-		public volatile boolean pendingDisposal;
     	
-    	public Slot(int xi, int yj, int zk) {
+    	public Slot() {
     		this.queued = false;
-    		this.chunk = new Chunk();
-    		this.x = xi;
-    		this.y = yj;
-    		this.z= zk;
-    		
     	}
     	
+    	public boolean escaped(Vector3f playerPos) {
+    	    return Math.abs(x - playerPos.x) > Settings.RENDER_DISTANCE ||
+    	           Math.abs(y - playerPos.y) > Settings.RENDER_HEIGHT ||
+    	           Math.abs(z - playerPos.z) > Settings.RENDER_DISTANCE;
+    	}
     	
+    	public void newPos(Vector3f p) {
+    	    this.x = (int) (p.x + floorMod((int) (this.x - p.x + Settings.RENDER_DISTANCE), WIDTH)  - Settings.RENDER_DISTANCE);
+    	    this.y = (int) (p.y + floorMod((int) (this.y - p.y + Settings.RENDER_HEIGHT),   HEIGHT) - Settings.RENDER_HEIGHT);
+    	    this.z = (int) (p.z + floorMod((int) (this.z - p.z + Settings.RENDER_DISTANCE), WIDTH)  - Settings.RENDER_DISTANCE);
+    	}
     	
     	@Override
     	public int hashCode() {

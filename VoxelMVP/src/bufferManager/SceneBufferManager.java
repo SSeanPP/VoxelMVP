@@ -18,6 +18,7 @@ import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.lwjgl.opengl.ARBBufferStorage;
@@ -29,6 +30,9 @@ public class SceneBufferManager {
 	
 	private AtomicInteger vertexOffset = new AtomicInteger();
 	private AtomicInteger indexOffset = new AtomicInteger();
+	
+	private AtomicLong totalAllocated = new AtomicLong();
+	private AtomicLong totalFreed = new AtomicLong();
 	
 	public static volatile long vboFreeBytes = 0;
 	public static volatile long eboFreeBytes = 0;
@@ -111,19 +115,23 @@ public class SceneBufferManager {
 	}
 	
 	public Allocation getAllocation(int vertexSizeBytes, int indexSizeBytes) {
-		allocLock.lock();
-		try {
-		    FreeRegion vboRegion = findFit(vboFreeList, vertexSizeBytes, true);
-		    FreeRegion eboRegion = findFit(eboFreeList, indexSizeBytes, false);
-		    
-		    if (vboRegion == null || eboRegion == null) {
-		        throw new RuntimeException("Out of GPU buffer space");
-		    }
-		    
-		    return new Allocation(vboRegion.offset, eboRegion.offset, vertexSizeBytes, indexSizeBytes);
-		} finally {
-			allocLock.unlock();
-		}
+	    allocLock.lock();
+	    try {
+	        FreeRegion vboRegion = findFit(vboFreeList, vertexSizeBytes, true);
+	        FreeRegion eboRegion = findFit(eboFreeList, indexSizeBytes, false);
+	        
+	        if (vboRegion == null || eboRegion == null) {
+	            throw new RuntimeException("Out of GPU buffer space");
+	        }
+	        
+	        //totalAllocated.addAndGet(vboRegion.size);
+	        //System.out.println("alloc: +" + vboRegion.size + " total=" + totalAllocated.get() + " freed=" + totalFreed.get() + " diff=" + (totalAllocated.get() - totalFreed.get()));
+	        
+	        // use vboRegion.size and eboRegion.size, not the requested sizes
+	        return new Allocation(vboRegion.offset, eboRegion.offset, vboRegion.size, eboRegion.size);
+	    } finally {
+	        allocLock.unlock();
+	    }
 	}
 	
 	public ByteBuffer getVBOSlice(Allocation allocation) {
@@ -165,6 +173,9 @@ public class SceneBufferManager {
 			coalesce(vboFreeList, vboRegion);
 			vboFreeBytes += (alloc.vertexLimit - alloc.vertexOffset);
 			vboFreeRegions = vboFreeList.size();
+			
+			//totalFreed.addAndGet(alloc.vertexLimit - alloc.vertexOffset);
+			//System.out.println("free: +" + (alloc.vertexLimit - alloc.vertexOffset) + " total=" + totalAllocated.get() + " freed=" + totalFreed.get() + " diff=" + (totalAllocated.get() - totalFreed.get()));
 
 			FreeRegion eboRegion = new FreeRegion(alloc.indexOffset, alloc.indexLimit - alloc.indexOffset);
 			eboFreeList.put(eboRegion.offset, eboRegion);
@@ -214,26 +225,31 @@ public class SceneBufferManager {
 	    if (bestFit == null) return null;
 
 	    freeList.remove(bestFit.offset);
-	    
+
+	    int actualSize;
 	    int remainder = bestFit.size - sizeBytes;
+
 	    if (remainder > Settings.stride) {
-	        // Only split if remainder is worth keeping
-	        freeList.put(bestFit.offset + sizeBytes, 
-	                     new FreeRegion(bestFit.offset + sizeBytes, remainder));
+	        actualSize = sizeBytes;
+
+	        freeList.put(
+	            bestFit.offset + actualSize,
+	            new FreeRegion(bestFit.offset + actualSize, remainder)
+	        );
 	    } else {
-	        // Absorb sliver - give whole block
-	        sizeBytes = bestFit.size;
+	        // absorb sliver
+	        actualSize = bestFit.size;
 	    }
 
 	    if (isVBO) {
-	        vboFreeBytes -= sizeBytes;
+	        vboFreeBytes -= actualSize;
 	        vboFreeRegions = freeList.size();
 	    } else {
-	        eboFreeBytes -= sizeBytes;
+	        eboFreeBytes -= actualSize;
 	        eboFreeRegions = freeList.size();
 	    }
 
-	    return new FreeRegion(bestFit.offset, sizeBytes);
+	    return new FreeRegion(bestFit.offset, actualSize);
 	}
 	
 }
