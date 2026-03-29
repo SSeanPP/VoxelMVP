@@ -63,7 +63,7 @@ public abstract class MeshThread implements Runnable {
 	
 	protected void uploadToGPU(Slot slot) {
 
-		if (vertexPtr == 0 && indexPtr == 0) {
+		if (vertexPtr == 0 && indexPtr == 0) {  
 		    if (slot.allocation != null) {
 		        bufferManager.free(slot.allocation);
 		        slot.allocation = null;
@@ -74,7 +74,8 @@ public abstract class MeshThread implements Runnable {
             int indexSizeBytes  = indexPtr  * 4;
             int paddedVertex = bufferManager.alignVertex((int)(vertexSizeBytes));
             int paddedIndex  = bufferManager.alignIndex ((int)(indexSizeBytes));
-
+            
+            
             if (slot.allocation != null) {
                 int allocV = slot.allocation.vertexLimit - slot.allocation.vertexOffset;
                 int allocI = slot.allocation.indexLimit  - slot.allocation.indexOffset;

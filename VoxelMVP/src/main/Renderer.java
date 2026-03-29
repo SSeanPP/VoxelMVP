@@ -89,10 +89,16 @@ public class Renderer {
 		Main.shaderProgram.setUniform("viewMatrix", camera.handleCameraLerpAndMatrix(alpha, renderPos));
 		Main.shaderProgram.setUniform("projectionMatrix", projection.getProjMatrix());
 		Main.shaderProgram.setUniform("cameraPos", renderPos);
-	
+		
+		if (lastFence != null) {
+		    GL32.glClientWaitSync(lastFence, GL32.GL_SYNC_FLUSH_COMMANDS_BIT, 0);
+		    GL32.glDeleteSync(lastFence);
+		    lastFence = null;
+
+		}
 
 		for (Slot slot : chunkSSBO.getRenderToroid()) {
-		    if (slot == null || slot.allocation == null || slot.allocation.getCounts() == 0) continue;
+		    if (slot.allocation == null || slot.allocation.getCounts() == 0) continue;
 
 		    renderMatrix.translation(slot.x * Settings.CHUNK_SIZE, slot.y * Settings.CHUNK_SIZE, slot.z * Settings.CHUNK_SIZE);
 		    Main.shaderProgram.setUniform("modelMatrix", renderMatrix);
@@ -105,6 +111,8 @@ public class Renderer {
 		        slot.allocation.vertexOffset / Settings.stride
 		    );
 		}
+		
+		lastFence = GL32.glFenceSync(GL32.GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
 		
 		
 		if(!guiHelper.runGUI(state, totalIndices, totalVertices)) {

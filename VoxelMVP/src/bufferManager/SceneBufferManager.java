@@ -17,6 +17,7 @@ import static org.lwjgl.opengl.GL30.glGenVertexArrays;
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
@@ -38,6 +39,11 @@ public class SceneBufferManager {
 	public static volatile long eboFreeBytes = 0;
 	public static volatile int vboFreeRegions = 1;
 	public static volatile int eboFreeRegions = 1;
+	
+	private static final int MAX_POOL_SIZE = 100;
+	private static final AtomicInteger currentSize = new AtomicInteger(0);
+	private static final ConcurrentLinkedQueue<Allocation> allocationPool = 
+		    new ConcurrentLinkedQueue<Allocation>();
 	
 	private final ByteBuffer megaVBO;
 	private final ByteBuffer megaEBO;
@@ -127,8 +133,11 @@ public class SceneBufferManager {
 	        //totalAllocated.addAndGet(vboRegion.size);
 	        //System.out.println("alloc: +" + vboRegion.size + " total=" + totalAllocated.get() + " freed=" + totalFreed.get() + " diff=" + (totalAllocated.get() - totalFreed.get()));
 	        
-	        // use vboRegion.size and eboRegion.size, not the requested sizes
-	        return new Allocation(vboRegion.offset, eboRegion.offset, vboRegion.size, eboRegion.size);
+	        // use vboRegion.size and eboRegion.size, not the requested size
+	        
+	        Allocation alloc = acquireAlloc();
+	        alloc.setAlloc(vboRegion.offset, eboRegion.offset, vboRegion.size, eboRegion.size);
+	        return alloc;
 	    } finally {
 	        allocLock.unlock();
 	    }
@@ -165,7 +174,7 @@ public class SceneBufferManager {
 	    return (bytes + 3) & ~3;
 	}
 	
-	public void free(Allocation alloc) {
+	public Allocation free(Allocation alloc) {
 		allocLock.lock();
 		try {
 			FreeRegion vboRegion = new FreeRegion(alloc.vertexOffset, alloc.vertexLimit - alloc.vertexOffset);
@@ -182,8 +191,12 @@ public class SceneBufferManager {
 			coalesce(eboFreeList, eboRegion);
 			eboFreeBytes += (alloc.indexLimit - alloc.indexOffset);
 			eboFreeRegions = eboFreeList.size();
+			
+			releaseAlloc(alloc);
+			return null;
 		} finally {
 			allocLock.unlock();
+			
 		}
 	}
 
@@ -250,6 +263,25 @@ public class SceneBufferManager {
 	    }
 
 	    return new FreeRegion(bestFit.offset, actualSize);
+	}
+	
+	public static Allocation acquireAlloc() {
+		Allocation alloc = allocationPool.poll();
+	    if (alloc == null) {
+	    	alloc = new Allocation();
+	    }
+	    currentSize.decrementAndGet();
+	    alloc.setAlloc(0, 0, 0, 0);
+	    
+	    return alloc;
+	}
+	
+	public static void releaseAlloc(Allocation alloc) {
+		alloc.setAlloc(0, 0, 0, 0);
+		if (currentSize.get() < MAX_POOL_SIZE) {
+	        allocationPool.offer(alloc);
+	        currentSize.incrementAndGet();
+	    }
 	}
 	
 }

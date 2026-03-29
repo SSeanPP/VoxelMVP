@@ -7,7 +7,7 @@ public class Allocation {
 	public volatile int vertexLimit; // no. bytes
 	public volatile int indexLimit;	// no. bytes
 	
-	public Allocation(int vertexOffset, int indexOffset, int vertexSizeBytes, int indexSizeBytes) {
+	public void setAlloc(int vertexOffset, int indexOffset, int vertexSizeBytes, int indexSizeBytes) {
 	    this.vertexOffset = vertexOffset;
 	    this.indexOffset = indexOffset;
 	    this.indexCount = 0;
@@ -16,6 +16,14 @@ public class Allocation {
 
 	}
 	
+	public Allocation() {
+		this.vertexOffset = 0;
+	    this.indexOffset = 0;
+	    this.indexCount = 0;
+	    this.vertexLimit = 0;
+	    this.indexLimit = 0;
+	}
+
 	public void setCounts(int indCount) {
 		this.indexCount = indCount;
 	}
