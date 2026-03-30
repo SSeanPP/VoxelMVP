@@ -45,10 +45,11 @@ public class GameEngine implements Runnable {
 		renderTorroid = renderCacheFromRenderer;
 		this.gameInputQueue = inputQueue;
 		
-		this.pPosition = new Vector3f();
+		
 		this.cameraPos = state.getCamera().getPosition();
+		this.pPosition = new Vector3f().set(Settings.spawnChunk);
 		
-		
+		initialView();
 	}
 	
 	public void gameLoop() {
@@ -57,6 +58,8 @@ public class GameEngine implements Runnable {
 
 	    double currentTime = System.nanoTime() /1000000000.0;
 	    double accumulator = 0.0;
+	    
+	    
 	    
 	    while ( running )
 	    {
@@ -107,6 +110,21 @@ public class GameEngine implements Runnable {
             if (!slot.queued && slot.escaped(this.pPosition)) {
             	slot.queued = true; 
                 WorldMap.removeChunk(WorldMap.key(slot.x, slot.y, slot.z));
+                
+                slot.newPos(this.pPosition);
+
+                meshQueue.submit(slot);
+            }
+        }
+    }
+    
+    public void initialView() {
+        for(Slot slot : renderTorroid.getRenderToroid()) {
+
+            if (!slot.queued) {
+            	slot.queued = true; 
+                WorldMap.removeChunk(WorldMap.key(slot.x, slot.y, slot.z));
+                
                 slot.newPos(this.pPosition);
 
                 meshQueue.submit(slot);

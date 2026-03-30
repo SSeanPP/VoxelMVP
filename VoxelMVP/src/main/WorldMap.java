@@ -40,6 +40,7 @@ public class WorldMap {
 	    
 	    long k = key(x, y, z);
 	    Chunk existing = chunks.get(k);
+	    
 	    if (existing != null) return existing;
 	    
 	    // Generate candidate
