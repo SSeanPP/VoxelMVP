@@ -26,14 +26,6 @@ public class WorldMap {
 		gen = new TerrainGeneratorGPT(seed);
 		
 	}
-	/*
-	public void addToWorldMapViaIndex(int Index, Chunk chunk) {
-		chunks[Index] = chunk;
-	}
-	
-	public static int chunkIndex(int x, int y, int z) {
-	    return x * Settings.WORLD_SIZE_HEIGHT * Settings.WORLD_SIZE_WIDTH + y * Settings.WORLD_SIZE_WIDTH + z;
-	}*/
 
 	public static Chunk getChunkDirect(int x, int y, int z) {
 	    if (y < 0 || y >= Settings.WORLD_SIZE_HEIGHT) return null;

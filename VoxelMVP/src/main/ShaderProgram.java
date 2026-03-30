@@ -10,6 +10,7 @@ import java.util.Map;
 
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
+import org.lwjgl.opengl.GL43;
 
 public class ShaderProgram {
 	public final int programId;
@@ -17,6 +18,7 @@ public class ShaderProgram {
     private int vertexShaderId;
 
     private int fragmentShaderId;
+    
 
     private Map<String, Integer> uniforms = new HashMap<String, Integer>();
     FloatBuffer matrixBuffer = ByteBuffer.allocateDirect(16*4).order(ByteOrder.nativeOrder()).asFloatBuffer();
@@ -35,6 +37,8 @@ public class ShaderProgram {
     public void createFragmentShader(String shaderCode) throws Exception {
         fragmentShaderId = createShader(shaderCode, GL_FRAGMENT_SHADER);
     }
+    
+    
 
     protected int createShader(String shaderCode, int shaderType) throws Exception {
         int shaderId = glCreateShader(shaderType);

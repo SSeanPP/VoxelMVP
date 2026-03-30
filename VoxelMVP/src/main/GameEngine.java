@@ -120,7 +120,6 @@ public class GameEngine implements Runnable {
     
     public void initialView() {
         for(Slot slot : renderTorroid.getRenderToroid()) {
-
             if (!slot.queued) {
             	slot.queued = true; 
                 WorldMap.removeChunk(WorldMap.key(slot.x, slot.y, slot.z));

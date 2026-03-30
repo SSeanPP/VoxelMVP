@@ -14,6 +14,7 @@ import meshThreader.MeshQueue;
 public class Main {
 	
 	public static ShaderProgram shaderProgram;
+	public static ComputeProgram computeProgram;
 	public static final GameInputQueue gameInput= new GameInputQueue();
 	public static final WorldMap gameMap = new WorldMap();
 	public static MeshQueue meshThreader;
@@ -64,6 +65,10 @@ public class Main {
     public static void init() throws Exception {
     	
     	renderer.initDisplay(1920,1080);
+    	
+    	computeProgram = new ComputeProgram();
+    	computeProgram.createComputeShader(ResourceLoader.loadResourceAsString("resources/cull.glsl"));
+    	computeProgram.link();
     	
         shaderProgram = new ShaderProgram();
         shaderProgram.createVertexShader(ResourceLoader.loadResourceAsString("resources/vertex.vs"));

@@ -1,67 +1,111 @@
-#version 450
+#version 430
 
 layout(local_size_x = 64) in;
 
-struct ChunkSlot {
-    int worldX, worldY, worldZ;
+// ----------------------
+// INPUT (matches Java)
+// ----------------------
+struct Slot {
+    int worldX;
+    int worldY;
+    int worldZ;
     int pad;
-    int firstIndex, baseVertex, indexCount;
-    int pad2;
+
+    uint firstIndex;
+    uint baseVertex;
+    uint indexCount;
+    uint chunkId;
 };
 
-struct DrawCommand {
+// ----------------------
+// OUTPUT DRAW COMMAND
+// ----------------------
+struct DrawCmd {
     uint count;
     uint instanceCount;
     uint firstIndex;
-    int  baseVertex;
+    uint baseVertex;
     uint baseInstance;
-    int  worldX, worldY, worldZ;
 };
 
-layout(std430, binding = 0) readonly buffer ChunkBuffer {
-    ChunkSlot slots[];
+// ----------------------
+// OUTPUT TRANSFORMS
+// ----------------------
+struct ChunkData {
+    vec4 position; // xyz = chunk origin, w unused (alignment)
+};
+
+// ----------------------
+// BUFFERS
+// ----------------------
+layout(std430, binding = 0) readonly buffer SlotBuffer {
+    Slot slots[];
 };
 
 layout(std430, binding = 1) writeonly buffer DrawBuffer {
-    DrawCommand commands[];
+    DrawCmd draws[];
 };
 
-layout(std430, binding = 2) buffer CountBuffer {
+layout(std430, binding = 2) buffer Counter {
     uint drawCount;
 };
 
-uniform int slotCount;
-uniform vec4 frustumPlanes[6];
+layout(std430, binding = 3) writeonly buffer ChunkBuffer {
+    ChunkData chunks[];
+};
 
-bool inFrustum(int wx, int wy, int wz) {
-    vec3 bmin = vec3(wx * 16.0, wy * 16.0, wz * 16.0);
-    vec3 bmax = bmin + vec3(16.0);
-    for (int i = 0; i < 6; i++) {
-        vec3 p;
-        p.x = frustumPlanes[i].x > 0.0 ? bmax.x : bmin.x;
-        p.y = frustumPlanes[i].y > 0.0 ? bmax.y : bmin.y;
-        p.z = frustumPlanes[i].z > 0.0 ? bmax.z : bmin.z;
-        if (dot(frustumPlanes[i].xyz, p) + frustumPlanes[i].w < 0.0) return false;
-    }
+// ----------------------
+// UNIFORMS
+// ----------------------
+uniform float chunkSize;
+
+// (for later frustum culling)
+uniform mat4 viewProj;
+
+// ----------------------
+// OPTIONAL CULLING HOOK
+// ----------------------
+bool visible(Slot s) {
+    // Stage 1: no culling yet
     return true;
+
+    // Stage 2 will go here:
+    // - build AABB from worldX/Y/Z
+    // - test vs frustum planes
 }
 
+// ----------------------
+// MAIN
+// ----------------------
 void main() {
-    uint slot = gl_GlobalInvocationID.x;
-    if (int(slot) >= slotCount) return;
+    uint i = gl_GlobalInvocationID.x;
 
-    ChunkSlot s = slots[slot];
-    if (s.indexCount == 0) return;
-    if (!inFrustum(s.worldX, s.worldY, s.worldZ)) return;
+    if (i >= slots.length())
+        return;
 
-    uint idx = atomicAdd(drawCount, 1);
+    Slot s = slots[i];
 
-    commands[idx].count        = uint(s.indexCount);
-    commands[idx].instanceCount = 1;
-    commands[idx].firstIndex   = uint(s.firstIndex);
-    commands[idx].baseVertex   = s.baseVertex;
-    commands[idx].baseInstance = 0;
-    commands[idx].worldX       = s.worldX;
-    commands[idx].worldY       = s.worldY;
-    commands[idx].worldZ       = s.worldZ;
+    if (s.indexCount == 0)
+        return;
+
+    if (!visible(s))
+        return;
+
+    // Append draw
+    uint dst = atomicAdd(drawCount, 1);
+
+    // ---- Draw command ----
+    draws[dst].count         = s.indexCount;
+    draws[dst].instanceCount = 1;
+    draws[dst].firstIndex    = s.firstIndex;
+    draws[dst].baseVertex    = s.baseVertex;
+    draws[dst].baseInstance  = dst; // index into chunk buffer
+
+    // ---- Chunk transform data ----
+    chunks[dst].position = vec4(
+        float(s.worldX) * chunkSize,
+        float(s.worldY) * chunkSize,
+        float(s.worldZ) * chunkSize,
+        0.0
+    );
 }
