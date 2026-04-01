@@ -159,7 +159,7 @@ public class WorldMap {
 	    blockCache[17][17][17] = getBlock(topNE, 0,  0,  0 );
 	    blockCache[0] [17][17] = getBlock(topNW, 15, 0,  0 );
 	    blockCache[17][17][0]  = getBlock(topSE, 0,  0,  15);
-	    blockCache[0] [17][0]  = getBlock(topSW, 15, 0,  0 );
+	    blockCache[0] [17][0]  = getBlock(topSW, 15, 0,  15 );
 	    blockCache[17][0] [17] = getBlock(botNE, 0,  15, 0 );
 	    blockCache[0] [0] [17] = getBlock(botNW, 15, 15, 0 );
 	    blockCache[17][0] [0]  = getBlock(botSE, 0,  15, 15);

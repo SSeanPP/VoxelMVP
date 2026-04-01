@@ -20,7 +20,7 @@ public class MeshQueue {
     private final SceneBufferManager bufferManager;
     private final ChunkSSBO renderTorroid;
     
-    private static Vector3f playerChunkPos = Settings.spawnChunk;
+    private static Vector3f playerChunkPos = new Vector3f().set(Settings.spawnChunk);
     public static final BlockingQueue<Slot> meshQueue = new PriorityBlockingQueue<Slot>((Settings.RENDER_DISTANCE*Settings.RENDER_HEIGHT*Settings.RENDER_DISTANCE),
     		new Comparator<Slot>() {
 		    	public int compare(Slot a, Slot b) {
