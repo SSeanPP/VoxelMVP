@@ -33,12 +33,14 @@ public class ChunkSSBO {
     private final int chunkSSBOid;
     private final int drawSSBOid;
     private final ByteBuffer chunkSSBO;
-    private final ByteBuffer zero = ByteBuffer.allocateDirect(4).order(ByteOrder.nativeOrder());
-    //private final ByteBuffer drawSSBO;
+    private final ByteBuffer zero = ByteBuffer.allocateDirect(8).order(ByteOrder.nativeOrder());
     
-    private final int countBufId;
+    private final int[] countBufIds = new int[2];
+    private final ByteBuffer[] countBufs = new ByteBuffer[2];
+    private int countBufWrite = 0; // GPU writes to this
+    private int countBufRead  = 1; // CPU reads from this
     
-    private final int slotCount;
+    public final int slotCount;
     
     private final static int WIDTH  = Settings.RENDER_DISTANCE * 2 + 1;
     private final static int HEIGHT = Settings.RENDER_HEIGHT   * 2 + 1;
@@ -63,23 +65,21 @@ public class ChunkSSBO {
         }
         
         zero.putInt(0, 0);
-    	
-    	chunkSSBOid = GL15.glGenBuffers();
-    	GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, chunkSSBOid);
+        zero.putInt(4, 0);
 
-    	GL44.glBufferStorage(GL43.GL_SHADER_STORAGE_BUFFER, 
-    			slotCount * SLOT_SIZE,
-    			GL30.GL_MAP_WRITE_BIT | ARBBufferStorage.GL_MAP_PERSISTENT_BIT | ARBBufferStorage.GL_MAP_COHERENT_BIT);
-    	
-    	
-    	chunkSSBO = ARBMapBufferRange.glMapBufferRange(GL43.GL_SHADER_STORAGE_BUFFER, 
-    			0, 
-    			slotCount * SLOT_SIZE,
-	    	    GL30.GL_MAP_WRITE_BIT | ARBBufferStorage.GL_MAP_PERSISTENT_BIT | ARBBufferStorage.GL_MAP_COHERENT_BIT, 
-	    	    null);
-    	
-    	for (int j = 0; j < slotCount * SLOT_SIZE; j += 4)
-    	    chunkSSBO.putInt(j, 0);
+        chunkSSBOid = GL15.glGenBuffers();
+        GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, chunkSSBOid);
+        GL44.glBufferStorage(GL43.GL_SHADER_STORAGE_BUFFER,
+            slotCount * SLOT_SIZE,
+            GL30.GL_MAP_WRITE_BIT | ARBBufferStorage.GL_MAP_PERSISTENT_BIT | ARBBufferStorage.GL_MAP_COHERENT_BIT);
+
+        chunkSSBO = ARBMapBufferRange.glMapBufferRange(GL43.GL_SHADER_STORAGE_BUFFER,
+            0, slotCount * SLOT_SIZE,
+            GL30.GL_MAP_WRITE_BIT | ARBBufferStorage.GL_MAP_PERSISTENT_BIT | ARBBufferStorage.GL_MAP_COHERENT_BIT,
+            null);
+
+        for (int j = 0; j < slotCount * SLOT_SIZE; j += 4)
+            chunkSSBO.putInt(j, 0);
 
     	/*
     	drawSSBOid = GL15.glGenBuffers();
@@ -98,11 +98,25 @@ public class ChunkSSBO {
     	    slotCount * DRAWCMD_SIZE,
     	    GL44.GL_DYNAMIC_STORAGE_BIT); 
     	
-    	countBufId = GL15.glGenBuffers();
-    	GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, countBufId);
-    	GL44.glBufferStorage(GL43.GL_SHADER_STORAGE_BUFFER, 4, GL44.GL_DYNAMIC_STORAGE_BIT);
+    	for (int b = 0; b < 2; b++) {
+    	    countBufIds[b] = GL15.glGenBuffers();
+    	    GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, countBufIds[b]);
+    	    GL44.glBufferStorage(GL43.GL_SHADER_STORAGE_BUFFER, 8,
+    	        GL30.GL_MAP_READ_BIT |
+    	        ARBBufferStorage.GL_MAP_PERSISTENT_BIT |
+    	        ARBBufferStorage.GL_MAP_COHERENT_BIT);
+    	    countBufs[b] = ARBMapBufferRange.glMapBufferRange(GL43.GL_SHADER_STORAGE_BUFFER, 0, 8,
+    	        GL30.GL_MAP_READ_BIT |
+    	        ARBBufferStorage.GL_MAP_PERSISTENT_BIT |
+    	        ARBBufferStorage.GL_MAP_COHERENT_BIT, null);
+    	}
     	
-
+    	
+    	// After creating chunkSSBOid:
+    	System.out.println("chunkSSBOid=" + chunkSSBOid);
+    	// After creating chunkSSBOid:
+    	System.out.println("drawSSBOid=" + drawSSBOid);
+    	
     }
     
     public static class Slot {
@@ -186,19 +200,40 @@ public class ChunkSSBO {
     }
     
     public void resetCount() {
+        // swap
+        countBufWrite = countBufWrite ^ 1;
+        countBufRead  = countBufRead  ^ 1;
         
-        GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, countBufId);
+        GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, countBufIds[countBufWrite]);
         GL43.glClearBufferSubData(
             GL43.GL_SHADER_STORAGE_BUFFER,
             GL30.GL_R32UI,
-            0L, 4L,
+            0L, 8L,
             GL30.GL_RED_INTEGER,
             GL11.GL_UNSIGNED_INT,
             zero
         );
     }
+    
+    private int stableDrawCount = 0;
+    private int stableMeshedCount = 0;
+    private int drawCountFrames = 0;
+
+    public int readDrawCount() {
+        if (++drawCountFrames >= 60) {
+            drawCountFrames = 0;
+            stableDrawCount   = countBufs[countBufRead].getInt(0);
+            stableMeshedCount = countBufs[countBufRead].getInt(4);
+        }
+        return stableDrawCount;
+    }
+
+    public int readMeshedCount() {
+        return stableMeshedCount;
+    }
+    
     public int getChunkSSBOid() { return chunkSSBOid; }
     public int getDrawSSBOid()  { return drawSSBOid; }
-    public int getCountBufId()  { return countBufId; }
+    public int getCountBufId() { return countBufIds[countBufWrite]; }
     public int getSlotCount()   { return slotCount; }
 }

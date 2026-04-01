@@ -7,16 +7,21 @@ import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.ARBIndirectParameters;
+import org.lwjgl.opengl.ARBTimerQuery;
 import org.lwjgl.opengl.ContextAttribs;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL15;
+import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
+import org.lwjgl.opengl.GL33;
 import org.lwjgl.opengl.GL40;
 import org.lwjgl.opengl.GL42;
 import org.lwjgl.opengl.GL43;
 import org.lwjgl.opengl.GL44;
+import org.lwjgl.opengl.KHRDebug;
+import org.lwjgl.opengl.KHRDebugCallback;
 import org.lwjgl.opengl.PixelFormat;
 
 import bufferManager.ChunkSSBO;
@@ -25,6 +30,7 @@ import bufferManager.SceneBufferManager;
 import guiHandler.GUIHelper;
 import imgui.ImGui;
 import imgui.ImInput;
+import meshThreader.MeshQueue;
 
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL13.*;
@@ -51,6 +57,15 @@ public class Renderer {
 	private final Queue<Slot> evictionQueue = new ConcurrentLinkedQueue<Slot>();
 	private ChunkSSBO chunkSSBO;
 	private final GameInputQueue gameInputQueue;
+	private int queueDepth;
+	private int drawCount;
+	private int meshedCount;
+	
+	private final int[] timerQueries = new int[2];
+	private int timerWrite = 0;
+	private int timerRead  = 1;
+	private long gpuTimeNs = 0;
+	private boolean timerReady = false;
 	
 	private final Vector4f[] planes = new Vector4f[6];
 	float[] m = new float[16];
@@ -59,6 +74,8 @@ public class Renderer {
 	public Renderer (GameInputQueue gameInputQueue) {
 		guiHelper = new GUIHelper();
 		this.gameInputQueue = gameInputQueue;
+		timerQueries[0] = 0;
+		timerQueries[1] = 0;
 	}
 	
 	public void setChunkSSBO(ChunkSSBO input) {
@@ -87,6 +104,7 @@ public class Renderer {
 	
 	
 	public void render(GameState state, double alpha) {
+		
 	    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	    camera = state.getCamera();
@@ -103,24 +121,41 @@ public class Renderer {
 	        lastFence = null;
 	    }*/
 	    
+	    GL15.glBeginQuery(ARBTimerQuery.GL_TIME_ELAPSED, timerQueries[timerWrite]);
+
+
 	    chunkSSBO.resetCount();
 	    GL42.glMemoryBarrier(GL44.GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT);
 	    Main.computeProgram.bind();
 	    Main.computeProgram.setUniform("slotCount", chunkSSBO.getSlotCount());
 	    uploadFrustumPlanes(viewMatrix);
+	    GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 2, chunkSSBO.getCountBufId());
 	    int groups = (chunkSSBO.getSlotCount() + 63) / 64;
 	    GL43.glDispatchCompute(groups, 1, 1);
-	    //GL42.glMemoryBarrier(GL42.GL_COMMAND_BARRIER_BIT | GL43.GL_SHADER_STORAGE_BARRIER_BIT);
+	    GL42.glMemoryBarrier(GL42.GL_COMMAND_BARRIER_BIT | GL43.GL_SHADER_STORAGE_BARRIER_BIT);
 	    Main.shaderProgram.bind();
 	    bufferManager.bind();
 	    ARBIndirectParameters.glMultiDrawElementsIndirectCountARB(
 	        GL_TRIANGLES, GL_UNSIGNED_INT, 0, 0, chunkSSBO.getSlotCount(), 32);
-	    
-	    
+
+	    GL15.glEndQuery(GL33.GL_TIME_ELAPSED);
+
+	    if (timerReady) {
+	        gpuTimeNs = GL33.glGetQueryObjectui64(timerQueries[timerRead], GL15.GL_QUERY_RESULT);
+	    } else {
+	        timerReady = true;
+	    }
+	    // Swap
+	    timerWrite ^= 1;
+	    timerRead  ^= 1;
 	    
 	    //lastFence = GL32.glFenceSync(GL32.GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
 
-	    if (!guiHelper.runGUI(state, 0, 0)) {
+	    drawCount   = chunkSSBO.readDrawCount();
+	    meshedCount = chunkSSBO.readMeshedCount();
+	    queueDepth  = MeshQueue.meshQueue.size();
+
+	    if (!guiHelper.runGUI(state, drawCount, meshedCount, queueDepth, gpuTimeNs)) {
 	        camera.updateCameraMatrix(Mouse.getDX(), Mouse.getDY());
 	    }
 
@@ -158,9 +193,26 @@ public class Renderer {
         glCullFace(GL_BACK);
         Display.setVSyncEnabled(false);
         
+        GL11.glEnable(KHRDebug.GL_DEBUG_OUTPUT);
+        GL11.glEnable(KHRDebug.GL_DEBUG_OUTPUT_SYNCHRONOUS); // Forces it to log on the thread that caused the error
+
+        KHRDebug.glDebugMessageCallback(new KHRDebugCallback(new KHRDebugCallback.Handler() {
+            @Override
+            public void handleMessage(int source, int type, int id, int severity, String message) {
+                if (type == KHRDebug.GL_DEBUG_TYPE_OTHER) return;
+
+                System.out.println("[GL DEBUG] src=" + source + " type=" + type + " sev=" + severity + " | " + message);
+
+                if (severity == KHRDebug.GL_DEBUG_SEVERITY_HIGH) {
+                    System.err.println("CRITICAL OPENGL ERROR DETECTED");
+                }
+            }
+        }));
         
         //glClearColor(0.3f, 0.55f, 0.75f, 1f);
         glClearColor(0.2f, 0.3f, 0.4f, 1f);
+        timerQueries[0] = GL15.glGenQueries();
+        timerQueries[1] = GL15.glGenQueries();
         //GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE);
         Mouse.setGrabbed(true);
         
@@ -238,4 +290,6 @@ public class Renderer {
 	        Main.computeProgram.setUniform("frustumPlanes[" + i + "]", planes[i]);
 	    }
 	}
+	
+	
 }

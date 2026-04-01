@@ -110,6 +110,12 @@ public class SceneBufferManager {
 		
 		megaEBO = ARBMapBufferRange.glMapBufferRange( GL15.GL_ELEMENT_ARRAY_BUFFER, 0, Settings.EBO_SIZE_BYTES, GL30.GL_MAP_WRITE_BIT  | ARBBufferStorage.GL_MAP_PERSISTENT_BIT | ARBBufferStorage.GL_MAP_COHERENT_BIT, null);
 		
+		// After creating megaVBOid:
+		System.out.println("megaVBOid=" + megaVBOid);
+
+		// After creating megaEBOid:
+		System.out.println("megaEBOid=" + megaEBOid);
+		
 		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
 		glBindVertexArray(0);
 	}

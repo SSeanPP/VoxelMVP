@@ -21,12 +21,12 @@ public class GUIHelper {
 	}
 	
 	//Returns True if mouseCaptured, returns false if not
-	public boolean runGUI(GameState state, int totalIndices, int totalVertices) {
+	public boolean runGUI(GameState state, int drawCount, int meshedCount, int queueDepth, long gpuTime) {
 		
 		ImInput.handleMouseAndScroll();
 		ImGui.newFrame();
 		
-		f3Menu.run(state, totalIndices, totalVertices);
+		f3Menu.run(state, drawCount, meshedCount, queueDepth, gpuTime);
 		isMouseCaptured = f4Menu.run(state);
 		
 		GL11.glEnable(GL11.GL_BLEND);

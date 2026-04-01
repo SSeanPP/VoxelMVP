@@ -20,7 +20,11 @@ struct DrawCmd {
 
 layout(std430, binding = 0) buffer SlotBuffer { Slot slots[]; };
 layout(std430, binding = 1) buffer DrawBuffer { DrawCmd draws[]; };
-layout(std430, binding = 2) buffer Counter    { uint drawCount; };
+layout(std430, binding = 2) buffer Counter { 
+    uint drawCount;
+    uint meshedCount;
+};
+
 
 uniform int slotCount;
 uniform vec4 frustumPlanes[6];
@@ -44,6 +48,7 @@ void main() {
 
     Slot s = slots[i];
     if (s.indexCount == 0) return;
+    atomicAdd(meshedCount, 1);
     if (!inFrustum(s.worldX, s.worldY, s.worldZ)) return;
 
     uint dst = atomicAdd(drawCount, 1);
