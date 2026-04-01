@@ -1,4 +1,7 @@
 #version 460
+#extension GL_KHR_shader_subgroup_arithmetic : enable
+#extension GL_KHR_shader_subgroup_ballot : enable
+
 
 layout(local_size_x = 64) in;
 
@@ -20,11 +23,10 @@ struct DrawCmd {
 
 layout(std430, binding = 0) buffer SlotBuffer { Slot slots[]; };
 layout(std430, binding = 1) buffer DrawBuffer { DrawCmd draws[]; };
-layout(std430, binding = 2) buffer Counter { 
+layout(std430, binding = 2) buffer Counter {
     uint drawCount;
     uint meshedCount;
 };
-
 
 uniform int slotCount;
 uniform vec4 frustumPlanes[6];
@@ -48,10 +50,20 @@ void main() {
 
     Slot s = slots[i];
     if (s.indexCount == 0) return;
-    atomicAdd(meshedCount, 1);
+
+    // Subgroup reduction for meshedCount — one atomic per subgroup
+    uint meshedContrib = subgroupAdd(1u);
+    if (subgroupElect()) atomicAdd(meshedCount, meshedContrib);
+
     if (!inFrustum(s.worldX, s.worldY, s.worldZ)) return;
 
-    uint dst = atomicAdd(drawCount, 1);
+    // Subgroup reduction for drawCount
+    uint drawContrib = subgroupAdd(1u);
+    uint base;
+    if (subgroupElect()) base = atomicAdd(drawCount, drawContrib);
+    base = subgroupBroadcastFirst(base);
+    uint dst = base + subgroupExclusiveAdd(1u);
+
     draws[dst].count         = uint(s.indexCount);
     draws[dst].instanceCount = 1;
     draws[dst].firstIndex    = uint(s.firstIndex);

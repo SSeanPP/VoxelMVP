@@ -102,9 +102,10 @@ public class ChunkSSBO {
     	    countBufIds[b] = GL15.glGenBuffers();
     	    GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, countBufIds[b]);
     	    GL44.glBufferStorage(GL43.GL_SHADER_STORAGE_BUFFER, 8,
-    	        GL30.GL_MAP_READ_BIT |
-    	        ARBBufferStorage.GL_MAP_PERSISTENT_BIT |
-    	        ARBBufferStorage.GL_MAP_COHERENT_BIT);
+    	    	    GL30.GL_MAP_READ_BIT |
+    	    	    ARBBufferStorage.GL_MAP_PERSISTENT_BIT |
+    	    	    ARBBufferStorage.GL_MAP_COHERENT_BIT |
+    	    	    GL44.GL_DYNAMIC_STORAGE_BIT);
     	    countBufs[b] = ARBMapBufferRange.glMapBufferRange(GL43.GL_SHADER_STORAGE_BUFFER, 0, 8,
     	        GL30.GL_MAP_READ_BIT |
     	        ARBBufferStorage.GL_MAP_PERSISTENT_BIT |
@@ -200,10 +201,8 @@ public class ChunkSSBO {
     }
     
     public void resetCount() {
-        // swap
-        countBufWrite = countBufWrite ^ 1;
-        countBufRead  = countBufRead  ^ 1;
-        
+        countBufWrite ^= 1;
+        countBufRead  ^= 1;
         GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, countBufIds[countBufWrite]);
         GL43.glClearBufferSubData(
             GL43.GL_SHADER_STORAGE_BUFFER,

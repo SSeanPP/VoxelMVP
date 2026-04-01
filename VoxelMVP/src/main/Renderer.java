@@ -74,6 +74,7 @@ public class Renderer {
 	public Renderer (GameInputQueue gameInputQueue) {
 		guiHelper = new GUIHelper();
 		this.gameInputQueue = gameInputQueue;
+		
 		timerQueries[0] = 0;
 		timerQueries[1] = 0;
 	}
@@ -130,6 +131,7 @@ public class Renderer {
 	    Main.computeProgram.setUniform("slotCount", chunkSSBO.getSlotCount());
 	    uploadFrustumPlanes(viewMatrix);
 	    GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 2, chunkSSBO.getCountBufId());
+	    GL15.glBindBuffer(ARBIndirectParameters.GL_PARAMETER_BUFFER_ARB, chunkSSBO.getCountBufId());
 	    int groups = (chunkSSBO.getSlotCount() + 63) / 64;
 	    GL43.glDispatchCompute(groups, 1, 1);
 	    GL42.glMemoryBarrier(GL42.GL_COMMAND_BARRIER_BIT | GL43.GL_SHADER_STORAGE_BARRIER_BIT);
@@ -194,15 +196,13 @@ public class Renderer {
         Display.setVSyncEnabled(false);
         
         GL11.glEnable(KHRDebug.GL_DEBUG_OUTPUT);
-        GL11.glEnable(KHRDebug.GL_DEBUG_OUTPUT_SYNCHRONOUS); // Forces it to log on the thread that caused the error
+        GL11.glEnable(KHRDebug.GL_DEBUG_OUTPUT_SYNCHRONOUS);
 
         KHRDebug.glDebugMessageCallback(new KHRDebugCallback(new KHRDebugCallback.Handler() {
             @Override
             public void handleMessage(int source, int type, int id, int severity, String message) {
                 if (type == KHRDebug.GL_DEBUG_TYPE_OTHER) return;
-
                 System.out.println("[GL DEBUG] src=" + source + " type=" + type + " sev=" + severity + " | " + message);
-
                 if (severity == KHRDebug.GL_DEBUG_SEVERITY_HIGH) {
                     System.err.println("CRITICAL OPENGL ERROR DETECTED");
                 }
@@ -210,10 +210,13 @@ public class Renderer {
         }));
         
         //glClearColor(0.3f, 0.55f, 0.75f, 1f);
-        glClearColor(0.2f, 0.3f, 0.4f, 1f);
+        //glClearColor(0.2f, 0.3f, 0.4f, 1f);
+        GL11.glClearColor(0.3f, 0.45f, 1.0f, 1.0f);
+        //GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE);
+        
         timerQueries[0] = GL15.glGenQueries();
         timerQueries[1] = GL15.glGenQueries();
-        //GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE);
+        
         Mouse.setGrabbed(true);
         
     }

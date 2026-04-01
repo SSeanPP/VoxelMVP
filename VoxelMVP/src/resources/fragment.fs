@@ -10,6 +10,8 @@ uniform sampler2D txtSampler;
 const float TILE_SIZE = 1.0 / 16.0;
 
 void main() {
-    vec2 withinTile = fract(outBlockUV) * TILE_SIZE;
+    vec2 uv = fract(outBlockUV);
+    uv = clamp(uv, 0.001, 0.999);
+    vec2 withinTile = uv * TILE_SIZE;
     fragColor = texture(txtSampler, outTileOrigin + withinTile);
 }

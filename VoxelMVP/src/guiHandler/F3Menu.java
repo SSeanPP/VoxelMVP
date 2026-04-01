@@ -73,6 +73,10 @@ public class F3Menu {
         offset += writeInt(textBuffer, offset, SceneBufferManager.eboFreeRegions);
         ImGui.text(textBuffer, offset);
 
+        offset = 0;
+        offset = writeAscii(textBuffer, offset, "Mesh queue: ");
+        offset += writeInt(textBuffer, offset, queueDepth);
+        ImGui.text(textBuffer, offset);
         ImGui.end(); // end Meshing window
 
         // --- General Data window ---
@@ -105,16 +109,13 @@ public class F3Menu {
         ImGui.text(textBuffer, offset);
 
         offset = 0;
-        offset = writeAscii(textBuffer, offset, "Meshed: ");
+        offset = writeAscii(textBuffer, offset, "Meshes: ");
         offset += writeInt(textBuffer, offset, meshedCount);
         offset = writeAscii(textBuffer, offset, " / ");
         offset += writeInt(textBuffer, offset, slotCount);
         ImGui.text(textBuffer, offset);
 
-        offset = 0;
-        offset = writeAscii(textBuffer, offset, "Mesh queue: ");
-        offset += writeInt(textBuffer, offset, queueDepth);
-        ImGui.text(textBuffer, offset);
+        
         
         offset = 0;
         offset = writeAscii(textBuffer, offset, "GPU: ");
