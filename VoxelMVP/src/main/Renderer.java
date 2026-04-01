@@ -13,6 +13,7 @@ import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL15;
+import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL33;
 import org.lwjgl.opengl.GL40;
@@ -292,4 +293,6 @@ public class Renderer {
 	        Main.computeProgram.setUniform("frustumPlanes[" + i + "]", planes[i]);
 	    }
 	}
+	
+	
 }
