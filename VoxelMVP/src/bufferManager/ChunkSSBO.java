@@ -113,9 +113,9 @@ public class ChunkSSBO {
     }
     
     public static class Slot {
-    	public volatile int x,y,z;
+    	public int x,y,z;
     	public int ssboIndex;
-    	public volatile Allocation allocation;
+    	public Allocation allocation;
     	public volatile boolean queued;
     	
     	public Slot() {
@@ -146,15 +146,6 @@ public class ChunkSSBO {
     	    return x == other.x && y == other.y && z == other.z;
     	}
     }
-    
-    private int index(int wx, int wy, int wz) {
-        int tx = floorMod(wx, WIDTH);
-        int ty = floorMod(wy, HEIGHT);
-        int tz = floorMod(wz, WIDTH);
-        
-        return tx * (HEIGHT * WIDTH) + ty * WIDTH + tz;
-    }
-
     
     public void write(Slot slot) {
         writeSlotMeta(slot.ssboIndex, slot.x, slot.y, slot.z);
@@ -218,20 +209,4 @@ public class ChunkSSBO {
     public int getDrawSSBOid()  { return drawSSBOid; }
     public int getCountBufId()  { return countBufId; }
     public int getSlotCount()   { return slotCount; }
-    /*
-    public int buildDrawCommands() {
-        int drawCount = 0;
-        for (int i = 0; i < slotCount; i++) {
-            Slot slot = renderTorroid[i];
-            if (slot == null || slot.allocation == null || slot.allocation.indexCount == 0) continue;
-            int base = drawCount * DRAWCMD_SIZE;
-            drawSSBO.putInt(base,      slot.allocation.indexCount);
-            drawSSBO.putInt(base + 4,  1);
-            drawSSBO.putInt(base + 8,  slot.allocation.indexOffset / 4);
-            drawSSBO.putInt(base + 12, slot.allocation.vertexOffset / Settings.stride);
-            drawSSBO.putInt(base + 16, 0);
-            drawCount++;
-        }
-        return drawCount;
-    }*/
 }

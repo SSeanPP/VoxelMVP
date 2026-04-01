@@ -48,28 +48,22 @@ public class Renderer {
 	private Projection projection;
 	
 	private Vector3f renderPos = new Vector3f();
-	private Matrix4f renderMatrix = new Matrix4f();
 	private Camera camera;
 	private GUIHelper guiHelper;
 	
 	private Texture textAtlas;
-	private int totalVertices;
-	private int totalIndices;
-
-	private GLSync lastFence;
+	
 	private final Queue<Slot> evictionQueue = new ConcurrentLinkedQueue<Slot>();
-	private MeshQueue meshQueue;
 	private ChunkSSBO chunkSSBO;
 	private final GameInputQueue gameInputQueue;
 	
+	private final Vector4f[] planes = new Vector4f[6];
+	float[] m = new float[16];
+	Matrix4f vp = new Matrix4f();
+	
 	public Renderer (GameInputQueue gameInputQueue) {
 		guiHelper = new GUIHelper();
-		totalVertices = 0;
-		totalIndices = 0;
-		renderMatrix = new Matrix4f();
 		this.gameInputQueue = gameInputQueue;
-		
-		
 	}
 	
 	public void setChunkSSBO(ChunkSSBO input) {
@@ -79,10 +73,6 @@ public class Renderer {
 	public void bindBufferMananger(SceneBufferManager main) {
 		bufferManager = main;
 		bufferManager.bind();
-	}
-	
-	public void bindMeshQueue(MeshQueue input) {
-		this.meshQueue = input;
 	}
 	
 	public void bindBuffers() {
@@ -223,12 +213,10 @@ public class Renderer {
 	}
 	
 	private void uploadFrustumPlanes(Matrix4f view) {
-	    Matrix4f vp = new Matrix4f(projection.getProjMatrix()).mul(view);
+	   vp.set(projection.getProjMatrix()).mul(view);
 
-	    float[] m = new float[16];
 	    vp.get(m);
-
-	    Vector4f[] planes = new Vector4f[6];
+	    
 	    planes[0] = new Vector4f(m[3]+m[0], m[7]+m[4], m[11]+m[8],  m[15]+m[12]); // left
 	    planes[1] = new Vector4f(m[3]-m[0], m[7]-m[4], m[11]-m[8],  m[15]-m[12]); // right
 	    planes[2] = new Vector4f(m[3]+m[1], m[7]+m[5], m[11]+m[9],  m[15]+m[13]); // bottom

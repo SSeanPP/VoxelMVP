@@ -32,7 +32,6 @@ public class Main {
             bufferManager = new SceneBufferManager();
             renderTorroid = new ChunkSSBO();
             meshThreader = new MeshQueue(bufferManager,renderTorroid);
-            renderer.bindMeshQueue(meshThreader);
             renderer.bindBufferMananger(bufferManager);
             renderer.setChunkSSBO(renderTorroid);
             renderer.bindBuffers();
