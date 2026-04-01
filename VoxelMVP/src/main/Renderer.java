@@ -2,6 +2,7 @@ package main;
 
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
+import org.joml.Vector4f;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
@@ -67,6 +68,8 @@ public class Renderer {
 		totalIndices = 0;
 		renderMatrix = new Matrix4f();
 		this.gameInputQueue = gameInputQueue;
+		
+		
 	}
 	
 	public void setChunkSSBO(ChunkSSBO input) {
@@ -80,6 +83,15 @@ public class Renderer {
 	
 	public void bindMeshQueue(MeshQueue input) {
 		this.meshQueue = input;
+	}
+	
+	public void bindBuffers() {
+		GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 0, chunkSSBO.getChunkSSBOid());
+	    GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 1, chunkSSBO.getDrawSSBOid());
+	    GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 2, chunkSSBO.getCountBufId());
+
+        GL15.glBindBuffer(GL40.GL_DRAW_INDIRECT_BUFFER, chunkSSBO.getDrawSSBOid());
+        GL15.glBindBuffer(ARBIndirectParameters.GL_PARAMETER_BUFFER_ARB, chunkSSBO.getCountBufId());
 	}
 	
 	public void bindTextureAtlas(Texture texture) {
@@ -99,33 +111,29 @@ public class Renderer {
 	    Main.shaderProgram.setUniform("projectionMatrix", projection.getProjMatrix());
 	    Main.shaderProgram.setUniform("cameraPos", renderPos);
 
+	    /*
 	    if (lastFence != null) {
 	        GL32.glClientWaitSync(lastFence, GL32.GL_SYNC_FLUSH_COMMANDS_BIT, 0);
 	        GL32.glDeleteSync(lastFence);
 	        lastFence = null;
-	    }
+	    }*/
 	    
 	    chunkSSBO.resetCount();
-	    GL42.glMemoryBarrier(GL43.GL_SHADER_STORAGE_BARRIER_BIT);
-
-	    GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 0, chunkSSBO.getChunkSSBOid());
-	    GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 1, chunkSSBO.getDrawSSBOid());
-	    GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 2, chunkSSBO.getCountBufId());
+	    GL42.glMemoryBarrier(GL44.GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT);
 	    Main.computeProgram.bind();
 	    Main.computeProgram.setUniform("slotCount", chunkSSBO.getSlotCount());
-	    GL42.glMemoryBarrier(GL44.GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT | GL43.GL_SHADER_STORAGE_BARRIER_BIT);
+	    uploadFrustumPlanes(viewMatrix);
 	    int groups = (chunkSSBO.getSlotCount() + 63) / 64;
 	    GL43.glDispatchCompute(groups, 1, 1);
 	    GL42.glMemoryBarrier(GL42.GL_COMMAND_BARRIER_BIT | GL43.GL_SHADER_STORAGE_BARRIER_BIT);
-
 	    Main.shaderProgram.bind();
-        bufferManager.bind();
-        GL15.glBindBuffer(GL40.GL_DRAW_INDIRECT_BUFFER, chunkSSBO.getDrawSSBOid());
-        GL15.glBindBuffer(ARBIndirectParameters.GL_PARAMETER_BUFFER_ARB, chunkSSBO.getCountBufId());
-    	ARBIndirectParameters.glMultiDrawElementsIndirectCountARB(
-    		    GL_TRIANGLES, GL_UNSIGNED_INT, 0, 0, chunkSSBO.getSlotCount(), 32); // stride = 32
+	    bufferManager.bind();
+	    ARBIndirectParameters.glMultiDrawElementsIndirectCountARB(
+	        GL_TRIANGLES, GL_UNSIGNED_INT, 0, 0, chunkSSBO.getSlotCount(), 32);
 	    
-	    lastFence = GL32.glFenceSync(GL32.GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+	    
+	    
+	    //lastFence = GL32.glFenceSync(GL32.GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
 
 	    if (!guiHelper.runGUI(state, 0, 0)) {
 	        camera.updateCameraMatrix(Mouse.getDX(), Mouse.getDY());
@@ -212,5 +220,33 @@ public class Renderer {
 	
 	public Queue<Slot> getEvictionQueue() {
 		return this.evictionQueue;
+	}
+	
+	private void uploadFrustumPlanes(Matrix4f view) {
+	    Matrix4f vp = new Matrix4f(projection.getProjMatrix()).mul(view);
+
+	    float[] m = new float[16];
+	    vp.get(m);
+
+	    Vector4f[] planes = new Vector4f[6];
+	    planes[0] = new Vector4f(m[3]+m[0], m[7]+m[4], m[11]+m[8],  m[15]+m[12]); // left
+	    planes[1] = new Vector4f(m[3]-m[0], m[7]-m[4], m[11]-m[8],  m[15]-m[12]); // right
+	    planes[2] = new Vector4f(m[3]+m[1], m[7]+m[5], m[11]+m[9],  m[15]+m[13]); // bottom
+	    planes[3] = new Vector4f(m[3]-m[1], m[7]-m[5], m[11]-m[9],  m[15]-m[13]); // top
+	    planes[4] = new Vector4f(m[3]+m[2], m[7]+m[6], m[11]+m[10], m[15]+m[14]); // near
+	    planes[5] = new Vector4f(m[3]-m[2], m[7]-m[6], m[11]-m[10], m[15]-m[14]); // far
+
+	    for (int i = 0; i < 6; i++) {
+	        float len = (float)Math.sqrt(
+	            planes[i].x*planes[i].x + 
+	            planes[i].y*planes[i].y + 
+	            planes[i].z*planes[i].z);
+	        planes[i].div(len);
+	        // adjust for camera-relative rendering
+	        planes[i].w -= planes[i].x*renderPos.x + 
+	                       planes[i].y*renderPos.y + 
+	                       planes[i].z*renderPos.z;
+	        Main.computeProgram.setUniform("frustumPlanes[" + i + "]", planes[i]);
+	    }
 	}
 }

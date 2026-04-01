@@ -35,6 +35,7 @@ public class Main {
             renderer.bindMeshQueue(meshThreader);
             renderer.bindBufferMananger(bufferManager);
             renderer.setChunkSSBO(renderTorroid);
+            renderer.bindBuffers();
             
             gameEngine = new GameEngine(meshThreader, renderer.getEvictionQueue(), renderTorroid, gameInput);
             gameEngineThread = new Thread(gameEngine);
@@ -72,6 +73,8 @@ public class Main {
     	
     	computeProgram.bind();
     	computeProgram.createUniform("slotCount");
+    	for (int i = 0; i < 6; i++)
+    	    computeProgram.createUniform("frustumPlanes[" + i + "]");
     	computeProgram.unbind();
     	
         shaderProgram = new ShaderProgram();
