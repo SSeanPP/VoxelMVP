@@ -2,7 +2,7 @@
 
 A high-performance voxel render engine built on Java 1.6 and LWJGL 2.9.3, demonstrating GPU-driven rendering techniques typically associated with modern C++ engines.
 
-![Demo Screenshot](screenshot.png)
+<img width="1916" height="1075" alt="VoxelMVP print" src="https://github.com/user-attachments/assets/fb0bbc7c-7f1a-465c-a33e-b85dcf414c39" />
 
 ## Features
 
