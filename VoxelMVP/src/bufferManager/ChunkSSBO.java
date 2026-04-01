@@ -40,6 +40,7 @@ public class ChunkSSBO {
     private final int chunkSSBOid;
     private final int drawSSBOid;
     private final ByteBuffer chunkSSBO;
+    private final ByteBuffer zero = ByteBuffer.allocateDirect(4).order(ByteOrder.nativeOrder());
     //private final ByteBuffer drawSSBO;
     
     private final int countBufId;
@@ -67,6 +68,8 @@ public class ChunkSSBO {
             s.z = (int)Settings.spawnChunk.z - Settings.RENDER_DISTANCE + z;
             renderTorroid[i++] = s;
         }
+        
+        zero.putInt(0, 0);
     	
     	chunkSSBOid = GL15.glGenBuffers();
     	GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, chunkSSBOid);
@@ -200,8 +203,7 @@ public class ChunkSSBO {
     }
     
     public void resetCount() {
-        ByteBuffer zero = ByteBuffer.allocateDirect(4).order(ByteOrder.nativeOrder());
-        zero.putInt(0, 0);
+        
         GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, countBufId);
         GL43.glClearBufferSubData(
             GL43.GL_SHADER_STORAGE_BUFFER,
