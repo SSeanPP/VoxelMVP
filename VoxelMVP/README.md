@@ -81,6 +81,19 @@ Eclipse project. External dependencies:
 
 Set your native library path and run `main.Main`.
 
+## JVM Arguments
+-XX:+UseConcMarkSweepGC
+-XX:+UseParNewGC
+-XX:+CMSParallelRemarkEnabled
+-XX:CMSInitiatingOccupancyFraction=90
+-XX:+UseCMSInitiatingOccupancyOnly
+-XX:+CMSScavengeBeforeRemark
+-XX:+UseCMSCompactAtFullCollection
+-XX:CMSFullGCsBeforeCompaction=1
+-Xms1024m -Xmx1024m
+-server
+-XX:CompileThreshold=1500
+
 ## Roadmap
 
 - Hi-Z GPU occlusion culling (~50-70% triangle reduction)
