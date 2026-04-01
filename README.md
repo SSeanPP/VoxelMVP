@@ -23,6 +23,9 @@ A high-performance voxel render engine built on Java 1.6 and LWJGL 2.9.3, demons
 | GUI | ImGui (custom JNI binding) |
 | Math | JOML |
 
+### Why Java 1.6 (and LWJGL 2.9.3)?
+I've built this on deliberately constrained tooling to force low-level thinking, manual memory management, and direct engagement with OpenGL without abstraction layers. That means handling GPU/CPU synchronisation manually, writing my own JNI bindings to interface with other languages and managing a concurrent mesh pipeline without modern convenience APIs.
+
 ## Architecture
 
 ```
