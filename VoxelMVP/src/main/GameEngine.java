@@ -110,22 +110,21 @@ public class GameEngine implements Runnable {
             if (!slot.queued && slot.escaped(this.pPosition)) {
             	slot.queued = true; 
                 WorldMap.removeChunk(WorldMap.key(slot.x, slot.y, slot.z));
-                
                 slot.newPos(this.pPosition);
-
+                renderTorroid.write(slot);
                 meshQueue.submit(slot);
             }
         }
     }
     
     public void initialView() {
-        for(Slot slot : renderTorroid.getRenderToroid()) {
-            if (!slot.queued) {
-            	slot.queued = true; 
+    	for(Slot slot : renderTorroid.getRenderToroid()) {
+            if (!slot.queued && slot.escaped(this.pPosition)) {
+                slot.queued = true;
                 WorldMap.removeChunk(WorldMap.key(slot.x, slot.y, slot.z));
-                
                 slot.newPos(this.pPosition);
-
+                renderTorroid.write(slot);  // is this being called?
+                System.out.println("write slot " + slot.ssboIndex);
                 meshQueue.submit(slot);
             }
         }

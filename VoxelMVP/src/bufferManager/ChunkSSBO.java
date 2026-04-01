@@ -1,15 +1,24 @@
 package bufferManager;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.lwjgl.opengl.ARBBufferStorage;
 import org.lwjgl.opengl.ARBMapBufferRange;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL15;
+import org.lwjgl.opengl.GL20;
+import org.lwjgl.opengl.GL21;
 import org.lwjgl.opengl.GL30;
+import org.lwjgl.opengl.GL31;
+import org.lwjgl.opengl.GL32;
+import org.lwjgl.opengl.GL33;
 import org.lwjgl.opengl.GL43;
 import org.lwjgl.opengl.GL44;
+import org.lwjgl.opengl.GL45;
 
 import main.Chunk;
 import main.Settings;
@@ -18,7 +27,7 @@ public class ChunkSSBO {
     // Slot layout - 32 bytes per slot
     // [worldX, worldY, worldZ, pad, firstIndex, baseVertex, indexCount, chunkId]
     
-	private final int DRAWCMD_SIZE = 20;
+	private final int DRAWCMD_SIZE = 32;
 	
     private final int SLOT_SIZE     = 32;
     private final int OFF_WORLD_X   = 0;
@@ -31,6 +40,9 @@ public class ChunkSSBO {
     private final int chunkSSBOid;
     private final int drawSSBOid;
     private final ByteBuffer chunkSSBO;
+    //private final ByteBuffer drawSSBO;
+    
+    private final int countBufId;
     
     private final int slotCount;
     
@@ -43,12 +55,13 @@ public class ChunkSSBO {
     public ChunkSSBO() {
     	slotCount = WIDTH * HEIGHT * WIDTH;
     	renderTorroid = new Slot[slotCount];
-    	
+    	System.out.println("slotCount=" + slotCount + " WIDTH=" + WIDTH + " HEIGHT=" + HEIGHT);
     	int i = 0;
         for (int x = 0; x < WIDTH; x++)
         for (int y = 0; y < HEIGHT; y++)
         for (int z = 0; z < WIDTH; z++) {
             Slot s = new Slot();
+            s.ssboIndex = i;
             s.x = (int)Settings.spawnChunk.x - Settings.RENDER_DISTANCE + x;
             s.y = (int)Settings.spawnChunk.y - Settings.RENDER_HEIGHT   + y;
             s.z = (int)Settings.spawnChunk.z - Settings.RENDER_DISTANCE + z;
@@ -68,17 +81,37 @@ public class ChunkSSBO {
     			slotCount * SLOT_SIZE,
 	    	    GL30.GL_MAP_WRITE_BIT | ARBBufferStorage.GL_MAP_PERSISTENT_BIT | ARBBufferStorage.GL_MAP_COHERENT_BIT, 
 	    	    null);
+    	
+    	for (int j = 0; j < slotCount * SLOT_SIZE; j += 4)
+    	    chunkSSBO.putInt(j, 0);
 
+    	/*
+    	drawSSBOid = GL15.glGenBuffers();
+    	GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, drawSSBOid);
+    	GL44.glBufferStorage(GL43.GL_SHADER_STORAGE_BUFFER,
+    	    slotCount * DRAWCMD_SIZE,
+    	    GL30.GL_MAP_WRITE_BIT | ARBBufferStorage.GL_MAP_PERSISTENT_BIT | ARBBufferStorage.GL_MAP_COHERENT_BIT);
+    	drawSSBO = ARBMapBufferRange.glMapBufferRange(GL43.GL_SHADER_STORAGE_BUFFER,
+    	    0, slotCount * DRAWCMD_SIZE,
+    	    GL30.GL_MAP_WRITE_BIT | ARBBufferStorage.GL_MAP_PERSISTENT_BIT | ARBBufferStorage.GL_MAP_COHERENT_BIT,
+    	    null);*/
     	
     	drawSSBOid = GL15.glGenBuffers();
     	GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, drawSSBOid);
-    	GL44.glBufferStorage(GL43.GL_SHADER_STORAGE_BUFFER, 
-    			slotCount * DRAWCMD_SIZE, 
-    			GL44.GL_DYNAMIC_STORAGE_BIT);
+    	GL44.glBufferStorage(GL43.GL_SHADER_STORAGE_BUFFER,
+    	    slotCount * DRAWCMD_SIZE,
+    	    GL44.GL_DYNAMIC_STORAGE_BIT); 
+    	
+    	countBufId = GL15.glGenBuffers();
+    	GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, countBufId);
+    	GL44.glBufferStorage(GL43.GL_SHADER_STORAGE_BUFFER, 4, GL44.GL_DYNAMIC_STORAGE_BIT);
+    	
+
     }
     
     public static class Slot {
     	public volatile int x,y,z;
+    	public int ssboIndex;
     	public volatile Allocation allocation;
     	public volatile boolean queued;
     	
@@ -119,22 +152,17 @@ public class ChunkSSBO {
         return tx * (HEIGHT * WIDTH) + ty * WIDTH + tz;
     }
 
-    public int getIndexAt(int wx, int wy, int wz) {
-        return index(wx, wy, wz);
-    }
     
-    public void write(Slot chunk) {
-        int slot = getIndexAt(chunk.x, chunk.y, chunk.z);
-        writeSlotMeta(slot, chunk.x, chunk.y, chunk.z);
-        renderTorroid[slot] = chunk;
+    public void write(Slot slot) {
+        writeSlotMeta(slot.ssboIndex, slot.x, slot.y, slot.z);
     }
-    
-    public void commit(Slot chunk, int firstIndex, int baseVertex, int indexCount) {
-    	commitSlot(getIndexAt(chunk.x, chunk.y, chunk.z), firstIndex, baseVertex, indexCount);
+
+    public void commit(Slot slot, int firstIndex, int baseVertex, int indexCount) {
+        commitSlot(slot.ssboIndex, firstIndex, baseVertex, indexCount);
     }
-    
-    public void clear(Slot current) {
-    	clearSlot(getIndexAt(current.x, current.y, current.z));
+
+    public void clear(Slot slot) {
+        clearSlot(slot.ssboIndex);
     }
 
     public Slot[] getRenderToroid() {
@@ -154,12 +182,12 @@ public class ChunkSSBO {
         chunkSSBO.putInt(base + OFF_FIRST_IDX, firstIndex);
         chunkSSBO.putInt(base + OFF_BASE_VTX,  baseVertex);
         chunkSSBO.putInt(base + OFF_COUNT,     indexCount);
+        //System.out.println("commitSlot " + slot + " indexCount=" + indexCount);
     }
 
     private void clearSlot(int slot) {
         int base = slot * SLOT_SIZE;
         chunkSSBO.putInt(base + OFF_COUNT,    0);
-        renderTorroid[slot] = null;
     }
 
     
@@ -171,5 +199,37 @@ public class ChunkSSBO {
         return r;
     }
     
-    
+    public void resetCount() {
+        ByteBuffer zero = ByteBuffer.allocateDirect(4).order(ByteOrder.nativeOrder());
+        zero.putInt(0, 0);
+        GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, countBufId);
+        GL43.glClearBufferSubData(
+            GL43.GL_SHADER_STORAGE_BUFFER,
+            GL30.GL_R32UI,
+            0L, 4L,
+            GL30.GL_RED_INTEGER,
+            GL11.GL_UNSIGNED_INT,
+            zero
+        );
+    }
+    public int getChunkSSBOid() { return chunkSSBOid; }
+    public int getDrawSSBOid()  { return drawSSBOid; }
+    public int getCountBufId()  { return countBufId; }
+    public int getSlotCount()   { return slotCount; }
+    /*
+    public int buildDrawCommands() {
+        int drawCount = 0;
+        for (int i = 0; i < slotCount; i++) {
+            Slot slot = renderTorroid[i];
+            if (slot == null || slot.allocation == null || slot.allocation.indexCount == 0) continue;
+            int base = drawCount * DRAWCMD_SIZE;
+            drawSSBO.putInt(base,      slot.allocation.indexCount);
+            drawSSBO.putInt(base + 4,  1);
+            drawSSBO.putInt(base + 8,  slot.allocation.indexOffset / 4);
+            drawSSBO.putInt(base + 12, slot.allocation.vertexOffset / Settings.stride);
+            drawSSBO.putInt(base + 16, 0);
+            drawCount++;
+        }
+        return drawCount;
+    }*/
 }

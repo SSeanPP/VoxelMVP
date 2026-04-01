@@ -30,10 +30,10 @@ public class Main {
     	try {
             init();
             bufferManager = new SceneBufferManager();
-            meshThreader = new MeshQueue(bufferManager);
+            renderTorroid = new ChunkSSBO();
+            meshThreader = new MeshQueue(bufferManager,renderTorroid);
             renderer.bindMeshQueue(meshThreader);
             renderer.bindBufferMananger(bufferManager);
-            renderTorroid = new ChunkSSBO();
             renderer.setChunkSSBO(renderTorroid);
             
             gameEngine = new GameEngine(meshThreader, renderer.getEvictionQueue(), renderTorroid, gameInput);
@@ -69,6 +69,10 @@ public class Main {
     	computeProgram = new ComputeProgram();
     	computeProgram.createComputeShader(ResourceLoader.loadResourceAsString("resources/cull.glsl"));
     	computeProgram.link();
+    	
+    	computeProgram.bind();
+    	computeProgram.createUniform("slotCount");
+    	computeProgram.unbind();
     	
         shaderProgram = new ShaderProgram();
         shaderProgram.createVertexShader(ResourceLoader.loadResourceAsString("resources/vertex.vs"));

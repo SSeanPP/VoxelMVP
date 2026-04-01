@@ -4,6 +4,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.concurrent.BlockingQueue;
 
+import bufferManager.ChunkSSBO;
 import bufferManager.ChunkSSBO.Slot;
 import bufferManager.SceneBufferManager;
 import main.Chunk;
@@ -13,6 +14,7 @@ import main.WorldMap;
 public abstract class MeshThread implements Runnable {
 	// --- Infrastructure ---
     protected SceneBufferManager bufferManager;
+    protected ChunkSSBO renderTorroid;
     protected BlockingQueue<Slot> queue;
 
     // --- Block cache ---
@@ -68,6 +70,7 @@ public abstract class MeshThread implements Runnable {
 		        bufferManager.free(slot.allocation);
 		        slot.allocation = null;
 		    }
+		    renderTorroid.clear(slot);
 		    return;
 		} else {
             int vertexSizeBytes = vertexPtr * 4;
@@ -99,6 +102,12 @@ public abstract class MeshThread implements Runnable {
             ebo.asIntBuffer().put(indices, 0, indexPtr);
 
             slot.allocation.setCounts(indexPtr);
-        }
+            
+            //System.out.println("uploadToGPU slot.ssboIndex=" + slot.ssboIndex + " slot.x=" + slot.x);
+            renderTorroid.commit(slot,
+            	    slot.allocation.indexOffset / 4,
+            	    slot.allocation.vertexOffset / Settings.stride,
+            	    indexPtr);
+		}
     }
 }

@@ -18,6 +18,11 @@ import static org.lwjgl.opengl.GL20.glShaderSource;
 import static org.lwjgl.opengl.GL20.glUseProgram;
 import static org.lwjgl.opengl.GL20.glValidateProgram;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import org.joml.Vector4f;
+import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL43;
 
 public class ComputeProgram {
@@ -80,5 +85,21 @@ public class ComputeProgram {
             System.err.println("Warning validating Shader code: " + glGetProgramInfoLog(programId, 1024));
         }
 
+    }
+    
+    private final Map<String, Integer> uniforms = new HashMap<String, Integer>();
+
+    public void createUniform(String name) {
+        int location = GL20.glGetUniformLocation(programId, name);
+        if (location < 0) throw new RuntimeException("Could not find uniform [" + name + "]");
+        uniforms.put(name, location);
+    }
+
+    public void setUniform(String name, int value) {
+        GL20.glUniform1i(uniforms.get(name), value);
+    }
+
+    public void setUniform(String name, Vector4f v) {
+        GL20.glUniform4f(uniforms.get(name), v.x, v.y, v.z, v.w);
     }
 }

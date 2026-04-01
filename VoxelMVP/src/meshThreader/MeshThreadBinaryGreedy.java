@@ -2,6 +2,7 @@ package meshThreader;
 
 import java.util.concurrent.BlockingQueue;
 
+import bufferManager.ChunkSSBO;
 import bufferManager.ChunkSSBO.Slot;
 import bufferManager.SceneBufferManager;
 import main.Block;
@@ -26,9 +27,10 @@ public class MeshThreadBinaryGreedy extends MeshThread {
     private int quadCount = 0;
 
 
-    public MeshThreadBinaryGreedy(SceneBufferManager manager, BlockingQueue<Slot> queueInput) {
+    public MeshThreadBinaryGreedy(SceneBufferManager manager, BlockingQueue<Slot> queueInput, ChunkSSBO torroid) {
         this.bufferManager = manager;
         this.queue = queueInput;
+        this.renderTorroid = torroid;
         // pre-allocate quad pool
         for (int i = 0; i < quadPool.length; i++)
             quadPool[i] = new GreedyQuad();

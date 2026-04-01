@@ -5,10 +5,19 @@ import org.joml.Vector3f;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
+import org.lwjgl.opengl.ARBIndirectParameters;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL15;
+import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL32;
+import org.lwjgl.opengl.GL40;
+import org.lwjgl.opengl.GL41;
+import org.lwjgl.opengl.GL42;
+import org.lwjgl.opengl.GL43;
+import org.lwjgl.opengl.GL44;
+import org.lwjgl.opengl.GL45;
 import org.lwjgl.opengl.GLSync;
 
 import bufferManager.ChunkSSBO;
@@ -22,6 +31,8 @@ import meshThreader.MeshQueue;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL13.*;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
@@ -79,48 +90,49 @@ public class Renderer {
 	
 	
 	public void render(GameState state, double alpha) {
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		
-		totalVertices = 0;
-		totalIndices = 0;
-		
-		camera = state.getCamera();
-		
-		Main.shaderProgram.setUniform("viewMatrix", camera.handleCameraLerpAndMatrix(alpha, renderPos));
-		Main.shaderProgram.setUniform("projectionMatrix", projection.getProjMatrix());
-		Main.shaderProgram.setUniform("cameraPos", renderPos);
-		
-		if (lastFence != null) {
-		    GL32.glClientWaitSync(lastFence, GL32.GL_SYNC_FLUSH_COMMANDS_BIT, 0);
-		    GL32.glDeleteSync(lastFence);
-		    lastFence = null;
+	    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		}
+	    camera = state.getCamera();
+	    Matrix4f viewMatrix = camera.handleCameraLerpAndMatrix(alpha, renderPos);
 
-		for (Slot slot : chunkSSBO.getRenderToroid()) {
-		    if (slot.allocation == null || slot.allocation.getCounts() == 0) continue;
+	    Main.shaderProgram.setUniform("viewMatrix", viewMatrix);
+	    Main.shaderProgram.setUniform("projectionMatrix", projection.getProjMatrix());
+	    Main.shaderProgram.setUniform("cameraPos", renderPos);
 
-		    renderMatrix.translation(slot.x * Settings.CHUNK_SIZE, slot.y * Settings.CHUNK_SIZE, slot.z * Settings.CHUNK_SIZE);
-		    Main.shaderProgram.setUniform("modelMatrix", renderMatrix);
+	    if (lastFence != null) {
+	        GL32.glClientWaitSync(lastFence, GL32.GL_SYNC_FLUSH_COMMANDS_BIT, 0);
+	        GL32.glDeleteSync(lastFence);
+	        lastFence = null;
+	    }
+	    
+	    chunkSSBO.resetCount();
+	    GL42.glMemoryBarrier(GL43.GL_SHADER_STORAGE_BARRIER_BIT);
 
-		    GL32.glDrawElementsBaseVertex(
-		        GL_TRIANGLES,
-		        slot.allocation.indexCount,
-		        GL_UNSIGNED_INT,
-		        slot.allocation.indexOffset,
-		        slot.allocation.vertexOffset / Settings.stride
-		    );
-		}
-		
-		lastFence = GL32.glFenceSync(GL32.GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
-		
-		
-		if(!guiHelper.runGUI(state, totalIndices, totalVertices)) {
-			camera.updateCameraMatrix(Mouse.getDX(), Mouse.getDY());
-		}
-		
-		Display.update();
-		gameInput();
+	    GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 0, chunkSSBO.getChunkSSBOid());
+	    GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 1, chunkSSBO.getDrawSSBOid());
+	    GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 2, chunkSSBO.getCountBufId());
+	    Main.computeProgram.bind();
+	    Main.computeProgram.setUniform("slotCount", chunkSSBO.getSlotCount());
+	    GL42.glMemoryBarrier(GL44.GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT | GL43.GL_SHADER_STORAGE_BARRIER_BIT);
+	    int groups = (chunkSSBO.getSlotCount() + 63) / 64;
+	    GL43.glDispatchCompute(groups, 1, 1);
+	    GL42.glMemoryBarrier(GL42.GL_COMMAND_BARRIER_BIT | GL43.GL_SHADER_STORAGE_BARRIER_BIT);
+
+	    Main.shaderProgram.bind();
+        bufferManager.bind();
+        GL15.glBindBuffer(GL40.GL_DRAW_INDIRECT_BUFFER, chunkSSBO.getDrawSSBOid());
+        GL15.glBindBuffer(ARBIndirectParameters.GL_PARAMETER_BUFFER_ARB, chunkSSBO.getCountBufId());
+    	ARBIndirectParameters.glMultiDrawElementsIndirectCountARB(
+    		    GL_TRIANGLES, GL_UNSIGNED_INT, 0, 0, chunkSSBO.getSlotCount(), 32); // stride = 32
+	    
+	    lastFence = GL32.glFenceSync(GL32.GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+
+	    if (!guiHelper.runGUI(state, 0, 0)) {
+	        camera.updateCameraMatrix(Mouse.getDX(), Mouse.getDY());
+	    }
+
+	    Display.update();
+	    gameInput();
 	}
 	
    
@@ -180,7 +192,6 @@ public class Renderer {
 	
 	public void createUniforms() {
 		Main.shaderProgram.createUniform("projectionMatrix");
-		Main.shaderProgram.createUniform("modelMatrix");
 		Main.shaderProgram.createUniform("txtSampler");
 		Main.shaderProgram.createUniform("viewMatrix");
 		Main.shaderProgram.createUniform("cameraPos");
