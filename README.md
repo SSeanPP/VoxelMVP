@@ -1,6 +1,6 @@
 # VoxelMVP
 
-A high-performance voxel render engine built on Java 1.6 and LWJGL 2.9.3, pushing GPU-driven rendering techniques typically reserved for AAA game engines.
+GPU-driven voxel renderer using MultiDrawIndirect and compute shader culling, achieving single draw call rendering for tens of thousands of chunks.
 
 <img width="1916" height="1075" alt="VoxelMVP print" src="https://github.com/user-attachments/assets/fb0bbc7c-7f1a-465c-a33e-b85dcf414c39" />
 
@@ -68,11 +68,9 @@ I've built this on deliberately constrained tooling to force low-level thinking,
 
 ## Performance
 
-Tested on NVIDIA GPU at 64 chunk render distance:
-
 - GPU frame time: ~11.7ms (vertex/geometry bound)
 - Compute cull dispatch: ~181μs
-- Eliminated CPU/GPU driver bottleneck - future updates need to reduce triangle counts
+- Eliminated CPU/GPU driver bottleneck
 
 ## Building
 
