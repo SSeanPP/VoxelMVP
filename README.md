@@ -1,18 +1,18 @@
 # VoxelMVP
 
-A high-performance voxel render engine built on Java 1.6 and LWJGL 2.9.3, demonstrating GPU-driven rendering techniques typically associated with modern C++ engines.
+A high-performance voxel render engine built on Java 1.6 and LWJGL 2.9.3, pushing GPU-driven rendering techniques typically reserved for AAA game engines.
 
 <img width="1916" height="1075" alt="VoxelMVP print" src="https://github.com/user-attachments/assets/fb0bbc7c-7f1a-465c-a33e-b85dcf414c39" />
 
 ## Features
 
-- **GPU-driven rendering** via `glMultiDrawElementsIndirectCountARB` — the CPU submits one draw call per frame regardless of chunk count
-- **Compute shader frustum culling** — a compute pass each frame culls chunks against the view frustum and writes only visible draw commands, using subgroup arithmetic to minimise atomic contention
-- **Binary greedy meshing** — mesh threads compact geometry using binary plane operations, producing large merged quads that minimise vertex count
-- **Persistent mapped buffers** — vertex and index data is written directly to GPU-mapped memory with no per-frame uploads
-- **Toroidal chunk buffer** — slots never move in memory as the player moves; the world scrolls through a fixed SSBO
-- **Priority mesh queue** — chunks are meshed nearest-first using a `PriorityBlockingQueue`, with physical core thread count to avoid hyperthreading overhead
-- **Debug overlay** — real-time ImGui overlay showing FPS, GPU frame time, visible/meshed chunk counts, VBO/EBO utilisation, and mesh queue depth
+- **GPU-driven rendering** via `glMultiDrawElementsIndirectCountARB` - the CPU submits one draw call per frame regardless of chunk count
+- **Compute shader frustum culling** - a compute pass each frame culls chunks against the view frustum and writes only visible draw commands, using subgroup arithmetic to minimise atomic contention
+- **Binary greedy meshing** - mesh threads compact geometry using binary plane operations, producing large merged quads that minimise vertex count
+- **Persistent mapped buffers** - vertex and index data is written directly to GPU-mapped memory with no per-frame uploads
+- **Toroidal chunk buffer** - slots never move in memory as the player moves; the world scrolls through a fixed SSBO
+- **Priority mesh queue** - chunks are meshed nearest-first using a `PriorityBlockingQueue`, with physical core thread count to avoid hyperthreading overhead
+- **Debug overlay** - real-time ImGui overlay showing FPS, GPU frame time, visible/meshed chunk counts, VBO/EBO utilisation, and mesh queue depth
 
 ## Tech Stack
 
