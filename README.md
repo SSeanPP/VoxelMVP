@@ -1,4 +1,4 @@
-# VoxelMVP
+# GPU-Driven Voxel Renderer (OpenGL 4.6)
 
 GPU-driven voxel renderer using MultiDrawIndirect and compute shader culling, achieving single draw call rendering for tens of thousands of chunks.
 
