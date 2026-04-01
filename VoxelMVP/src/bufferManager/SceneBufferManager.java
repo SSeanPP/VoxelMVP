@@ -9,9 +9,7 @@ import main.Settings;
 import org.lwjgl.opengl.ARBMapBufferRange;
 import org.lwjgl.opengl.GL11;
 
-import static org.lwjgl.opengl.GL11.GL_FLOAT;
 import static org.lwjgl.opengl.GL20.glEnableVertexAttribArray;
-import static org.lwjgl.opengl.GL20.glVertexAttribPointer;
 import static org.lwjgl.opengl.GL30.glBindVertexArray;
 import static org.lwjgl.opengl.GL30.glGenVertexArrays;
 
@@ -20,7 +18,6 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.lwjgl.opengl.ARBBufferStorage;
@@ -33,8 +30,6 @@ public class SceneBufferManager {
 	private AtomicInteger vertexOffset = new AtomicInteger();
 	private AtomicInteger indexOffset = new AtomicInteger();
 	
-	private AtomicLong totalAllocated = new AtomicLong();
-	private AtomicLong totalFreed = new AtomicLong();
 	
 	public static volatile long vboFreeBytes = 0;
 	public static volatile long eboFreeBytes = 0;

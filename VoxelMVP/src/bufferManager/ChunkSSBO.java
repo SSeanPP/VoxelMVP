@@ -3,24 +3,15 @@ package bufferManager;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.lwjgl.opengl.ARBBufferStorage;
 import org.lwjgl.opengl.ARBMapBufferRange;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL15;
-import org.lwjgl.opengl.GL20;
-import org.lwjgl.opengl.GL21;
 import org.lwjgl.opengl.GL30;
-import org.lwjgl.opengl.GL31;
-import org.lwjgl.opengl.GL32;
-import org.lwjgl.opengl.GL33;
 import org.lwjgl.opengl.GL43;
 import org.lwjgl.opengl.GL44;
-import org.lwjgl.opengl.GL45;
 
-import main.Chunk;
 import main.Settings;
 
 public class ChunkSSBO {

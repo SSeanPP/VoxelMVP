@@ -12,7 +12,6 @@ import bufferManager.ChunkSSBO;
 import bufferManager.ChunkSSBO.Slot;
 import bufferManager.SceneBufferManager;
 
-import main.Chunk;
 import main.Settings;
 public class MeshQueue {
 

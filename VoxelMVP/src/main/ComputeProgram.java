@@ -38,7 +38,7 @@ public class ComputeProgram {
     private int computeShaderId;
 	public void createComputeShader(String shaderCode) throws Exception {
     	computeShaderId = createShader(shaderCode, GL43.GL_COMPUTE_SHADER);
-    	glAttachShader(programId, computeShaderId);
+    	//glAttachShader(programId, computeShaderId);
     }
 	
 	public int createShader(String shaderCode, int shaderType) throws Exception {

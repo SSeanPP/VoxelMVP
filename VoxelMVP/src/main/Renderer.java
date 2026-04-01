@@ -7,19 +7,17 @@ import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.ARBIndirectParameters;
+import org.lwjgl.opengl.ContextAttribs;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL30;
-import org.lwjgl.opengl.GL32;
 import org.lwjgl.opengl.GL40;
-import org.lwjgl.opengl.GL41;
 import org.lwjgl.opengl.GL42;
 import org.lwjgl.opengl.GL43;
 import org.lwjgl.opengl.GL44;
-import org.lwjgl.opengl.GL45;
-import org.lwjgl.opengl.GLSync;
+import org.lwjgl.opengl.PixelFormat;
 
 import bufferManager.ChunkSSBO;
 import bufferManager.ChunkSSBO.Slot;
@@ -27,13 +25,10 @@ import bufferManager.SceneBufferManager;
 import guiHandler.GUIHelper;
 import imgui.ImGui;
 import imgui.ImInput;
-import meshThreader.MeshQueue;
 
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL13.*;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
@@ -115,7 +110,7 @@ public class Renderer {
 	    uploadFrustumPlanes(viewMatrix);
 	    int groups = (chunkSSBO.getSlotCount() + 63) / 64;
 	    GL43.glDispatchCompute(groups, 1, 1);
-	    GL42.glMemoryBarrier(GL42.GL_COMMAND_BARRIER_BIT | GL43.GL_SHADER_STORAGE_BARRIER_BIT);
+	    //GL42.glMemoryBarrier(GL42.GL_COMMAND_BARRIER_BIT | GL43.GL_SHADER_STORAGE_BARRIER_BIT);
 	    Main.shaderProgram.bind();
 	    bufferManager.bind();
 	    ARBIndirectParameters.glMultiDrawElementsIndirectCountARB(
@@ -139,7 +134,11 @@ public class Renderer {
         Display.setDisplayMode(new DisplayMode(width, height));
         Display.setTitle("VoxelMVP - A maximum performance Voxel Render Engine built on Java 1.6 and LWJGL 2.9.3");
         
-        Display.create();
+        ContextAttribs attribs = new ContextAttribs(4, 3)
+                .withForwardCompatible(true)
+                .withProfileCore(true);
+
+            Display.create(new PixelFormat(), attribs);
         
         //IMGUI init
         ImGui.createContext();
@@ -157,8 +156,8 @@ public class Renderer {
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_CULL_FACE);
         glCullFace(GL_BACK);
+        Display.setVSyncEnabled(false);
         
-        glEnable(GL11.GL_TEXTURE_2D);
         
         //glClearColor(0.3f, 0.55f, 0.75f, 1f);
         glClearColor(0.2f, 0.3f, 0.4f, 1f);
@@ -189,11 +188,13 @@ public class Renderer {
 	}
 	
 	public void createUniforms() {
-		Main.shaderProgram.createUniform("projectionMatrix");
-		Main.shaderProgram.createUniform("txtSampler");
-		Main.shaderProgram.createUniform("viewMatrix");
-		Main.shaderProgram.createUniform("cameraPos");
-		Main.shaderProgram.setUniform("txtSampler", 0);
+	    Main.shaderProgram.createUniform("projectionMatrix");
+	    Main.shaderProgram.createUniform("txtSampler");
+	    Main.shaderProgram.createUniform("viewMatrix");
+	    Main.shaderProgram.createUniform("cameraPos");
+	    Main.shaderProgram.bind();                        // ← add this
+	    Main.shaderProgram.setUniform("txtSampler", 0);
+	    Main.shaderProgram.unbind();                      // ← and this
 	}
 	
 	public TextureCache getTextureCache() {
