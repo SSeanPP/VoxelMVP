@@ -24,6 +24,5 @@
 			<attribute name="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value="C:/Users/seanp/Documents/IMGUI experiments/public/imgui-lwjgl2-jni/out"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="README.md"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
