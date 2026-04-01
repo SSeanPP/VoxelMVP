@@ -21,7 +21,7 @@ public abstract class MeshThread implements Runnable {
     protected final short[][][] localBlockCache = new short[Settings.blockCacheSize][Settings.blockCacheSize][Settings.blockCacheSize];
     
     //Vertex Indices Stuff
-    protected float[] vertices = new float[120000];
+    protected int[] vertices = new int[120000];
     protected int[] indices = new int[80000];
 	
 	protected int vertexPtr = 0;
@@ -96,7 +96,7 @@ public abstract class MeshThread implements Runnable {
             }
 
             ByteBuffer vbo = bufferManager.getVBOSlice(slot.allocation).order(ByteOrder.nativeOrder());
-            vbo.asFloatBuffer().put(vertices, 0, vertexPtr);
+            vbo.asIntBuffer().put(vertices, 0, vertexPtr);
             
             ByteBuffer ebo = bufferManager.getEBOSlice(slot.allocation).order(ByteOrder.nativeOrder());
             ebo.asIntBuffer().put(indices, 0, indexPtr);

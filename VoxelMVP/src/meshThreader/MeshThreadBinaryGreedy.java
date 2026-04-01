@@ -283,81 +283,66 @@ public class MeshThreadBinaryGreedy extends MeshThread {
     // -------------------------------------------------------------------------
 
     private void emitQuad(int face, int axisPos, GreedyQuad q, short blockId) {
-        if (vertexPtr + 20 > vertices.length || indexPtr + 6 > indices.length) return;
+        if (vertexPtr + 4 > vertices.length || indexPtr + 6 > indices.length) return;
 
         Block block = Block.blockRegister[blockId];
         int texIndex = getFaceTexture(block, face);
-        int tileX = texIndex % ATLAS_SIZE;
-        int tileY = texIndex / ATLAS_SIZE;
-        float u0 = tileX * TILE_SIZE;
-        float v0 = 1.0f - (tileY * TILE_SIZE) - TILE_SIZE;
-        float u1 = u0 + TILE_SIZE;
-        float v1 = v0 + TILE_SIZE;
 
-        // q.x = row axis, q.y = column axis within the plane
-        // expand to world coords depending on face orientation
-        int r0 = q.x;
-        int c0 = q.y;
-        int s  = axisPos;
+        int r0 = q.x, c0 = q.y, s = axisPos;
+        int qw = q.w, qh = q.h;
 
         switch (face) {
-	        case TOP: {
-	            // slice=Y, row=X, bit=Z
-	            int x0=r0, x1=r0+q.w, z0=c0, z1=c0+q.h, y=s+1;
-	            putVertex(x0,y,z0, u0,v0);
-	            putVertex(x1,y,z0, u1,v0);
-	            putVertex(x1,y,z1, u1,v1);
-	            putVertex(x0,y,z1, u0,v1);
-	            break;
-	        }
-	        case BOTTOM: {
-	            // slice=Y, row=X, bit=Z
-	            int x0=r0, x1=r0+q.w, z0=c0, z1=c0+q.h, y=s;
-	            putVertex(x0,y,z0, u0,v0);
-	            putVertex(x0,y,z1, u0,v1);
-	            putVertex(x1,y,z1, u1,v1);
-	            putVertex(x1,y,z0, u1,v0);
-	            break;
-	        }
-	        case NORTH: {
-	            // slice=Z, row=Y, bit=X
-	            int y0=r0, y1=r0+q.w, x0=c0, x1=c0+q.h, z=s+1;
-	            putVertex(x0,y0,z, u0,v0);
-	            putVertex(x0,y1,z, u0,v1);
-	            putVertex(x1,y1,z, u1,v1);
-	            putVertex(x1,y0,z, u1,v0);
-	            break;
-	        }
-	        case SOUTH: {
-	            // slice=Z, row=Y, bit=X
-	            int y0=r0, y1=r0+q.w, x0=c0, x1=c0+q.h, z=s;
-	            putVertex(x0,y0,z, u0,v0);
-	            putVertex(x1,y0,z, u1,v0);
-	            putVertex(x1,y1,z, u1,v1);
-	            putVertex(x0,y1,z, u0,v1);
-	            break;
-	        }
-	        case EAST: {
-	            // slice=X, row=Z, bit=Y
-	            int z0=r0, z1=r0+q.w, y0=c0, y1=c0+q.h, x=s+1;
-	            putVertex(x,y0,z0, u0,v0);
-	            putVertex(x,y0,z1, u1,v0);
-	            putVertex(x,y1,z1, u1,v1);
-	            putVertex(x,y1,z0, u0,v1);
-	            break;
-	        }
-	        case WEST: {
-	            // slice=X, row=Z, bit=Y
-	            int z0=r0, z1=r0+q.w, y0=c0, y1=c0+q.h, x=s;
-	            putVertex(x,y0,z0, u0,v0);
-	            putVertex(x,y1,z0, u0,v1);
-	            putVertex(x,y1,z1, u1,v1);
-	            putVertex(x,y0,z1, u1,v0);
-	            break;
-	        }
+            case TOP: {
+                int x0=r0, x1=r0+qw, z0=c0, z1=c0+qh, y=s+1;
+                putVertex(x0,y,z0, 0, qw,qh, face, texIndex);
+                putVertex(x1,y,z0, 1, qw,qh, face, texIndex);
+                putVertex(x1,y,z1, 2, qw,qh, face, texIndex);
+                putVertex(x0,y,z1, 3, qw,qh, face, texIndex);
+                break;
+            }
+            case BOTTOM: {
+                int x0=r0, x1=r0+qw, z0=c0, z1=c0+qh, y=s;
+                putVertex(x0,y,z0, 0, qw,qh, face, texIndex);
+                putVertex(x0,y,z1, 1, qw,qh, face, texIndex);
+                putVertex(x1,y,z1, 2, qw,qh, face, texIndex);
+                putVertex(x1,y,z0, 3, qw,qh, face, texIndex);
+                break;
+            }
+            case NORTH: {
+                int y0=r0, y1=r0+qw, x0=c0, x1=c0+qh, z=s+1;
+                putVertex(x0,y0,z, 0, qh,qw, face, texIndex);
+                putVertex(x0,y1,z, 1, qh,qw, face, texIndex);
+                putVertex(x1,y1,z, 2, qh,qw, face, texIndex);
+                putVertex(x1,y0,z, 3, qh,qw, face, texIndex);
+                break;
+            }
+            case SOUTH: {
+                int y0=r0, y1=r0+qw, x0=c0, x1=c0+qh, z=s;
+                putVertex(x0,y0,z, 0, qh,qw, face, texIndex);
+                putVertex(x1,y0,z, 1, qh,qw, face, texIndex);
+                putVertex(x1,y1,z, 2, qh,qw, face, texIndex);
+                putVertex(x0,y1,z, 3, qh,qw, face, texIndex);
+                break;
+            }
+            case EAST: {
+                int z0=r0, z1=r0+qw, y0=c0, y1=c0+qh, x=s+1;
+                putVertex(x,y0,z0, 0, qw,qh, face, texIndex);
+                putVertex(x,y0,z1, 1, qw,qh, face, texIndex);
+                putVertex(x,y1,z1, 2, qw,qh, face, texIndex);
+                putVertex(x,y1,z0, 3, qw,qh, face, texIndex);
+                break;
+            }
+            case WEST: {
+                int z0=r0, z1=r0+qw, y0=c0, y1=c0+qh, x=s;
+                putVertex(x,y0,z0, 0, qw,qh, face, texIndex);
+                putVertex(x,y1,z0, 1, qw,qh, face, texIndex);
+                putVertex(x,y1,z1, 2, qw,qh, face, texIndex);
+                putVertex(x,y0,z1, 3, qw,qh, face, texIndex);
+                break;
+            }
         }
 
-        int base = vertexPtr / 5 - 4;
+        int base = vertexPtr / 2 - 4; // vertexPtr now counts uints, not floats
         indices[indexPtr++] = base;
         indices[indexPtr++] = base + 2;
         indices[indexPtr++] = base + 1;
@@ -366,12 +351,20 @@ public class MeshThreadBinaryGreedy extends MeshThread {
         indices[indexPtr++] = base + 2;
     }
 
-    private void putVertex(int x, int y, int z, float u, float v) {
-        vertices[vertexPtr++] = x;
-        vertices[vertexPtr++] = y;
-        vertices[vertexPtr++] = z;
-        vertices[vertexPtr++] = u;
-        vertices[vertexPtr++] = v;
+ // Replace putVertex entirely
+    private void putVertex(int x, int y, int z, int corner, int quadW, int quadH, int face, int texIndex) {
+        int packed0 = (x & 0x1F)
+                    | ((y      & 0x1F) << 5)
+                    | ((z      & 0x1F) << 10)
+                    | ((corner & 0x3)  << 15)
+                    | ((quadW  & 0x1F) << 17)
+                    | ((quadH  & 0x1F) << 22)
+                    | ((face   & 0x7)  << 27);
+
+        int packed1 = (texIndex & 0xFF); // bits 0-7, 24 bits spare for AO later
+
+        vertices[vertexPtr++] = packed0;
+        vertices[vertexPtr++] = packed1;
     }
     
     // -------------------------------------------------------------------------

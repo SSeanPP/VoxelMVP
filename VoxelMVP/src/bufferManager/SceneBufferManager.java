@@ -7,6 +7,7 @@ import org.lwjgl.opengl.GL44;
 import main.Settings;
 
 import org.lwjgl.opengl.ARBMapBufferRange;
+import org.lwjgl.opengl.GL11;
 
 import static org.lwjgl.opengl.GL11.GL_FLOAT;
 import static org.lwjgl.opengl.GL20.glEnableVertexAttribArray;
@@ -96,9 +97,7 @@ public class SceneBufferManager {
 		);
 		
 		glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, false, Settings.stride, 0);
-        glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 2, GL_FLOAT, false, Settings.stride, 3*4);
+		GL30.glVertexAttribIPointer(0, 2, GL11.GL_UNSIGNED_INT, Settings.stride, 0);
 		
 		megaVBO = ARBMapBufferRange.glMapBufferRange( GL15.GL_ARRAY_BUFFER, 0, Settings.VBO_SIZE_BYTES, GL30.GL_MAP_WRITE_BIT  | ARBBufferStorage.GL_MAP_PERSISTENT_BIT | ARBBufferStorage.GL_MAP_COHERENT_BIT, null);
 	

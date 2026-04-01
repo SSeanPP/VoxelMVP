@@ -29,14 +29,16 @@ public class ChunkSSBO {
     
 	private final int DRAWCMD_SIZE = 32;
 	
-    private final int SLOT_SIZE     = 32;
-    private final int OFF_WORLD_X   = 0;
-    private final int OFF_WORLD_Y   = 4;
-    private final int OFF_WORLD_Z   = 8;
-    private final int OFF_FIRST_IDX = 16;
-    private final int OFF_BASE_VTX  = 20;
-    private final int OFF_COUNT     = 24;
-    
+	private final int SLOT_SIZE      = 32;
+	private final int OFF_WORLD_X    = 0;
+	private final int OFF_WORLD_Y    = 4;
+	private final int OFF_WORLD_Z    = 8;
+	// offset 12 = pad (unused)
+	private final int OFF_FIRST_IDX  = 16;
+	private final int OFF_BASE_VTX   = 20;
+	private final int OFF_COUNT      = 24; 
+	
+	
     private final int chunkSSBOid;
     private final int drawSSBOid;
     private final ByteBuffer chunkSSBO;
@@ -176,7 +178,6 @@ public class ChunkSSBO {
         chunkSSBO.putInt(base + OFF_FIRST_IDX, firstIndex);
         chunkSSBO.putInt(base + OFF_BASE_VTX,  baseVertex);
         chunkSSBO.putInt(base + OFF_COUNT,     indexCount);
-        //System.out.println("commitSlot " + slot + " indexCount=" + indexCount);
     }
 
     private void clearSlot(int slot) {

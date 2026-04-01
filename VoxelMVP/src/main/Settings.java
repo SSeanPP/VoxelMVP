@@ -12,7 +12,7 @@ public final class Settings {
     public static final long VBO_SIZE_BYTES    = 1024*1024*1024; 
     public static final long EBO_SIZE_BYTES    = (1024 * 1024L * 1024L * 3L/4l) + 1L;
     public static final int blockCacheSize = CHUNK_SIZE + 2;
-    public static final int stride = 5 * 4;
+    public static final int stride = 4*2;
     public static final Vector3f spawnPoint = new Vector3f((WORLD_SIZE_WIDTH * CHUNK_SIZE / 2),((WORLD_SIZE_HEIGHT * CHUNK_SIZE) -32),(WORLD_SIZE_WIDTH * CHUNK_SIZE / 2));
     public static final Vector3f spawnChunk = new Vector3f(spawnPoint.x/CHUNK_SIZE,spawnPoint.y/CHUNK_SIZE,spawnPoint.z/CHUNK_SIZE);
 
