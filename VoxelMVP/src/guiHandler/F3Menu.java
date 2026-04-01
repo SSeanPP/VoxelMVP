@@ -1,5 +1,6 @@
 package guiHandler;
 
+import bufferManager.ChunkSSBO;
 import bufferManager.SceneBufferManager;
 import imgui.ImGui;
 import main.GameState;
@@ -13,14 +14,14 @@ public class F3Menu {
     private static int fps;
     private static int frames;
     private static long fpsTimer;
-
+    private int slotCount = (Settings.RENDER_DISTANCE * 2 + 1) * (Settings.RENDER_DISTANCE * 2 + 1) * (Settings.RENDER_HEIGHT   * 2 + 1);
     private final Runtime rt = Runtime.getRuntime();
 
     public F3Menu() {
         fpsTimer = System.currentTimeMillis();
     }
 
-    public void run(GameState state, int totalIndices, int totalVertices) {
+    public void run(GameState state, int drawCount, int meshedCount, int queueDepth, long gpuTimeNs) { 
         if (!state.getF3state()) return;
 
         // --- Compute used memory ---
@@ -72,6 +73,10 @@ public class F3Menu {
         offset += writeInt(textBuffer, offset, SceneBufferManager.eboFreeRegions);
         ImGui.text(textBuffer, offset);
 
+        offset = 0;
+        offset = writeAscii(textBuffer, offset, "Mesh queue: ");
+        offset += writeInt(textBuffer, offset, queueDepth);
+        ImGui.text(textBuffer, offset);
         ImGui.end(); // end Meshing window
 
         // --- General Data window ---
@@ -91,20 +96,35 @@ public class F3Menu {
             frames = 0;
             fpsTimer += 1000;
         }
-
+        
         offset = 0;
         offset = writeAscii(textBuffer, offset, "FPS: ");
         offset += writeInt(textBuffer, offset, fps);
         ImGui.text(textBuffer, offset);
 
-        // Vertices / Indices
+
         offset = 0;
-        offset = writeAscii(textBuffer, offset, "Vertices: ");
-        offset += writeInt(textBuffer, offset, totalVertices);
-        offset = writeAscii(textBuffer, offset, " Indices: ");
-        offset += writeInt(textBuffer, offset, totalIndices);
+        offset = writeAscii(textBuffer, offset, "Visible: ");
+        offset += writeInt(textBuffer, offset, drawCount);
         ImGui.text(textBuffer, offset);
 
+        offset = 0;
+        offset = writeAscii(textBuffer, offset, "Meshes: ");
+        offset += writeInt(textBuffer, offset, meshedCount);
+        offset = writeAscii(textBuffer, offset, " / ");
+        offset += writeInt(textBuffer, offset, slotCount);
+        ImGui.text(textBuffer, offset);
+
+        
+        
+        offset = 0;
+        offset = writeAscii(textBuffer, offset, "GPU: ");
+        offset += writeInt(textBuffer, offset, gpuTimeNs / 1000000);
+        offset = writeAscii(textBuffer, offset, ".");
+        offset += writeInt(textBuffer, offset, (gpuTimeNs % 1000000) / 100000);
+        offset = writeAscii(textBuffer, offset, " ms");
+        ImGui.text(textBuffer, offset);
+        
         ImGui.end(); // end General Data
     }
 
