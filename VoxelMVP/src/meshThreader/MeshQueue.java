@@ -19,16 +19,18 @@ public class MeshQueue {
     private final SceneBufferManager bufferManager;
     private final ChunkSSBO renderTorroid;
     
-    private static Vector3f playerChunkPos = new Vector3f().set(Settings.spawnChunk);
+    private static Vector3f initialChunkPos = new Vector3f().set(Settings.spawnChunk);
+    private static volatile int playerCX = (int) initialChunkPos.x, playerCY = (int) initialChunkPos.y, playerCZ = (int) initialChunkPos.z;
+    
     public static final BlockingQueue<Slot> meshQueue = new PriorityBlockingQueue<Slot>((Settings.RENDER_DISTANCE*Settings.RENDER_HEIGHT*Settings.RENDER_DISTANCE),
     		new Comparator<Slot>() {
 		    	public int compare(Slot a, Slot b) {
-		            int dax = (int) (a.x - playerChunkPos.x);
-		            int day = (int) (a.y - playerChunkPos.y);
-		            int daz = (int) (a.z - playerChunkPos.z);
-		            int dbx = (int) (b.x - playerChunkPos.x);
-		            int dby = (int) (b.y - playerChunkPos.y);
-		            int dbz = (int) (b.z - playerChunkPos.z);
+		    		int dax = a.x - playerCX;
+		    		int day = a.y - playerCY;
+		    		int daz = a.z - playerCZ;
+		    		int dbx = b.x - playerCX;
+		    		int dby = b.y - playerCY;
+		    		int dbz = b.z - playerCZ;
 		            
 		            int distA = Math.max(Math.abs(dax), Math.max(Math.abs(day), Math.abs(daz)));
 		            int distB = Math.max(Math.abs(dbx), Math.max(Math.abs(dby), Math.abs(dbz)));
@@ -61,8 +63,10 @@ public class MeshQueue {
     	meshQueue.offer(correct);
     }
     
-    public void updatePos(Vector3f newPos)  {
-    	MeshQueue.playerChunkPos.set(newPos);
+    public void updatePos(Vector3f newPos) {
+        playerCX = (int) newPos.x;
+        playerCY = (int) newPos.y;
+        playerCZ = (int) newPos.z;
     }
 
 }
