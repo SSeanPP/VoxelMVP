@@ -68,7 +68,7 @@ I've built this on deliberately constrained tooling to force low-level thinking,
 
 ## Performance
 
-- GPU frame time: ~11.7ms (vertex/geometry bound)
+- GPU frame time: ~6ms (vertex/geometry bound)
 - Compute cull dispatch: ~181μs
 - Eliminated CPU/GPU driver bottleneck
 
