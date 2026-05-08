@@ -85,10 +85,10 @@ public class Renderer {
 	
 	public void bindBufferMananger(SceneBufferManager main) {
 		bufferManager = main;
-		bufferManager.bind();
 	}
 	
 	public void bindBuffers() {
+		bufferManager.bind();
 		GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 0, chunkSSBO.getChunkSSBOid());
 	    GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 1, chunkSSBO.getDrawSSBOid());
 	    GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 2, chunkSSBO.getCountBufId());
@@ -175,7 +175,7 @@ public class Renderer {
                 .withForwardCompatible(true)
                 .withProfileCore(true);
 
-            Display.create(new PixelFormat(), attribs);
+        Display.create(new PixelFormat(0, 24, 0), attribs);
         
         //IMGUI init
         ImGui.createContext();

@@ -10,8 +10,13 @@ uniform sampler2D txtSampler;
 const float TILE_SIZE = 1.0 / 16.0;
 
 void main() {
-    vec2 uv = fract(outBlockUV);
-    uv = clamp(uv, 0.001, 0.999);
-    vec2 withinTile = uv * TILE_SIZE;
-    fragColor = texture(txtSampler, outTileOrigin + withinTile);
+    vec2 withinTile = fract(outBlockUV) * TILE_SIZE;
+	vec2 uv = outTileOrigin + withinTile;
+	
+	// Clamp to tile boundary with half-texel inset
+	vec2 tileMin = outTileOrigin + vec2(0.5 / 256.0);
+	vec2 tileMax = outTileOrigin + vec2(TILE_SIZE) - vec2(0.5 / 256.0);
+	uv = clamp(uv, tileMin, tileMax);
+	
+	fragColor = texture(txtSampler, uv);
 }
